@@ -1,0 +1,56 @@
+[{
+        "id": 1,
+        "text": "Which language is used to build this TestMaker app?",
+        "options": [
+            "Kotlin",
+            "Swift",
+            "Dart",
+            "JavaScript"
+        ],
+        "answerIndex": 2
+    },
+    {
+        "id": 2,
+        "text": "What is the main advantage of loading quiz questions from JSON?",
+        "options": [
+            "It makes the app slower but prettier",
+            "You can update quizzes without changing the app code",
+            "It disables offline support",
+            "It removes the need for models"
+        ],
+        "answerIndex": 1
+    },
+    {
+        "id": 3,
+        "text": "In this app, how many questions are shown at once?",
+        "options": [
+            "All questions on a single long page",
+            "One question at a time",
+            "Two questions side by side",
+            "It depends on screen size"
+        ],
+        "answerIndex": 1
+    },
+    {
+        "id": 4,
+        "text": "Which UI behavior best matches Apple’s Human Interface Guidelines?",
+        "options": [
+            "Harsh, flashing animations",
+            "Overlapping dialogs everywhere",
+            "Clear hierarchy and subtle, meaningful motion",
+            "Random color changes on each tap"
+        ],
+        "answerIndex": 2
+    },
+    {
+        "id": 5,
+        "text": "When you finish the quiz in this app, what do you see?",
+        "options": [
+            "An empty screen",
+            "A result view summarizing your score",
+            "The app immediately closes",
+            "The questions restart without any summary"
+        ],
+        "answerIndex": 1
+    }
+]
