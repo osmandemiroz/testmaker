@@ -1,3 +1,5 @@
+import 'dart:math';
+
 /// ********************************************************************
 /// Question model
 /// ********************************************************************
@@ -61,9 +63,59 @@ class Question {
     };
   }
 
+  /// Creates a copy of this question with shuffled options.
+  ///
+  /// This method shuffles the options list and updates the answerIndex
+  /// to point to the correct answer in the new shuffled order.
+  /// This prevents users from memorizing option positions.
+  Question withShuffledOptions([Random? random]) {
+    final rng = random ?? Random();
+    final shuffledOptions = List<String>.from(options);
+    final correctAnswer = shuffledOptions[answerIndex];
+
+    // Shuffle the options
+    shuffledOptions.shuffle(rng);
+
+    // Find the new index of the correct answer
+    final newAnswerIndex = shuffledOptions.indexOf(correctAnswer);
+
+    return Question(
+      id: id,
+      text: text,
+      options: shuffledOptions,
+      answerIndex: newAnswerIndex,
+    );
+  }
+
   /// Debug helper for logging.
   @override
   String toString() {
     return 'Question(id: $id, text: $text, options: $options, answerIndex: $answerIndex)';
+  }
+}
+
+/// ********************************************************************
+/// Question Utilities
+/// ********************************************************************
+///
+/// Utility functions for working with lists of questions.
+///
+class QuestionUtils {
+  /// Shuffles a list of questions and their options.
+  ///
+  /// This function:
+  /// 1. Shuffles the order of questions
+  /// 2. Shuffles the options within each question
+  /// 3. Updates answer indices to match the new option order
+  ///
+  /// This prevents users from memorizing question and option positions.
+  /// A new random order is generated each time this is called.
+  static List<Question> shuffleQuestions(List<Question> questions) {
+    final random = Random();
+    final shuffled = questions
+        .map((Question q) => q.withShuffledOptions(random))
+        .toList()
+      ..shuffle(random);
+    return shuffled;
   }
 }

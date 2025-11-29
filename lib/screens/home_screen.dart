@@ -335,6 +335,9 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   /// Starts a quiz from the selected course and quiz index.
+  ///
+  /// Questions and options are shuffled before starting the quiz to prevent
+  /// users from memorizing positions. A new random order is generated each time.
   Future<void> _startQuizFromCourse(Course course, int quizIndex) async {
     if (quizIndex < 0 || quizIndex >= course.quizzes.length) {
       return;
@@ -345,12 +348,18 @@ class _HomeScreenState extends State<HomeScreen> {
       return;
     }
 
+    // Shuffle questions and options to prevent memorization
+    final shuffledQuestions = QuestionUtils.shuffleQuestions(questions);
+
     await Navigator.of(context).push(
-      _createQuizRoute(questions),
+      _createQuizRoute(shuffledQuestions),
     );
   }
 
   /// Starts the default sample quiz.
+  ///
+  /// Questions and options are shuffled before starting the quiz to prevent
+  /// users from memorizing positions. A new random order is generated each time.
   Future<void> _startQuiz() async {
     setState(() {
       _isLoading = true;
@@ -372,8 +381,11 @@ class _HomeScreenState extends State<HomeScreen> {
         return;
       }
 
+      // Shuffle questions and options to prevent memorization
+      final shuffledQuestions = QuestionUtils.shuffleQuestions(questions);
+
       await Navigator.of(context).push(
-        _createQuizRoute(questions),
+        _createQuizRoute(shuffledQuestions),
       );
 
       if (mounted) {
