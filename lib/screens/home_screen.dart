@@ -582,7 +582,19 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   /// Deletes a PDF from a course.
+  ///
+  /// Immediately updates the local state to remove the PDF from the UI,
+  /// then performs the async deletion and reloads from storage.
   Future<void> _deletePdfFromCourse(Course course, String pdfPath) async {
+    // Immediately update local state to remove the PDF from the widget tree
+    // This prevents the Dismissible widget error
+    if (mounted && _selectedCourse?.id == course.id) {
+      final updatedPdfs = course.pdfs.where((String path) => path != pdfPath).toList();
+      setState(() {
+        _selectedCourse = course.copyWith(pdfs: updatedPdfs);
+      });
+    }
+
     try {
       await _courseService.deletePdfFromCourse(course.id, pdfPath);
 
@@ -600,11 +612,30 @@ class _HomeScreenState extends State<HomeScreen> {
       if (kDebugMode) {
         print('[HomeScreen._deletePdfFromCourse] Failed to delete PDF: $e');
       }
+      // Reload courses even on error to ensure UI matches storage
+      if (mounted) {
+        await _loadCourses();
+      }
     }
   }
 
   /// Deletes a quiz from a course.
+  ///
+  /// Immediately updates the local state to remove the quiz from the UI,
+  /// then performs the async deletion and reloads from storage.
   Future<void> _deleteQuizFromCourse(Course course, int quizIndex) async {
+    // Immediately update local state to remove the quiz from the widget tree
+    // This prevents the Dismissible widget error
+    if (mounted && _selectedCourse?.id == course.id) {
+      final updatedQuizzes = <List<Question>>[
+        ...course.quizzes.sublist(0, quizIndex),
+        ...course.quizzes.sublist(quizIndex + 1),
+      ];
+      setState(() {
+        _selectedCourse = course.copyWith(quizzes: updatedQuizzes);
+      });
+    }
+
     try {
       await _courseService.deleteQuizFromCourse(course.id, quizIndex);
 
@@ -621,6 +652,10 @@ class _HomeScreenState extends State<HomeScreen> {
     } on Exception catch (e) {
       if (kDebugMode) {
         print('[HomeScreen._deleteQuizFromCourse] Failed to delete quiz: $e');
+      }
+      // Reload courses even on error to ensure UI matches storage
+      if (mounted) {
+        await _loadCourses();
       }
     }
   }
@@ -1129,7 +1164,7 @@ class _HomeScreenState extends State<HomeScreen> {
               if (_selectedCourse == null) ...<Widget>[
                 _buildWelcomeContent(theme, textTheme),
               ] else ...<Widget>[
-                _buildCourseContent(theme, textTheme, _selectedCourse!),
+                _buildCourseContent(theme, textTheme),
               ],
             ],
           ),
@@ -1222,11 +1257,20 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   /// Builds the content for a selected course.
+  ///
+  /// Uses [_selectedCourse] directly to ensure the widget tree always reflects
+  /// the current state, preventing Dismissible widget errors.
   Widget _buildCourseContent(
     ThemeData theme,
     TextTheme textTheme,
-    Course course,
   ) {
+    // Guard against null _selectedCourse (shouldn't happen, but safety first)
+    if (_selectedCourse == null) {
+      return const SizedBox.shrink();
+    }
+
+    final course = _selectedCourse!;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
