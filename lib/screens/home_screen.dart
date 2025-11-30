@@ -474,16 +474,20 @@ class _HomeScreenState extends State<HomeScreen> {
               child: const Text('Cancel'),
             ),
             FilledButton(
-              onPressed: () {
+              onPressed: () async {
                 if (controller.text.trim().isNotEmpty) {
-                  QuestionGeneratorService.setApiKey(controller.text.trim());
-                  Navigator.of(context).pop(true);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('API key saved successfully!'),
-                      behavior: SnackBarBehavior.floating,
-                    ),
+                  await QuestionGeneratorService.setApiKey(
+                    controller.text.trim(),
                   );
+                  if (context.mounted) {
+                    Navigator.of(context).pop(true);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('API key saved successfully!'),
+                        behavior: SnackBarBehavior.floating,
+                      ),
+                    );
+                  }
                 }
               },
               child: const Text('Save'),
@@ -581,6 +585,20 @@ class _HomeScreenState extends State<HomeScreen> {
     return result;
   }
 
+  /// Shows the settings dialog with options to change the API key.
+  Future<void> _showSettingsDialog() async {
+    if (!mounted) {
+      return;
+    }
+
+    await showDialog<void>(
+      context: context,
+      builder: (BuildContext context) {
+        return const _SettingsDialog();
+      },
+    );
+  }
+
   /// Deletes a PDF from a course.
   ///
   /// Immediately updates the local state to remove the PDF from the UI,
@@ -589,7 +607,8 @@ class _HomeScreenState extends State<HomeScreen> {
     // Immediately update local state to remove the PDF from the widget tree
     // This prevents the Dismissible widget error
     if (mounted && _selectedCourse?.id == course.id) {
-      final updatedPdfs = course.pdfs.where((String path) => path != pdfPath).toList();
+      final updatedPdfs =
+          course.pdfs.where((String path) => path != pdfPath).toList();
       setState(() {
         _selectedCourse = course.copyWith(pdfs: updatedPdfs);
       });
@@ -901,27 +920,43 @@ class _HomeScreenState extends State<HomeScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
-          // Header
+          // Header with clickable logo to go to main screen
           Padding(
             padding: const EdgeInsets.all(20),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[
-                Text(
-                  'TestMaker',
-                  style: textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: -0.5,
-                  ),
+            child: InkWell(
+              onTap: () {
+                setState(() {
+                  _selectedCourse = null;
+                  _error = null;
+                });
+              },
+              borderRadius: BorderRadius.circular(12),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 4,
+                  vertical: 4,
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  'Your courses',
-                  style: textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
-                  ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    Text(
+                      'TestMaker',
+                      style: textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: -0.5,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Your courses',
+                      style: textTheme.bodySmall?.copyWith(
+                        color:
+                            theme.colorScheme.onSurface.withValues(alpha: 0.7),
+                      ),
+                    ),
+                  ],
                 ),
-              ],
+              ),
             ),
           ),
           const Divider(height: 1),
@@ -1178,19 +1213,46 @@ class _HomeScreenState extends State<HomeScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
-        Text(
-          'Welcome to TestMaker',
-          style: textTheme.headlineMedium?.copyWith(
-            fontWeight: FontWeight.w700,
-            letterSpacing: -0.5,
-          ),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          'Create and take beautiful, focused quizzes.',
-          style: textTheme.bodyMedium?.copyWith(
-            color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
-          ),
+        // Header row with title and settings button
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  Text(
+                    'Welcome to TestMaker',
+                    style: textTheme.headlineMedium?.copyWith(
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: -0.5,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Create and take beautiful, focused quizzes.',
+                    style: textTheme.bodyMedium?.copyWith(
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            // Settings button in upper right corner
+            IconButton(
+              onPressed: _showSettingsDialog,
+              icon: Icon(
+                Icons.settings_outlined,
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+              ),
+              tooltip: 'Settings',
+              style: IconButton.styleFrom(
+                padding: const EdgeInsets.all(8),
+                minimumSize: const Size(40, 40),
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              ),
+            ),
+          ],
         ),
         const SizedBox(height: 32),
         Hero(
@@ -2209,6 +2271,326 @@ class _CreateCourseDialogState extends State<_CreateCourseDialog>
                           ),
                           child: Text(
                             'Create',
+                            style: textTheme.labelLarge?.copyWith(
+                              fontWeight: FontWeight.w600,
+                              color: theme.colorScheme.onPrimary,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// ********************************************************************
+/// _SettingsDialog
+/// ********************************************************************
+///
+/// A beautifully designed settings dialog following Apple's Human Interface
+/// Guidelines:
+///  - Clean, minimal design with generous spacing
+///  - Soft rounded corners and subtle shadows
+///  - Smooth animations and transitions
+///  - Clear visual hierarchy and focus states
+///
+class _SettingsDialog extends StatefulWidget {
+  const _SettingsDialog();
+
+  @override
+  State<_SettingsDialog> createState() => _SettingsDialogState();
+}
+
+class _SettingsDialogState extends State<_SettingsDialog>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _animationController;
+  late Animation<double> _scaleAnimation;
+  late Animation<double> _fadeAnimation;
+  late TextEditingController _apiKeyController;
+  bool _isFocused = false;
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _apiKeyController = TextEditingController();
+    _animationController = AnimationController(
+      duration: const Duration(milliseconds: 200),
+      vsync: this,
+    );
+
+    _scaleAnimation = Tween<double>(
+      begin: 0.9,
+      end: 1,
+    ).animate(
+      CurvedAnimation(
+        parent: _animationController,
+        curve: Curves.easeOutCubic,
+      ),
+    );
+
+    _fadeAnimation = Tween<double>(
+      begin: 0,
+      end: 1,
+    ).animate(
+      CurvedAnimation(
+        parent: _animationController,
+        curve: Curves.easeIn,
+      ),
+    );
+
+    _loadApiKey();
+    _animationController.forward();
+  }
+
+  /// Loads the current API key from storage.
+  Future<void> _loadApiKey() async {
+    final currentKey = await QuestionGeneratorService.getApiKey() ?? '';
+    if (mounted) {
+      setState(() {
+        _apiKeyController.text = currentKey;
+        _isLoading = false;
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _animationController.dispose();
+    _apiKeyController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final textTheme = theme.textTheme;
+
+    return FadeTransition(
+      opacity: _fadeAnimation,
+      child: ScaleTransition(
+        scale: _scaleAnimation,
+        child: Dialog(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          child: Container(
+            constraints: const BoxConstraints(maxWidth: 400),
+            decoration: BoxDecoration(
+              color: theme.colorScheme.surface,
+              borderRadius: BorderRadius.circular(28),
+              boxShadow: <BoxShadow>[
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.15),
+                  blurRadius: 40,
+                  offset: const Offset(0, 20),
+                ),
+              ],
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: <Widget>[
+                // Header section with icon
+                Container(
+                  padding: const EdgeInsets.fromLTRB(28, 32, 28, 20),
+                  child: Column(
+                    children: <Widget>[
+                      // Title
+                      Text(
+                        'Settings',
+                        style: textTheme.headlineSmall?.copyWith(
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: -0.5,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 8),
+                      // Subtitle
+                      Text(
+                        'Manage your app preferences',
+                        style: textTheme.bodyMedium?.copyWith(
+                          color: theme.colorScheme.onSurface
+                              .withValues(alpha: 0.7),
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
+                  ),
+                ),
+                // API Key section
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 28),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: <Widget>[
+                      Text(
+                        'Google AI API Key',
+                        style: textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Required for generating questions from PDFs',
+                        style: textTheme.bodySmall?.copyWith(
+                          color: theme.colorScheme.onSurface
+                              .withValues(alpha: 0.7),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Focus(
+                        onFocusChange: (bool hasFocus) {
+                          setState(() {
+                            _isFocused = hasFocus;
+                          });
+                        },
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 200),
+                          curve: Curves.easeOutCubic,
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(
+                              color: _isFocused
+                                  ? theme.colorScheme.primary
+                                  : theme.colorScheme.outlineVariant
+                                      .withValues(alpha: 0.5),
+                              width: _isFocused ? 2 : 1,
+                            ),
+                            color: _isFocused
+                                ? theme.colorScheme.primaryContainer
+                                    .withValues(alpha: 0.1)
+                                : theme.colorScheme.surfaceContainerHighest,
+                          ),
+                          child: _isLoading
+                              ? const Padding(
+                                  padding: EdgeInsets.all(20),
+                                  child: Center(
+                                    child: CircularProgressIndicator(),
+                                  ),
+                                )
+                              : TextField(
+                                  controller: _apiKeyController,
+                                  style: textTheme.bodyLarge?.copyWith(
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                  decoration: InputDecoration(
+                                    hintText: 'Enter your Google AI API key',
+                                    hintStyle: textTheme.bodyLarge?.copyWith(
+                                      color: theme.colorScheme.onSurface
+                                          .withValues(alpha: 0.4),
+                                    ),
+                                    border: InputBorder.none,
+                                    contentPadding: const EdgeInsets.symmetric(
+                                      horizontal: 20,
+                                      vertical: 18,
+                                    ),
+                                  ),
+                                  obscureText: true,
+                                ),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      TextButton.icon(
+                        onPressed: () async {
+                          final url = Uri.parse(
+                            'https://makersuite.google.com/app/apikey',
+                          );
+                          if (await canLaunchUrl(url)) {
+                            await launchUrl(
+                              url,
+                              mode: LaunchMode.externalApplication,
+                            );
+                          }
+                        },
+                        icon: const Icon(Icons.open_in_new, size: 16),
+                        label: const Text('Get API Key'),
+                        style: TextButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 8,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 28),
+                // Action buttons
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(28, 0, 28, 28),
+                  child: Row(
+                    children: <Widget>[
+                      // Cancel button
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed: () => Navigator.of(context).pop(),
+                          style: OutlinedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(14),
+                            ),
+                            side: BorderSide(
+                              color: theme.colorScheme.outlineVariant
+                                  .withValues(alpha: 0.5),
+                            ),
+                          ),
+                          child: Text(
+                            'Cancel',
+                            style: textTheme.labelLarge?.copyWith(
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      // Save button
+                      Expanded(
+                        flex: 2,
+                        child: FilledButton(
+                          onPressed: () async {
+                            await QuestionGeneratorService.setApiKey(
+                              _apiKeyController.text.trim().isEmpty
+                                  ? null
+                                  : _apiKeyController.text.trim(),
+                            );
+                            if (context.mounted) {
+                              Navigator.of(context).pop();
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(
+                                    'Settings saved successfully!',
+                                    style: TextStyle(
+                                      color: theme.colorScheme.onSurface,
+                                    ),
+                                  ),
+                                  backgroundColor:
+                                      theme.colorScheme.primaryContainer,
+                                  behavior: SnackBarBehavior.floating,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                ),
+                              );
+                            }
+                          },
+                          style: FilledButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(14),
+                            ),
+                            backgroundColor: theme.colorScheme.primary,
+                            foregroundColor: theme.colorScheme.onPrimary,
+                            elevation: 0,
+                          ),
+                          child: Text(
+                            'Save',
                             style: textTheme.labelLarge?.copyWith(
                               fontWeight: FontWeight.w600,
                               color: theme.colorScheme.onPrimary,
