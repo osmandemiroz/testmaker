@@ -640,30 +640,20 @@ class _HomeScreenState extends State<HomeScreen> {
 
   /// Deletes a quiz from a course.
   ///
-  /// Immediately updates the local state to remove the quiz from the UI,
-  /// then performs the async deletion and reloads from storage.
+  /// Note: State update should already be done in onDismissed before calling this.
+  /// This method performs the async deletion and reloads from storage.
   Future<void> _deleteQuizFromCourse(Course course, int quizIndex) async {
-    // Immediately update local state to remove the quiz from the widget tree
-    // This prevents the Dismissible widget error
-    if (mounted && _selectedCourse?.id == course.id) {
-      final updatedQuizzes = <List<Question>>[
-        ...course.quizzes.sublist(0, quizIndex),
-        ...course.quizzes.sublist(quizIndex + 1),
-      ];
-      setState(() {
-        _selectedCourse = course.copyWith(quizzes: updatedQuizzes);
-      });
-    }
-
     try {
       await _courseService.deleteQuizFromCourse(course.id, quizIndex);
 
       if (mounted) {
         await _loadCourses();
+        // Update _selectedCourse to match the latest data from storage
         if (_selectedCourse?.id == course.id) {
           setState(() {
             _selectedCourse = _courses.firstWhere(
               (Course c) => c.id == course.id,
+              orElse: () => _selectedCourse!,
             );
           });
         }
@@ -675,6 +665,14 @@ class _HomeScreenState extends State<HomeScreen> {
       // Reload courses even on error to ensure UI matches storage
       if (mounted) {
         await _loadCourses();
+        if (_selectedCourse?.id == course.id) {
+          setState(() {
+            _selectedCourse = _courses.firstWhere(
+              (Course c) => c.id == course.id,
+              orElse: () => _selectedCourse!,
+            );
+          });
+        }
       }
     }
   }
@@ -1460,6 +1458,15 @@ class _HomeScreenState extends State<HomeScreen> {
               (MapEntry<int, List<Question>> entry) {
                 final quizIndex = entry.key;
                 final questions = entry.value;
+                // Create a stable identifier for the quiz based on its content
+                // This prevents Dismissible errors when quizzes are deleted
+                // Use a combination of course ID, quiz index, and content hash for uniqueness
+                final quizHash = Object.hashAll([
+                  course.id,
+                  quizIndex,
+                  ...questions.map((Question q) => q.id),
+                  ...questions.map((Question q) => q.text),
+                ]);
 
                 return _buildQuizCardWithSwipe(
                   theme,
@@ -1467,6 +1474,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   course,
                   quizIndex,
                   questions.length,
+                  quizHash,
                   () => _startQuizFromCourse(course, quizIndex),
                 );
               },
@@ -1558,8 +1566,10 @@ class _HomeScreenState extends State<HomeScreen> {
     String fileName,
     String pdfPath,
   ) {
+    // Use PDF path as key instead of index to prevent Dismissible errors
+    // when items are deleted and indices shift
     return Dismissible(
-      key: Key('pdf_${course.id}_$pdfIndex'),
+      key: Key('pdf_${course.id}_${pdfPath.hashCode}'),
       direction: DismissDirection.endToStart,
       background: Container(
         margin: const EdgeInsets.only(bottom: 12),
@@ -1700,10 +1710,13 @@ class _HomeScreenState extends State<HomeScreen> {
     Course course,
     int quizIndex,
     int questionCount,
+    int quizHash,
     VoidCallback onTap,
   ) {
+    // Use quiz content hash as key instead of index to prevent Dismissible errors
+    // when items are deleted and indices shift
     return Dismissible(
-      key: Key('quiz_${course.id}_$quizIndex'),
+      key: Key('quiz_${course.id}_$quizHash'),
       direction: DismissDirection.endToStart,
       background: Container(
         margin: const EdgeInsets.only(bottom: 12),
@@ -1762,7 +1775,23 @@ class _HomeScreenState extends State<HomeScreen> {
         return confirmed ?? false;
       },
       onDismissed: (DismissDirection direction) {
-        _deleteQuizFromCourse(course, quizIndex);
+        // Immediately update state synchronously before async operations
+        // This ensures the Dismissible widget is removed from the tree immediately
+        if (mounted && _selectedCourse != null && _selectedCourse!.id == course.id) {
+          final currentCourse = _selectedCourse!;
+          if (quizIndex >= 0 && quizIndex < currentCourse.quizzes.length) {
+            // Update state immediately to remove the quiz from the widget tree
+            final updatedQuizzes = <List<Question>>[
+              ...currentCourse.quizzes.sublist(0, quizIndex),
+              ...currentCourse.quizzes.sublist(quizIndex + 1),
+            ];
+            setState(() {
+              _selectedCourse = currentCourse.copyWith(quizzes: updatedQuizzes);
+            });
+            // Then perform async deletion
+            _deleteQuizFromCourse(currentCourse, quizIndex);
+          }
+        }
       },
       child: _buildQuizCard(theme, textTheme, quizIndex, questionCount, onTap),
     );
