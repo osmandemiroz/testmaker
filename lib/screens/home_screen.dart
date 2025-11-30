@@ -59,6 +59,12 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     _loadCourses();
+    _loadApiKey();
+  }
+
+  /// Loads the API key from local storage on app start.
+  Future<void> _loadApiKey() async {
+    await QuestionGeneratorService.getApiKey();
   }
 
   /// Loads all courses from local storage.
@@ -281,12 +287,22 @@ class _HomeScreenState extends State<HomeScreen> {
   ///
   /// This method extracts text from the PDF, then uses Google's Gemini AI
   /// to generate quiz questions based on the study material content.
+  ///
+  /// First checks for API key, then prompts for question count.
   Future<void> _generateQuestionsFromPdf(Course course, String pdfPath) async {
     // Check if API key is set
-    if (QuestionGeneratorService.apiKey == null ||
-        QuestionGeneratorService.apiKey!.isEmpty) {
-      _showApiKeyDialog();
-      return;
+    final hasApiKey = await QuestionGeneratorService.hasApiKey();
+    if (!hasApiKey) {
+      final apiKeySet = await _showApiKeyDialog();
+      if (!apiKeySet) {
+        return; // User cancelled
+      }
+    }
+
+    // Ask for question count
+    final questionCount = await _showQuestionCountDialog();
+    if (questionCount == null) {
+      return; // User cancelled
     }
 
     setState(() {
@@ -308,9 +324,11 @@ class _HomeScreenState extends State<HomeScreen> {
         );
       }
 
-      // Generate questions using LLM
-      final questions =
-          await _questionGenerator.generateQuestionsFromText(pdfText);
+      // Generate questions using LLM with the specified count
+      final questions = await _questionGenerator.generateQuestionsFromText(
+        pdfText,
+        questionCount: questionCount,
+      );
 
       // Add generated questions to the course
       await _courseService.addQuizToCourse(course.id, questions);
@@ -351,7 +369,7 @@ class _HomeScreenState extends State<HomeScreen> {
       // Extract a user-friendly error message
       var errorMessage = e.toString();
       if (errorMessage.contains('API key not set')) {
-        _showApiKeyDialog();
+        await _showApiKeyDialog();
         setState(() {
           _isGeneratingQuestions = false;
           _error = null;
@@ -377,11 +395,17 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   /// Shows a dialog to set the Google AI API key.
-  void _showApiKeyDialog() {
+  ///
+  /// Returns true if the API key was successfully set, false if cancelled.
+  Future<bool> _showApiKeyDialog() async {
     final controller = TextEditingController();
-    final currentKey = QuestionGeneratorService.apiKey ?? '';
+    final currentKey = await QuestionGeneratorService.getApiKey() ?? '';
 
-    showDialog<void>(
+    if (!mounted) {
+      return false;
+    }
+
+    final result = await showDialog<bool>(
       context: context,
       builder: (BuildContext context) {
         final theme = Theme.of(context);
@@ -446,14 +470,14 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           actions: <Widget>[
             TextButton(
-              onPressed: () => Navigator.of(context).pop(),
+              onPressed: () => Navigator.of(context).pop(false),
               child: const Text('Cancel'),
             ),
             FilledButton(
               onPressed: () {
                 if (controller.text.trim().isNotEmpty) {
-                  QuestionGeneratorService.apiKey = controller.text.trim();
-                  Navigator.of(context).pop();
+                  QuestionGeneratorService.setApiKey(controller.text.trim());
+                  Navigator.of(context).pop(true);
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
                       content: Text('API key saved successfully!'),
@@ -468,6 +492,93 @@ class _HomeScreenState extends State<HomeScreen> {
         );
       },
     );
+
+    return result ?? false;
+  }
+
+  /// Shows a dialog to ask the user how many questions to generate.
+  ///
+  /// Returns the question count if confirmed, null if cancelled.
+  Future<int?> _showQuestionCountDialog() async {
+    final controller = TextEditingController(text: '10');
+
+    final result = await showDialog<int>(
+      context: context,
+      builder: (BuildContext context) {
+        final theme = Theme.of(context);
+        final textTheme = theme.textTheme;
+
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          title: Text(
+            'Number of Questions',
+            style: textTheme.titleLarge?.copyWith(
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Text(
+                  'How many questions would you like to generate from this PDF?',
+                  style: textTheme.bodyMedium,
+                ),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: controller,
+                  decoration: InputDecoration(
+                    labelText: 'Question Count',
+                    hintText: 'Enter a number (e.g., 10)',
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  keyboardType: TextInputType.number,
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Recommended: 5-20 questions',
+                  style: textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: () {
+                final text = controller.text.trim();
+                final count = int.tryParse(text);
+                if (count != null && count > 0 && count <= 50) {
+                  Navigator.of(context).pop(count);
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text(
+                        'Please enter a number between 1 and 50',
+                      ),
+                      behavior: SnackBarBehavior.floating,
+                    ),
+                  );
+                }
+              },
+              child: const Text('Generate'),
+            ),
+          ],
+        );
+      },
+    );
+
+    return result;
   }
 
   /// Deletes a PDF from a course.

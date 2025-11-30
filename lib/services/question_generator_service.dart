@@ -4,6 +4,7 @@ import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:testmaker/models/question.dart';
 
 /// ********************************************************************
@@ -27,30 +28,56 @@ class QuestionGeneratorService {
     this.questionCount = 5,
   });
 
-  /// Google Generative AI API key.
+  /// Key used in SharedPreferences to store the API key.
+  static const String _apiKeyPrefsKey = 'testmaker_gemini_api_key';
+
+  /// Google Generative AI API key (cached in memory).
   ///
-  /// IMPORTANT: In production, store this securely (e.g., environment variables,
-  /// secure storage). For now, users should set this via a configuration method.
+  /// IMPORTANT: The API key is stored in SharedPreferences for persistence.
   static String? _apiKey;
 
   /// Number of questions to generate per request.
   final int questionCount;
 
-  /// Sets the Google AI API key.
+  /// Initializes SharedPreferences and loads the API key.
+  static Future<void> _ensureInitialized() async {
+    if (_apiKey == null) {
+      final prefs = await SharedPreferences.getInstance();
+      _apiKey = prefs.getString(_apiKeyPrefsKey);
+    }
+  }
+
+  /// Sets the Google AI API key and saves it to local storage.
   ///
   /// This should be set before using the service.
   /// You can get an API key from: https://makersuite.google.com/app/apikey
-  static set apiKey(String? key) {
+  static Future<void> setApiKey(String? key) async {
     _apiKey = key;
+    final prefs = await SharedPreferences.getInstance();
+    if (key != null && key.isNotEmpty) {
+      await prefs.setString(_apiKeyPrefsKey, key);
+    } else {
+      await prefs.remove(_apiKeyPrefsKey);
+    }
   }
 
-  /// Gets the current API key.
-  static String? get apiKey => _apiKey;
+  /// Gets the current API key (loads from storage if not in memory).
+  static Future<String?> getApiKey() async {
+    await _ensureInitialized();
+    return _apiKey;
+  }
+
+  /// Checks if an API key is set.
+  static Future<bool> hasApiKey() async {
+    final key = await getApiKey();
+    return key != null && key.isNotEmpty;
+  }
 
   /// Lists available models from the Gemini API.
   ///
   /// This helps determine which models are available for the current API key.
   Future<List<String>> listAvailableModels() async {
+    await _ensureInitialized();
     if (_apiKey == null || _apiKey!.isEmpty) {
       return <String>[];
     }
@@ -88,25 +115,34 @@ class QuestionGeneratorService {
   /// The text should be study material content (e.g., extracted from a PDF).
   /// The service uses Google's Gemini AI to generate multiple-choice questions.
   ///
+  /// [questionCount] specifies how many questions to generate (overrides the
+  /// default questionCount if provided).
+  ///
   /// Returns a list of [Question] objects that can be added to a course.
   ///
   /// Throws an exception if:
   /// - API key is not set
   /// - API request fails
   /// - Generated content cannot be parsed
-  Future<List<Question>> generateQuestionsFromText(String text) async {
+  Future<List<Question>> generateQuestionsFromText(
+    String text, {
+    int? questionCount,
+  }) async {
+    await _ensureInitialized();
     if (_apiKey == null || _apiKey!.isEmpty) {
       throw Exception(
-        'Google AI API key not set. Please set it using QuestionGeneratorService.apiKey = "your-key"',
+        'Google AI API key not set. Please set it using QuestionGeneratorService.setApiKey()',
       );
     }
+
+    final count = questionCount ?? this.questionCount;
 
     if (text.trim().isEmpty) {
       throw Exception('Text content is empty');
     }
 
     try {
-      final prompt = _buildPrompt(text, questionCount);
+      final prompt = _buildPrompt(text, count);
 
       // First, try to get available models to use the correct one
       final availableModels = await listAvailableModels();
