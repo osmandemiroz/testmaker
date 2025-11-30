@@ -6,7 +6,10 @@ import 'package:testmaker/models/question.dart';
 import 'package:testmaker/screens/pdf_viewer_screen.dart';
 import 'package:testmaker/screens/quiz_screen.dart';
 import 'package:testmaker/services/course_service.dart';
+import 'package:testmaker/services/pdf_text_extractor.dart';
+import 'package:testmaker/services/question_generator_service.dart';
 import 'package:testmaker/services/quiz_service.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 /// ********************************************************************
 /// HomeScreen
@@ -37,6 +40,11 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   final QuizService _quizService = const QuizService();
   final CourseService _courseService = CourseService();
+  final PdfTextExtractor _pdfTextExtractor = const PdfTextExtractor();
+  final QuestionGeneratorService _questionGenerator =
+      const QuestionGeneratorService(
+    questionCount: 10,
+  );
 
   List<Course> _courses = <Course>[];
   Course? _selectedCourse;
@@ -44,6 +52,7 @@ class _HomeScreenState extends State<HomeScreen> {
   bool _isLoading = false;
   bool _isCustomLoading = false;
   bool _isPdfLoading = false;
+  bool _isGeneratingQuestions = false;
   String? _error;
 
   @override
@@ -79,22 +88,51 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   /// Creates a new course with the given name.
+  ///
+  /// After creation, reloads courses from storage and selects the newly
+  /// created course to ensure UI consistency.
   Future<void> _createCourse(String name) async {
     if (name.trim().isEmpty) {
       return;
     }
 
     try {
-      final course = await _courseService.createCourse(name.trim());
+      // Create the course and get the returned course object
+      final newCourse = await _courseService.createCourse(name.trim());
+
+      // Reload courses from storage to ensure consistency
       if (mounted) {
-        setState(() {
-          _courses = <Course>[..._courses, course];
-          _selectedCourse = course;
-        });
+        await _loadCourses();
+
+        // Find and select the newly created course by ID (more reliable than using last)
+        if (mounted && _courses.isNotEmpty) {
+          try {
+            final createdCourse = _courses.firstWhere(
+              (Course c) => c.id == newCourse.id,
+            );
+            setState(() {
+              _selectedCourse = createdCourse;
+            });
+          } on Exception catch (e) {
+            if (kDebugMode) {
+              print('[HomeScreen._createCourse] Failed to select course: $e');
+            }
+            // If course not found (shouldn't happen), select the last one
+            if (mounted) {
+              setState(() {
+                _selectedCourse = _courses.last;
+              });
+            }
+          }
+        }
       }
     } on Exception catch (e) {
       if (kDebugMode) {
         print('[HomeScreen._createCourse] Failed to create course: $e');
+      }
+      // Reload courses even on error to ensure UI matches storage
+      if (mounted) {
+        await _loadCourses();
       }
     }
   }
@@ -122,21 +160,30 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   /// Deletes a course from local storage.
+  ///
+  /// After deletion, reloads courses from storage to ensure UI consistency.
   Future<void> _deleteCourse(Course course) async {
     try {
       await _courseService.deleteCourse(course.id);
 
+      // Reload courses from storage to ensure consistency
       if (mounted) {
-        setState(() {
-          _courses.removeWhere((Course c) => c.id == course.id);
-          if (_selectedCourse?.id == course.id) {
+        await _loadCourses();
+
+        // Clear selection if the deleted course was selected
+        if (mounted && _selectedCourse?.id == course.id) {
+          setState(() {
             _selectedCourse = null;
-          }
-        });
+          });
+        }
       }
     } on Exception catch (e) {
       if (kDebugMode) {
         print('[HomeScreen._deleteCourse] Failed to delete course: $e');
+      }
+      // Even if deletion fails, reload to ensure UI matches storage
+      if (mounted) {
+        await _loadCourses();
       }
     }
   }
@@ -210,6 +257,199 @@ class _HomeScreenState extends State<HomeScreen> {
           title: title,
         ),
       ),
+    );
+  }
+
+  /// Generates questions from a PDF file using the LLM.
+  ///
+  /// This method extracts text from the PDF, then uses Google's Gemini AI
+  /// to generate quiz questions based on the study material content.
+  Future<void> _generateQuestionsFromPdf(Course course, String pdfPath) async {
+    // Check if API key is set
+    if (QuestionGeneratorService.apiKey == null ||
+        QuestionGeneratorService.apiKey!.isEmpty) {
+      _showApiKeyDialog();
+      return;
+    }
+
+    setState(() {
+      _isGeneratingQuestions = true;
+      _error = null;
+    });
+
+    try {
+      // Extract text from PDF (limited to first 10 pages for performance)
+      final pdfText = await _pdfTextExtractor.extractTextLimited(pdfPath);
+
+      if (pdfText.isEmpty) {
+        throw Exception('No text content found in PDF');
+      }
+
+      if (kDebugMode) {
+        print(
+          '[HomeScreen._generateQuestionsFromPdf] Extracted ${pdfText.length} characters from PDF',
+        );
+      }
+
+      // Generate questions using LLM
+      final questions =
+          await _questionGenerator.generateQuestionsFromText(pdfText);
+
+      // Add generated questions to the course
+      await _courseService.addQuizToCourse(course.id, questions);
+
+      // Reload courses to get the updated data
+      await _loadCourses();
+
+      if (mounted) {
+        setState(() {
+          _isGeneratingQuestions = false;
+          _error = null;
+        });
+
+        // Show success message
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                'Successfully generated ${questions.length} questions!',
+              ),
+              backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+          );
+        }
+      }
+    } on Exception catch (e) {
+      if (kDebugMode) {
+        print('[HomeScreen._generateQuestionsFromPdf] Failed: $e');
+      }
+      if (!mounted) {
+        return;
+      }
+
+      // Extract a user-friendly error message
+      var errorMessage = e.toString();
+      if (errorMessage.contains('API key not set')) {
+        _showApiKeyDialog();
+        setState(() {
+          _isGeneratingQuestions = false;
+          _error = null;
+        });
+        return;
+      } else if (errorMessage.contains('No text content found')) {
+        errorMessage =
+            'Could not extract text from the PDF.\n\nPlease ensure the PDF contains readable text content.';
+      } else if (errorMessage.contains('No questions were generated') ||
+          errorMessage.contains('Could not parse')) {
+        errorMessage =
+            'The AI could not generate valid questions.\n\nThis might be because:\n'
+            '• The PDF content is too short or unclear\n'
+            '• The AI response format was unexpected\n\n'
+            'Please try again.';
+      }
+
+      setState(() {
+        _error = errorMessage;
+        _isGeneratingQuestions = false;
+      });
+    }
+  }
+
+  /// Shows a dialog to set the Google AI API key.
+  void _showApiKeyDialog() {
+    final controller = TextEditingController();
+    final currentKey = QuestionGeneratorService.apiKey ?? '';
+
+    showDialog<void>(
+      context: context,
+      builder: (BuildContext context) {
+        final theme = Theme.of(context);
+        final textTheme = theme.textTheme;
+
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          title: Text(
+            'API Key Required',
+            style: textTheme.titleLarge?.copyWith(
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Text(
+                  'To generate questions from PDFs, you need a Google AI API key.',
+                  style: textTheme.bodyMedium,
+                ),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: controller..text = currentKey,
+                  decoration: InputDecoration(
+                    labelText: 'Google AI API Key',
+                    hintText: 'Enter your API key',
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  obscureText: true,
+                ),
+                const SizedBox(height: 12),
+                TextButton.icon(
+                  onPressed: () async {
+                    final url = Uri.parse(
+                      'https://makersuite.google.com/app/apikey',
+                    );
+                    if (await canLaunchUrl(url)) {
+                      await launchUrl(
+                        url,
+                        mode: LaunchMode.externalApplication,
+                      );
+                    }
+                  },
+                  icon: const Icon(Icons.open_in_new, size: 16),
+                  label: const Text('Get API Key'),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Get your free API key from:\nhttps://makersuite.google.com/app/apikey',
+                  style: textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: () {
+                if (controller.text.trim().isNotEmpty) {
+                  QuestionGeneratorService.apiKey = controller.text.trim();
+                  Navigator.of(context).pop();
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('API key saved successfully!'),
+                      behavior: SnackBarBehavior.floating,
+                    ),
+                  );
+                }
+              },
+              child: const Text('Save'),
+            ),
+          ],
+        );
+      },
     );
   }
 
@@ -918,13 +1158,56 @@ class _HomeScreenState extends State<HomeScreen> {
                 final pdfPath = entry.value;
                 final fileName = pdfPath.split('/').last;
 
-                return _buildPdfCardWithSwipe(
-                  theme,
-                  textTheme,
-                  course,
-                  pdfIndex,
-                  fileName,
-                  pdfPath,
+                return Column(
+                  children: <Widget>[
+                    _buildPdfCardWithSwipe(
+                      theme,
+                      textTheme,
+                      course,
+                      pdfIndex,
+                      fileName,
+                      pdfPath,
+                    ),
+                    // Generate questions button
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 12),
+                      child: SizedBox(
+                        height: 36,
+                        child: OutlinedButton.icon(
+                          onPressed: _isGeneratingQuestions
+                              ? null
+                              : () =>
+                                  _generateQuestionsFromPdf(course, pdfPath),
+                          icon: _isGeneratingQuestions
+                              ? SizedBox(
+                                  width: 14,
+                                  height: 14,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    valueColor: AlwaysStoppedAnimation<Color>(
+                                      theme.colorScheme.primary,
+                                    ),
+                                  ),
+                                )
+                              : const Icon(Icons.auto_awesome, size: 16),
+                          label: Text(
+                            _isGeneratingQuestions
+                                ? 'Generating...'
+                                : 'Generate Questions',
+                            style: textTheme.labelSmall?.copyWith(
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          style: OutlinedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(horizontal: 12),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
                 );
               },
             ),
