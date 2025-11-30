@@ -31,6 +31,7 @@ class _QuizScreenState extends State<QuizScreen> {
   int? _selectedIndex;
   bool _revealAnswer = false;
   bool _isTransitioning = false;
+  final List<Map<String, dynamic>> _incorrectAnswers = <Map<String, dynamic>>[];
 
   Question get _currentQuestion => widget.questions[_currentIndex];
 
@@ -47,6 +48,12 @@ class _QuizScreenState extends State<QuizScreen> {
 
     if (index == _currentQuestion.answerIndex) {
       _score += 1;
+    } else {
+      // Track incorrect answer for review
+      _incorrectAnswers.add(<String, dynamic>{
+        'question': _currentQuestion,
+        'selectedIndex': index,
+      });
     }
 
     // Short pause so the user can see the feedback colors before moving on.
@@ -69,6 +76,11 @@ class _QuizScreenState extends State<QuizScreen> {
   }
 
   Future<void> _goToResults() async {
+    // Check if any questions have explanations (AI-generated quiz)
+    final hasExplanations = widget.questions.any(
+      (Question q) => q.explanation != null && q.explanation!.isNotEmpty,
+    );
+
     await Navigator.of(context).pushReplacement(
       PageRouteBuilder<void>(
         pageBuilder: (
@@ -79,6 +91,7 @@ class _QuizScreenState extends State<QuizScreen> {
           return ResultScreen(
             totalQuestions: widget.questions.length,
             correctAnswers: _score,
+            incorrectAnswers: hasExplanations ? _incorrectAnswers : null,
           );
         },
         transitionsBuilder: (

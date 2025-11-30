@@ -22,6 +22,7 @@ class Question {
     required this.text,
     required this.options,
     required this.answerIndex,
+    this.explanation,
   }) : assert(
           answerIndex >= 0 && answerIndex < options.length,
           'answerIndex must point to a valid option.',
@@ -38,6 +39,7 @@ class Question {
         }),
       ),
       answerIndex: json['answerIndex'] as int,
+      explanation: json['explanation'] as String?,
     );
   }
 
@@ -53,6 +55,12 @@ class Question {
   /// Index into [options] for the correct answer.
   final int answerIndex;
 
+  /// Optional explanation for why the correct answer is correct.
+  ///
+  /// This is typically provided for AI-generated questions based on study material.
+  /// If present, indicates this is an AI-generated question with review capabilities.
+  final String? explanation;
+
   /// Converts this question back to JSON.
   Map<String, dynamic> toJson() {
     return <String, dynamic>{
@@ -60,6 +68,7 @@ class Question {
       'text': text,
       'options': options,
       'answerIndex': answerIndex,
+      if (explanation != null) 'explanation': explanation,
     };
   }
 
@@ -84,6 +93,7 @@ class Question {
       text: text,
       options: shuffledOptions,
       answerIndex: newAnswerIndex,
+      explanation: explanation,
     );
   }
 
