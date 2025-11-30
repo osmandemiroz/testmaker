@@ -1,59 +1,123 @@
-## TestMaker
+<div align="center">
 
-TestMaker is a modern Flutter quiz application that loads questions from JSON.
-The UI takes cues from Apple's Human Interface Guidelines: clean typography,
-soft cards, and subtle animations, while keeping the codebase small and easy
-to customize.
+# 📚 TestMaker
 
-### Features
+**A modern Flutter quiz application with AI-powered question generation**
 
-- **JSON‑driven quizzes**: Questions, options, and correct answers are loaded
-  from a simple JSON file.
-- **Course management**: Organize quizzes and study materials into course sections
-  with a sidebar navigation menu.
-- **PDF study materials**: Upload PDF files to courses for study, with an
-  integrated PDF viewer.
-- **AI-powered quiz generation**: Automatically generate quiz questions from PDF
-  content using Google Gemini AI.
-- **Local storage**: All courses, quizzes, and PDFs are stored locally using
-  SharedPreferences, persisting across app restarts.
-- **Swipe-to-delete**: Intuitively delete courses, quizzes, and PDFs by swiping
-  left with confirmation dialogs.
-- **Question randomization**: Questions and answer options are shuffled each
-  time you start a quiz to prevent memorization.
-- **Modern, animated UI**: Card‑based question layout, animated progress bar,
-  and smooth screen transitions.
-- **One question at a time**: Focused quiz experience with immediate feedback
-  on each answer.
-- **Result summary**: Final score and percentage with a short textual summary.
-- **Null‑safe, layered architecture**: Models, services, screens, and widgets
-  are separated for clarity and reuse.
+*Transform your PDFs into interactive quizzes with a beautiful, Apple-inspired interface*
 
-### Project structure
+[![Flutter](https://img.shields.io/badge/Flutter-3.6.1+-02569B?logo=flutter&logoColor=white)](https://flutter.dev)
+[![Dart](https://img.shields.io/badge/Dart-3.6.1+-0175C2?logo=dart&logoColor=white)](https://dart.dev)
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-- `lib/main.dart` – App entry point and global theming.
-- `lib/models/`
-  - `question.dart` – `Question` model with `fromJson` / `toJson` and randomization utilities.
-  - `course.dart` – `Course` model for organizing quizzes and PDFs.
-- `lib/services/`
-  - `quiz_service.dart` – Loads questions from bundled assets or user‑selected JSON files.
-  - `course_service.dart` – Manages CRUD operations for courses using SharedPreferences.
-  - `pdf_text_extractor.dart` – Extracts text content from PDF files.
-  - `question_generator_service.dart` – Generates quiz questions from text using Google Gemini AI.
-- `lib/screens/`
-  - `home_screen.dart` – Main screen with sidebar menu, course management, and quiz/PDF uploads.
-  - `quiz_screen.dart` – Core quiz flow; shows one question at a time with randomized order.
-  - `result_screen.dart` – Score summary screen.
-  - `pdf_viewer_screen.dart` – PDF viewer with page navigation.
-- `lib/widgets/`
-  - `quiz_option_card.dart` – Animated option tiles.
-  - `quiz_progress_bar.dart` – Animated quiz progress indicator.
-- `assets/quizzes/sample_quiz.json` – Example quiz file.
-- `assets/logo/app_logo.png` – App icon source.
+---
 
-### JSON format
+</div>
 
-The quiz JSON is a list of question objects:
+## ✨ Overview
+
+TestMaker is a sleek, modern Flutter application that revolutionizes how you create and take quizzes. With its AI-powered question generation, you can automatically create quizzes from PDF documents using Google Gemini AI. The app features a beautiful, minimal interface inspired by Apple's Human Interface Guidelines—think clean typography, soft cards, smooth animations, and an intuitive user experience.
+
+### 🎯 Key Highlights
+
+- 🤖 **AI-Powered Generation** - Automatically generate quiz questions from PDF content
+- 📱 **Modern UI/UX** - Beautiful Apple-inspired design with smooth animations
+- 📄 **PDF Integration** - Upload, view, and extract text from PDF documents
+- 📚 **Course Management** - Organize quizzes and study materials efficiently
+- 💾 **Local Storage** - All data stored locally, works offline
+- 🎲 **Randomized Quizzes** - Prevent memorization with shuffled questions and options
+
+---
+
+## 🚀 Features
+
+| Feature | Description |
+|---------|-------------|
+| 📝 **JSON-Driven Quizzes** | Load questions from simple JSON files with customizable options |
+| 🗂️ **Course Management** | Organize quizzes and materials into course sections with sidebar navigation |
+| 📑 **PDF Study Materials** | Upload PDF files and view them with an integrated PDF viewer |
+| 🤖 **AI Quiz Generation** | Automatically generate quiz questions from PDF content using Google Gemini AI |
+| 💾 **Local Storage** | All courses, quizzes, and PDFs stored locally using SharedPreferences |
+| 🗑️ **Swipe-to-Delete** | Intuitively delete items with confirmation dialogs |
+| 🔀 **Question Randomization** | Questions and options shuffled each time for authentic testing |
+| 🎨 **Modern Animated UI** | Card-based layouts with smooth transitions and progress indicators |
+| 📊 **Result Summaries** | Detailed score breakdown with percentage and feedback |
+| 🏗️ **Clean Architecture** | Null-safe, layered architecture with separation of concerns |
+
+---
+
+## 🎨 Design Philosophy
+
+TestMaker follows **Apple's Human Interface Guidelines** to deliver an exceptional user experience:
+
+- ✨ Clean sidebar navigation
+- 🌟 Generous use of white space
+- 🎭 Soft rounded rectangles and subtle shadows
+- 🎬 Smooth animations and transitions
+- 📐 Clear visual hierarchy
+- 👆 Intuitive swipe gestures for deletion
+
+The codebase emphasizes:
+- 🔧 Separation of concerns (models, services, screens, widgets)
+- ✅ Null safety throughout
+- 🛡️ Comprehensive error handling
+- 📝 Extensive code comments for maintainability
+
+---
+
+## 📋 Requirements
+
+- **Flutter SDK**: `>=3.6.1 <4.0.0`
+- **Dart SDK**: `>=3.6.1 <4.0.0`
+
+### 📦 Dependencies
+
+| Package | Purpose |
+|---------|---------|
+| `file_picker` | File selection for JSON quizzes and PDF uploads |
+| `shared_preferences` | Local storage for courses and user data |
+| `path_provider` | Access to app documents directory for PDF storage |
+| `syncfusion_flutter_pdf` | PDF text extraction |
+| `syncfusion_flutter_pdfviewer` | PDF viewing |
+| `http` | API calls to Google Gemini AI |
+| `url_launcher` | Opening external URLs (e.g., API key registration) |
+
+---
+
+## 🏃 Quick Start
+
+### Installation
+
+```bash
+# Clone the repository
+git clone <your-repo-url>
+cd testmaker
+
+# Install dependencies
+flutter pub get
+
+# Run the app
+flutter run
+```
+
+### 🎯 Quick Quiz
+
+1. Launch the app
+2. Tap **"Start Sample Quiz"** on the home screen
+3. Answer questions and see your results!
+
+---
+
+## 📖 Usage Guide
+
+### 📝 Using Your Own JSON Quiz
+
+1. Launch the app
+2. Look for the **"Use your own JSON"** section on the home screen
+3. Tap to select a `.json` file following the format below
+4. The app will parse and start the quiz automatically
+
+#### 📄 JSON Format
 
 ```json
 [
@@ -66,91 +130,146 @@ The quiz JSON is a list of question objects:
 ]
 ```
 
-- **id**: Numeric identifier.
-- **text**: Question text.
-- **options**: Array of answer strings, in display order.
-- **answerIndex**: Zero‑based index into `options` for the correct answer.
+**Field Descriptions:**
 
-To create your own quiz, copy `assets/quizzes/sample_quiz.json`,
-adjust the questions, and keep the same structure.
+| Field | Type | Description |
+|-------|------|-------------|
+| `id` | `number` | Numeric identifier for the question |
+| `text` | `string` | The question text |
+| `options` | `string[]` | Array of answer strings in display order |
+| `answerIndex` | `number` | Zero-based index into `options` for the correct answer |
 
-### Requirements
+> 💡 **Tip**: Copy `assets/quizzes/sample_quiz.json` as a template for your own quizzes!
 
-- Flutter SDK `>=3.6.1 <4.0.0`
+---
 
-Main dependencies:
+### 🗂️ Course Management
 
-- `flutter` – Flutter SDK
-- `file_picker` – File selection for JSON quizzes and PDF uploads
-- `shared_preferences` – Local storage for courses and user data
-- `path_provider` – Access to app documents directory for PDF storage
-- `syncfusion_flutter_pdf` – PDF text extraction
-- `syncfusion_flutter_pdfviewer` – PDF viewing
-- `http` – API calls to Google Gemini AI
-- `url_launcher` – Opening external URLs (e.g., API key registration)
+#### Creating a Course
 
-### Running the app
+1. Tap **"New Course"** in the sidebar
+2. Enter a course name
+3. Tap **"Create"**
 
-From the project root:
+#### Managing Content
 
-```bash
-flutter pub get
-flutter run
+| Action | Steps |
+|--------|-------|
+| **Upload Quiz** | Select a course → Tap **"Upload Quiz"** → Choose JSON file |
+| **Upload PDF** | Select a course → Tap **"Upload PDF"** → Choose PDF file |
+| **View PDF** | Tap on any PDF card in a course |
+| **Start Quiz** | Tap on any quiz card (questions are randomized) |
+| **Delete Items** | Swipe left on any course, quiz, or PDF → Confirm deletion |
+
+---
+
+### 🤖 AI-Powered Quiz Generation
+
+Transform your PDFs into interactive quizzes in seconds!
+
+#### Step-by-Step Guide
+
+1. **Upload a PDF** to a course (see Course Management above)
+2. **Tap "Generate Questions"** below the PDF card
+3. **Enter your API Key** (if prompted):
+   - Get a free API key from [Google AI Studio](https://makersuite.google.com/app/apikey)
+   - Enter it when prompted
+4. **Wait for Generation** - The app extracts text and generates questions
+5. **Quiz Ready!** - The generated quiz is automatically added to your course
+
+> ⚠️ **Important Notes:**
+> - The AI generator extracts text from the first 10 pages for performance
+> - For best results, ensure your PDF contains readable text (not just images)
+> - Internet connection required for AI generation
+> - Generated quizzes work offline once created
+
+---
+
+## 💾 Data Storage
+
+All data is stored **locally** on your device:
+
+- ✅ **Course metadata** → Stored in SharedPreferences
+- ✅ **PDF files** → Copied to app's documents directory
+- ✅ **Data persistence** → Survives app restarts
+- ✅ **Offline support** → No internet needed for local quizzes and PDFs
+
+> 🌐 **Note**: Internet connection is only required for AI quiz generation.
+
+---
+
+## 📁 Project Structure
+
+```
+lib/
+├── main.dart                      # App entry point and global theming
+├── models/
+│   ├── question.dart              # Question model with JSON serialization
+│   └── course.dart                # Course model for organizing quizzes/PDFs
+├── services/
+│   ├── quiz_service.dart          # Loads questions from assets or JSON files
+│   ├── course_service.dart        # CRUD operations for courses (SharedPreferences)
+│   ├── pdf_text_extractor.dart    # Extracts text content from PDF files
+│   └── question_generator_service.dart  # AI-powered question generation (Gemini)
+├── screens/
+│   ├── home_screen.dart           # Main screen with sidebar and course management
+│   ├── quiz_screen.dart           # Core quiz flow with randomized questions
+│   ├── result_screen.dart         # Score summary screen
+│   └── pdf_viewer_screen.dart     # PDF viewer with page navigation
+└── widgets/
+    ├── quiz_option_card.dart      # Animated option tiles
+    └── quiz_progress_bar.dart     # Animated quiz progress indicator
+
+assets/
+├── quizzes/
+│   └── sample_quiz.json           # Example quiz file
+└── logo/
+    └── app_logo.png               # App icon source
 ```
 
-### Usage
+---
 
-#### Quick Start Quiz
+## 🛠️ Development
 
-1. Launch the app.
-2. On the home screen, tap **"Start Sample Quiz"** to use the bundled sample quiz.
+### Building the App
 
-#### Using Your Own JSON Quiz
+```bash
+# Build APK for Android
+flutter build apk
 
-1. Launch the app.
-2. On the home screen, look for the **"Use your own JSON"** section.
-2. Tap to select a `.json` file that follows the format shown above.
-3. The app will parse the file and start a quiz based on those questions.
+# Build iOS (macOS only)
+flutter build ios
 
-#### Course Management
+# Build with release configuration
+flutter build apk --release
+```
 
-1. **Create a course**: Tap **"New Course"** in the sidebar, enter a course name, and tap **"Create"**.
-2. **Upload a quiz**: Select a course, then tap **"Upload Quiz"** and choose a JSON file.
-3. **Upload a PDF**: Select a course, then tap **"Upload PDF"** and choose a PDF file.
-4. **View PDF**: Tap on any PDF card in a course to open the PDF viewer.
-5. **Start a quiz**: Tap on any quiz card in a course to start that quiz (questions and options are randomized).
-6. **Delete items**: Swipe left on any course, quiz, or PDF to delete it (with confirmation).
+### Running Tests
 
-#### AI-Powered Quiz Generation
+```bash
+flutter test
+```
 
-1. Upload a PDF to a course (see above).
-2. Below the PDF card, tap **"Generate Questions"**.
-3. If prompted, enter your Google AI API key (get one from [Google AI Studio](https://makersuite.google.com/app/apikey)).
-4. The app will extract text from the PDF and generate quiz questions using Google Gemini AI.
-5. The generated quiz will be added to the course automatically.
+---
 
-**Note**: The AI quiz generator extracts text from the first 10 pages of the PDF for performance. For best results, ensure your PDF contains readable text (not just images).
+## 🤝 Contributing
 
-### Data Storage
+Contributions are welcome! Please feel free to submit a Pull Request.
 
-All courses, quizzes, and PDFs are stored locally on your device:
-- Course metadata is stored in SharedPreferences.
-- PDF files are copied to the app's documents directory.
-- Data persists across app restarts.
-- No internet connection is required for local quizzes and PDFs (AI generation requires internet).
+---
 
-### Design Philosophy
+## 📄 License
 
-TestMaker follows Apple's Human Interface Guidelines:
-- Clean sidebar navigation
-- Generous use of white space
-- Soft rounded rectangles and subtle shadows
-- Smooth animations and transitions
-- Clear visual hierarchy
-- Intuitive swipe gestures for deletion
+This project is licensed under the MIT License.
 
-The codebase emphasizes:
-- Separation of concerns (models, services, screens, widgets)
-- Null safety throughout
-- Comprehensive error handling
-- Extensive code comments for maintainability
+---
+
+<div align="center">
+
+**Made with ❤️ using Flutter**
+
+*Inspired by Apple's Human Interface Guidelines*
+
+[⬆ Back to Top](#-testmaker)
+
+</div>
