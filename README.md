@@ -90,7 +90,7 @@ The codebase emphasizes:
 
 ```bash
 # Clone the repository
-git clone <your-repo-url>
+git clone <https://github.com/osmandemiroz/testmaker>
 cd testmaker
 
 # Install dependencies
