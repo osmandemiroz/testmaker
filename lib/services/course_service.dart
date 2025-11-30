@@ -55,7 +55,7 @@ class CourseService {
               item as Map<String, dynamic>,
             ),
           )
-          .toList(growable: false);
+          .toList(); // Make it growable so we can add/remove courses
     } on Exception catch (_) {
       // If there's any error parsing, return an empty list.
       // In a production app, you might want to log this error.

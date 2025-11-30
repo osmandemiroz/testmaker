@@ -62,6 +62,9 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   /// Loads all courses from local storage.
+  ///
+  /// Also updates the selected course reference to ensure it points to
+  /// the latest data from storage.
   Future<void> _loadCourses() async {
     setState(() {
       _isLoadingCourses = true;
@@ -70,8 +73,22 @@ class _HomeScreenState extends State<HomeScreen> {
     try {
       final courses = await _courseService.getAllCourses();
       if (mounted) {
+        // Update selected course to point to the latest data from storage
+        Course? updatedSelectedCourse;
+        if (_selectedCourse != null) {
+          try {
+            updatedSelectedCourse = courses.firstWhere(
+              (Course c) => c.id == _selectedCourse!.id,
+            );
+          } on Exception catch (_) {
+            // Selected course was deleted, clear selection
+            updatedSelectedCourse = null;
+          }
+        }
+
         setState(() {
           _courses = courses;
+          _selectedCourse = updatedSelectedCourse;
           _isLoadingCourses = false;
         });
       }
