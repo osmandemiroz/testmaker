@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:testmaker/utils/responsive_sizer.dart';
 
 /// ********************************************************************
 /// QuizOptionCard
@@ -72,13 +73,19 @@ class QuizOptionCard extends StatelessWidget {
       textColor = theme.colorScheme.onSurface;
     }
 
-    return AnimatedContainer(
+    return LayoutBuilder(
+      builder: (BuildContext context, BoxConstraints constraints) {
+        return AnimatedContainer(
       duration: const Duration(milliseconds: 220),
       curve: Curves.easeInOutCubic,
-      margin: const EdgeInsets.symmetric(vertical: 6),
+      margin: EdgeInsets.symmetric(
+        vertical: ResponsiveSizer.spacingFromConstraints(constraints, multiplier: 0.75),
+      ),
       decoration: BoxDecoration(
         color: background,
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(
+          ResponsiveSizer.borderRadiusFromConstraints(constraints, multiplier: 1.5),
+        ),
         border: Border.all(color: borderColor, width: 1.2),
         boxShadow: <BoxShadow>[
           BoxShadow(
@@ -132,6 +139,8 @@ class QuizOptionCard extends StatelessWidget {
           ),
         ),
       ),
+    );
+      },
     );
   }
 }

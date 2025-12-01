@@ -9,6 +9,7 @@ import 'package:testmaker/services/course_service.dart';
 import 'package:testmaker/services/pdf_text_extractor.dart';
 import 'package:testmaker/services/question_generator_service.dart';
 import 'package:testmaker/services/quiz_service.dart';
+import 'package:testmaker/utils/responsive_sizer.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 /// ********************************************************************
@@ -878,7 +879,9 @@ class _HomeScreenState extends State<HomeScreen> {
       body: SafeArea(
         child: LayoutBuilder(
           builder: (BuildContext context, BoxConstraints constraints) {
-            final isCompact = constraints.maxWidth < 800;
+            // Use ResponsiveSizer to determine if we should use compact layout
+            final isCompact =
+                ResponsiveSizer.isCompactFromConstraints(constraints);
 
             // On compact screens, use a drawer instead of a sidebar.
             if (isCompact) {
@@ -888,7 +891,7 @@ class _HomeScreenState extends State<HomeScreen> {
             // On larger screens, use a persistent sidebar.
             return Row(
               children: <Widget>[
-                _buildSidebar(theme, constraints.maxWidth),
+                _buildSidebar(theme, constraints),
                 Expanded(
                   child: _buildMainContent(theme),
                 ),
@@ -901,9 +904,10 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   /// Builds the sidebar menu for course navigation.
-  Widget _buildSidebar(ThemeData theme, double maxWidth) {
+  Widget _buildSidebar(ThemeData theme, BoxConstraints constraints) {
     final textTheme = theme.textTheme;
-    final sidebarWidth = (maxWidth * 0.25).clamp(240.0, 320.0);
+    final sidebarWidth =
+        ResponsiveSizer.sidebarWidthFromConstraints(constraints);
 
     return Container(
       width: sidebarWidth,
@@ -1185,24 +1189,31 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildMainContent(ThemeData theme) {
     final textTheme = theme.textTheme;
 
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(32),
-      child: Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 700),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: <Widget>[
-              if (_selectedCourse == null) ...<Widget>[
-                _buildWelcomeContent(theme, textTheme),
-              ] else ...<Widget>[
-                _buildCourseContent(theme, textTheme),
-              ],
-            ],
+    return LayoutBuilder(
+      builder: (BuildContext context, BoxConstraints constraints) {
+        return SingleChildScrollView(
+          padding: ResponsiveSizer.paddingFromConstraints(constraints),
+          child: Center(
+            child: ConstrainedBox(
+              constraints: BoxConstraints(
+                maxWidth:
+                    ResponsiveSizer.maxContentWidthFromConstraints(constraints),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: <Widget>[
+                  if (_selectedCourse == null) ...<Widget>[
+                    _buildWelcomeContent(theme, textTheme),
+                  ] else ...<Widget>[
+                    _buildCourseContent(theme, textTheme),
+                  ],
+                ],
+              ),
+            ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 
@@ -1777,7 +1788,9 @@ class _HomeScreenState extends State<HomeScreen> {
       onDismissed: (DismissDirection direction) {
         // Immediately update state synchronously before async operations
         // This ensures the Dismissible widget is removed from the tree immediately
-        if (mounted && _selectedCourse != null && _selectedCourse!.id == course.id) {
+        if (mounted &&
+            _selectedCourse != null &&
+            _selectedCourse!.id == course.id) {
           final currentCourse = _selectedCourse!;
           if (quizIndex >= 0 && quizIndex < currentCourse.quizzes.length) {
             // Update state immediately to remove the quiz from the widget tree
@@ -1908,13 +1921,17 @@ class _HomeScreenState extends State<HomeScreen> {
 
   /// Builds the compact layout for smaller screens (uses drawer).
   Widget _buildCompactLayout(ThemeData theme) {
-    return Scaffold(
-      backgroundColor: theme.colorScheme.surface,
-      drawer: Drawer(
-        width: 280,
-        child: _buildSidebar(theme, 280),
-      ),
-      body: _buildMainContent(theme),
+    return LayoutBuilder(
+      builder: (BuildContext context, BoxConstraints constraints) {
+        return Scaffold(
+          backgroundColor: theme.colorScheme.surface,
+          drawer: Drawer(
+            width: ResponsiveSizer.sidebarWidthFromConstraints(constraints),
+            child: _buildSidebar(theme, constraints),
+          ),
+          body: _buildMainContent(theme),
+        );
+      },
     );
   }
 
@@ -2123,195 +2140,246 @@ class _CreateCourseDialogState extends State<_CreateCourseDialog>
         child: Dialog(
           backgroundColor: Colors.transparent,
           elevation: 0,
-          child: Container(
-            constraints: const BoxConstraints(maxWidth: 400),
-            decoration: BoxDecoration(
-              color: theme.colorScheme.surface,
-              borderRadius: BorderRadius.circular(28),
-              boxShadow: <BoxShadow>[
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.15),
-                  blurRadius: 40,
-                  offset: const Offset(0, 20),
-                ),
-              ],
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: <Widget>[
-                // Header section with icon
-                Container(
-                  padding: const EdgeInsets.fromLTRB(28, 32, 28, 20),
-                  child: Column(
-                    children: <Widget>[
-                      // Icon container
-                      Container(
-                        width: 64,
-                        height: 64,
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(18),
-                          gradient: LinearGradient(
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                            colors: <Color>[
-                              theme.colorScheme.primary,
-                              theme.colorScheme.primary.withValues(alpha: 0.8),
-                            ],
-                          ),
-                          boxShadow: <BoxShadow>[
-                            BoxShadow(
-                              color: theme.colorScheme.primary
-                                  .withValues(alpha: 0.3),
-                              blurRadius: 20,
-                              offset: const Offset(0, 8),
-                            ),
-                          ],
-                        ),
-                        child: Icon(
-                          Icons.add,
-                          color: theme.colorScheme.onPrimary,
-                          size: 32,
-                        ),
-                      ),
-                      const SizedBox(height: 20),
-                      // Title
-                      Text(
-                        'New Course',
-                        style: textTheme.headlineSmall?.copyWith(
-                          fontWeight: FontWeight.w700,
-                          letterSpacing: -0.5,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                      const SizedBox(height: 8),
-                      // Subtitle
-                      Text(
-                        'Give your course a name to get started',
-                        style: textTheme.bodyMedium?.copyWith(
-                          color: theme.colorScheme.onSurface
-                              .withValues(alpha: 0.7),
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                    ],
+          child: LayoutBuilder(
+            builder: (BuildContext context, BoxConstraints constraints) {
+              return Container(
+                constraints: BoxConstraints(
+                  maxWidth: ResponsiveSizer.dialogMaxWidthFromConstraints(
+                    constraints,
                   ),
                 ),
-                // Input section
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 28),
-                  child: Focus(
-                    onFocusChange: (bool hasFocus) {
-                      setState(() {
-                        _isFocused = hasFocus;
-                      });
-                    },
-                    child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 200),
-                      curve: Curves.easeOutCubic,
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(
-                          color: _isFocused
-                              ? theme.colorScheme.primary
-                              : theme.colorScheme.outlineVariant
-                                  .withValues(alpha: 0.5),
-                          width: _isFocused ? 2 : 1,
-                        ),
-                        color: _isFocused
-                            ? theme.colorScheme.primaryContainer
-                                .withValues(alpha: 0.1)
-                            : theme.colorScheme.surfaceContainerHighest,
-                      ),
-                      child: TextField(
-                        controller: widget.controller,
-                        autofocus: true,
-                        style: textTheme.bodyLarge?.copyWith(
-                          fontWeight: FontWeight.w500,
-                        ),
-                        decoration: InputDecoration(
-                          hintText: 'e.g., Math 101, History, Science',
-                          hintStyle: textTheme.bodyLarge?.copyWith(
-                            color: theme.colorScheme.onSurface
-                                .withValues(alpha: 0.4),
-                          ),
-                          border: InputBorder.none,
-                          contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 20,
-                            vertical: 18,
-                          ),
-                        ),
-                        onSubmitted: (String value) {
-                          if (value.trim().isNotEmpty) {
-                            Navigator.of(context).pop(value.trim());
-                          }
-                        },
-                      ),
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.surface,
+                  borderRadius: BorderRadius.circular(
+                    ResponsiveSizer.borderRadiusFromConstraints(
+                      constraints,
+                      multiplier: 1.4,
                     ),
                   ),
+                  boxShadow: <BoxShadow>[
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.15),
+                      blurRadius: 40,
+                      offset: const Offset(0, 20),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 28),
-                // Action buttons
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(28, 0, 28, 28),
-                  child: Row(
-                    children: <Widget>[
-                      // Cancel button
-                      Expanded(
-                        child: OutlinedButton(
-                          onPressed: () => Navigator.of(context).pop(),
-                          style: OutlinedButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(vertical: 16),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(14),
-                            ),
-                            side: BorderSide(
-                              color: theme.colorScheme.outlineVariant
-                                  .withValues(alpha: 0.5),
-                            ),
-                          ),
-                          child: Text(
-                            'Cancel',
-                            style: textTheme.labelLarge?.copyWith(
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: <Widget>[
+                    // Header section with icon
+                    Container(
+                      padding: EdgeInsets.fromLTRB(
+                        ResponsiveSizer.horizontalPaddingFromConstraints(
+                              constraints,
+                            ) *
+                            1.4,
+                        ResponsiveSizer.verticalPaddingFromConstraints(
+                              constraints,
+                            ) *
+                            1.3,
+                        ResponsiveSizer.horizontalPaddingFromConstraints(
+                              constraints,
+                            ) *
+                            1.4,
+                        ResponsiveSizer.verticalPaddingFromConstraints(
+                          constraints,
                         ),
                       ),
-                      const SizedBox(width: 12),
-                      // Create button
-                      Expanded(
-                        flex: 2,
-                        child: FilledButton(
-                          onPressed: () {
-                            if (widget.controller.text.trim().isNotEmpty) {
-                              Navigator.of(context)
-                                  .pop(widget.controller.text.trim());
-                            }
-                          },
-                          style: FilledButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(vertical: 16),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(14),
+                      child: Column(
+                        children: <Widget>[
+                          // Icon container
+                          Container(
+                            width: ResponsiveSizer.scaleWidthFromConstraints(
+                              constraints,
+                              64,
                             ),
-                            backgroundColor: theme.colorScheme.primary,
-                            foregroundColor: theme.colorScheme.onPrimary,
-                            elevation: 0,
-                          ),
-                          child: Text(
-                            'Create',
-                            style: textTheme.labelLarge?.copyWith(
-                              fontWeight: FontWeight.w600,
+                            height: ResponsiveSizer.scaleWidthFromConstraints(
+                              constraints,
+                              64,
+                            ),
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(
+                                ResponsiveSizer.borderRadiusFromConstraints(
+                                  constraints,
+                                  multiplier: 1.5,
+                                ),
+                              ),
+                              gradient: LinearGradient(
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                                colors: <Color>[
+                                  theme.colorScheme.primary,
+                                  theme.colorScheme.primary
+                                      .withValues(alpha: 0.8),
+                                ],
+                              ),
+                              boxShadow: <BoxShadow>[
+                                BoxShadow(
+                                  color: theme.colorScheme.primary
+                                      .withValues(alpha: 0.3),
+                                  blurRadius: 20,
+                                  offset: const Offset(0, 8),
+                                ),
+                              ],
+                            ),
+                            child: Icon(
+                              Icons.add,
                               color: theme.colorScheme.onPrimary,
+                              size: ResponsiveSizer.iconSizeFromConstraints(
+                                constraints,
+                                multiplier: 1.6,
+                              ),
                             ),
+                          ),
+                          SizedBox(
+                            height: ResponsiveSizer.spacingFromConstraints(
+                              constraints,
+                              multiplier: 2.5,
+                            ),
+                          ),
+                          // Title
+                          Text(
+                            'New Course',
+                            style: textTheme.headlineSmall?.copyWith(
+                              fontWeight: FontWeight.w700,
+                              letterSpacing: -0.5,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                          const SizedBox(height: 8),
+                          // Subtitle
+                          Text(
+                            'Give your course a name to get started',
+                            style: textTheme.bodyMedium?.copyWith(
+                              color: theme.colorScheme.onSurface
+                                  .withValues(alpha: 0.7),
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ],
+                      ),
+                    ),
+                    // Input section
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 28),
+                      child: Focus(
+                        onFocusChange: (bool hasFocus) {
+                          setState(() {
+                            _isFocused = hasFocus;
+                          });
+                        },
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 200),
+                          curve: Curves.easeOutCubic,
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(
+                              color: _isFocused
+                                  ? theme.colorScheme.primary
+                                  : theme.colorScheme.outlineVariant
+                                      .withValues(alpha: 0.5),
+                              width: _isFocused ? 2 : 1,
+                            ),
+                            color: _isFocused
+                                ? theme.colorScheme.primaryContainer
+                                    .withValues(alpha: 0.1)
+                                : theme.colorScheme.surfaceContainerHighest,
+                          ),
+                          child: TextField(
+                            controller: widget.controller,
+                            autofocus: true,
+                            style: textTheme.bodyLarge?.copyWith(
+                              fontWeight: FontWeight.w500,
+                            ),
+                            decoration: InputDecoration(
+                              hintText: 'e.g., Math 101, History, Science',
+                              hintStyle: textTheme.bodyLarge?.copyWith(
+                                color: theme.colorScheme.onSurface
+                                    .withValues(alpha: 0.4),
+                              ),
+                              border: InputBorder.none,
+                              contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 20,
+                                vertical: 18,
+                              ),
+                            ),
+                            onSubmitted: (String value) {
+                              if (value.trim().isNotEmpty) {
+                                Navigator.of(context).pop(value.trim());
+                              }
+                            },
                           ),
                         ),
                       ),
-                    ],
-                  ),
+                    ),
+                    const SizedBox(height: 28),
+                    // Action buttons
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(28, 0, 28, 28),
+                      child: Row(
+                        children: <Widget>[
+                          // Cancel button
+                          Expanded(
+                            child: OutlinedButton(
+                              onPressed: () => Navigator.of(context).pop(),
+                              style: OutlinedButton.styleFrom(
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 16),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(14),
+                                ),
+                                side: BorderSide(
+                                  color: theme.colorScheme.outlineVariant
+                                      .withValues(alpha: 0.5),
+                                ),
+                              ),
+                              child: Text(
+                                'Cancel',
+                                style: textTheme.labelLarge?.copyWith(
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          // Create button
+                          Expanded(
+                            flex: 2,
+                            child: FilledButton(
+                              onPressed: () {
+                                if (widget.controller.text.trim().isNotEmpty) {
+                                  Navigator.of(context)
+                                      .pop(widget.controller.text.trim());
+                                }
+                              },
+                              style: FilledButton.styleFrom(
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 16),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(14),
+                                ),
+                                backgroundColor: theme.colorScheme.primary,
+                                foregroundColor: theme.colorScheme.onPrimary,
+                                elevation: 0,
+                              ),
+                              child: Text(
+                                'Create',
+                                style: textTheme.labelLarge?.copyWith(
+                                  fontWeight: FontWeight.w600,
+                                  color: theme.colorScheme.onPrimary,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
-              ],
-            ),
+              );
+            },
           ),
         ),
       ),
@@ -2409,229 +2477,263 @@ class _SettingsDialogState extends State<_SettingsDialog>
         child: Dialog(
           backgroundColor: Colors.transparent,
           elevation: 0,
-          child: Container(
-            constraints: const BoxConstraints(maxWidth: 400),
-            decoration: BoxDecoration(
-              color: theme.colorScheme.surface,
-              borderRadius: BorderRadius.circular(28),
-              boxShadow: <BoxShadow>[
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.15),
-                  blurRadius: 40,
-                  offset: const Offset(0, 20),
-                ),
-              ],
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: <Widget>[
-                // Header section with icon
-                Container(
-                  padding: const EdgeInsets.fromLTRB(28, 32, 28, 20),
-                  child: Column(
-                    children: <Widget>[
-                      // Title
-                      Text(
-                        'Settings',
-                        style: textTheme.headlineSmall?.copyWith(
-                          fontWeight: FontWeight.w700,
-                          letterSpacing: -0.5,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                      const SizedBox(height: 8),
-                      // Subtitle
-                      Text(
-                        'Manage your app preferences',
-                        style: textTheme.bodyMedium?.copyWith(
-                          color: theme.colorScheme.onSurface
-                              .withValues(alpha: 0.7),
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                    ],
+          child: LayoutBuilder(
+            builder: (BuildContext context, BoxConstraints constraints) {
+              return Container(
+                constraints: BoxConstraints(
+                  maxWidth: ResponsiveSizer.dialogMaxWidthFromConstraints(
+                    constraints,
                   ),
                 ),
-                // API Key section
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 28),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: <Widget>[
-                      Text(
-                        'Google AI API Key',
-                        style: textTheme.titleSmall?.copyWith(
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Required for generating questions from PDFs',
-                        style: textTheme.bodySmall?.copyWith(
-                          color: theme.colorScheme.onSurface
-                              .withValues(alpha: 0.7),
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      Focus(
-                        onFocusChange: (bool hasFocus) {
-                          setState(() {
-                            _isFocused = hasFocus;
-                          });
-                        },
-                        child: AnimatedContainer(
-                          duration: const Duration(milliseconds: 200),
-                          curve: Curves.easeOutCubic,
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(16),
-                            border: Border.all(
-                              color: _isFocused
-                                  ? theme.colorScheme.primary
-                                  : theme.colorScheme.outlineVariant
-                                      .withValues(alpha: 0.5),
-                              width: _isFocused ? 2 : 1,
-                            ),
-                            color: _isFocused
-                                ? theme.colorScheme.primaryContainer
-                                    .withValues(alpha: 0.1)
-                                : theme.colorScheme.surfaceContainerHighest,
-                          ),
-                          child: _isLoading
-                              ? const Padding(
-                                  padding: EdgeInsets.all(20),
-                                  child: Center(
-                                    child: CircularProgressIndicator(),
-                                  ),
-                                )
-                              : TextField(
-                                  controller: _apiKeyController,
-                                  style: textTheme.bodyLarge?.copyWith(
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                  decoration: InputDecoration(
-                                    hintText: 'Enter your Google AI API key',
-                                    hintStyle: textTheme.bodyLarge?.copyWith(
-                                      color: theme.colorScheme.onSurface
-                                          .withValues(alpha: 0.4),
-                                    ),
-                                    border: InputBorder.none,
-                                    contentPadding: const EdgeInsets.symmetric(
-                                      horizontal: 20,
-                                      vertical: 18,
-                                    ),
-                                  ),
-                                  obscureText: true,
-                                ),
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      TextButton.icon(
-                        onPressed: () async {
-                          final url = Uri.parse(
-                            'https://makersuite.google.com/app/apikey',
-                          );
-                          if (await canLaunchUrl(url)) {
-                            await launchUrl(
-                              url,
-                              mode: LaunchMode.externalApplication,
-                            );
-                          }
-                        },
-                        icon: const Icon(Icons.open_in_new, size: 16),
-                        label: const Text('Get API Key'),
-                        style: TextButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 8,
-                          ),
-                        ),
-                      ),
-                    ],
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.surface,
+                  borderRadius: BorderRadius.circular(
+                    ResponsiveSizer.borderRadiusFromConstraints(
+                      constraints,
+                      multiplier: 1.4,
+                    ),
                   ),
+                  boxShadow: <BoxShadow>[
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.15),
+                      blurRadius: 40,
+                      offset: const Offset(0, 20),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 28),
-                // Action buttons
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(28, 0, 28, 28),
-                  child: Row(
-                    children: <Widget>[
-                      // Cancel button
-                      Expanded(
-                        child: OutlinedButton(
-                          onPressed: () => Navigator.of(context).pop(),
-                          style: OutlinedButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(vertical: 16),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(14),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: <Widget>[
+                    // Header section with icon
+                    Container(
+                      padding: EdgeInsets.fromLTRB(
+                        ResponsiveSizer.horizontalPaddingFromConstraints(
+                              constraints,
+                            ) *
+                            1.4,
+                        ResponsiveSizer.verticalPaddingFromConstraints(
+                              constraints,
+                            ) *
+                            1.3,
+                        ResponsiveSizer.horizontalPaddingFromConstraints(
+                              constraints,
+                            ) *
+                            1.4,
+                        ResponsiveSizer.verticalPaddingFromConstraints(
+                          constraints,
+                        ),
+                      ),
+                      child: Column(
+                        children: <Widget>[
+                          // Title
+                          Text(
+                            'Settings',
+                            style: textTheme.headlineSmall?.copyWith(
+                              fontWeight: FontWeight.w700,
+                              letterSpacing: -0.5,
                             ),
-                            side: BorderSide(
-                              color: theme.colorScheme.outlineVariant
-                                  .withValues(alpha: 0.5),
-                            ),
+                            textAlign: TextAlign.center,
                           ),
-                          child: Text(
-                            'Cancel',
-                            style: textTheme.labelLarge?.copyWith(
+                          const SizedBox(height: 8),
+                          // Subtitle
+                          Text(
+                            'Manage your app preferences',
+                            style: textTheme.bodyMedium?.copyWith(
+                              color: theme.colorScheme.onSurface
+                                  .withValues(alpha: 0.7),
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ],
+                      ),
+                    ),
+                    // API Key section
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 28),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: <Widget>[
+                          Text(
+                            'Google AI API Key',
+                            style: textTheme.titleSmall?.copyWith(
                               fontWeight: FontWeight.w600,
                             ),
                           ),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      // Save button
-                      Expanded(
-                        flex: 2,
-                        child: FilledButton(
-                          onPressed: () async {
-                            await QuestionGeneratorService.setApiKey(
-                              _apiKeyController.text.trim().isEmpty
-                                  ? null
-                                  : _apiKeyController.text.trim(),
-                            );
-                            if (context.mounted) {
-                              Navigator.of(context).pop();
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text(
-                                    'Settings saved successfully!',
-                                    style: TextStyle(
-                                      color: theme.colorScheme.onSurface,
-                                    ),
-                                  ),
-                                  backgroundColor:
-                                      theme.colorScheme.primaryContainer,
-                                  behavior: SnackBarBehavior.floating,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
+                          const SizedBox(height: 8),
+                          Text(
+                            'Required for generating questions from PDFs',
+                            style: textTheme.bodySmall?.copyWith(
+                              color: theme.colorScheme.onSurface
+                                  .withValues(alpha: 0.7),
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          Focus(
+                            onFocusChange: (bool hasFocus) {
+                              setState(() {
+                                _isFocused = hasFocus;
+                              });
+                            },
+                            child: AnimatedContainer(
+                              duration: const Duration(milliseconds: 200),
+                              curve: Curves.easeOutCubic,
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(16),
+                                border: Border.all(
+                                  color: _isFocused
+                                      ? theme.colorScheme.primary
+                                      : theme.colorScheme.outlineVariant
+                                          .withValues(alpha: 0.5),
+                                  width: _isFocused ? 2 : 1,
                                 ),
+                                color: _isFocused
+                                    ? theme.colorScheme.primaryContainer
+                                        .withValues(alpha: 0.1)
+                                    : theme.colorScheme.surfaceContainerHighest,
+                              ),
+                              child: _isLoading
+                                  ? const Padding(
+                                      padding: EdgeInsets.all(20),
+                                      child: Center(
+                                        child: CircularProgressIndicator(),
+                                      ),
+                                    )
+                                  : TextField(
+                                      controller: _apiKeyController,
+                                      style: textTheme.bodyLarge?.copyWith(
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                      decoration: InputDecoration(
+                                        hintText:
+                                            'Enter your Google AI API key',
+                                        hintStyle:
+                                            textTheme.bodyLarge?.copyWith(
+                                          color: theme.colorScheme.onSurface
+                                              .withValues(alpha: 0.4),
+                                        ),
+                                        border: InputBorder.none,
+                                        contentPadding:
+                                            const EdgeInsets.symmetric(
+                                          horizontal: 20,
+                                          vertical: 18,
+                                        ),
+                                      ),
+                                      obscureText: true,
+                                    ),
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          TextButton.icon(
+                            onPressed: () async {
+                              final url = Uri.parse(
+                                'https://makersuite.google.com/app/apikey',
                               );
-                            }
-                          },
-                          style: FilledButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(vertical: 16),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(14),
-                            ),
-                            backgroundColor: theme.colorScheme.primary,
-                            foregroundColor: theme.colorScheme.onPrimary,
-                            elevation: 0,
-                          ),
-                          child: Text(
-                            'Save',
-                            style: textTheme.labelLarge?.copyWith(
-                              fontWeight: FontWeight.w600,
-                              color: theme.colorScheme.onPrimary,
+                              if (await canLaunchUrl(url)) {
+                                await launchUrl(
+                                  url,
+                                  mode: LaunchMode.externalApplication,
+                                );
+                              }
+                            },
+                            icon: const Icon(Icons.open_in_new, size: 16),
+                            label: const Text('Get API Key'),
+                            style: TextButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 8,
+                              ),
                             ),
                           ),
-                        ),
+                        ],
                       ),
-                    ],
-                  ),
+                    ),
+                    const SizedBox(height: 28),
+                    // Action buttons
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(28, 0, 28, 28),
+                      child: Row(
+                        children: <Widget>[
+                          // Cancel button
+                          Expanded(
+                            child: OutlinedButton(
+                              onPressed: () => Navigator.of(context).pop(),
+                              style: OutlinedButton.styleFrom(
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 16),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(14),
+                                ),
+                                side: BorderSide(
+                                  color: theme.colorScheme.outlineVariant
+                                      .withValues(alpha: 0.5),
+                                ),
+                              ),
+                              child: Text(
+                                'Cancel',
+                                style: textTheme.labelLarge?.copyWith(
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          // Save button
+                          Expanded(
+                            flex: 2,
+                            child: FilledButton(
+                              onPressed: () async {
+                                await QuestionGeneratorService.setApiKey(
+                                  _apiKeyController.text.trim().isEmpty
+                                      ? null
+                                      : _apiKeyController.text.trim(),
+                                );
+                                if (context.mounted) {
+                                  Navigator.of(context).pop();
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text(
+                                        'Settings saved successfully!',
+                                        style: TextStyle(
+                                          color: theme.colorScheme.onSurface,
+                                        ),
+                                      ),
+                                      backgroundColor:
+                                          theme.colorScheme.primaryContainer,
+                                      behavior: SnackBarBehavior.floating,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                    ),
+                                  );
+                                }
+                              },
+                              style: FilledButton.styleFrom(
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 16),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(14),
+                                ),
+                                backgroundColor: theme.colorScheme.primary,
+                                foregroundColor: theme.colorScheme.onPrimary,
+                                elevation: 0,
+                              ),
+                              child: Text(
+                                'Save',
+                                style: textTheme.labelLarge?.copyWith(
+                                  fontWeight: FontWeight.w600,
+                                  color: theme.colorScheme.onPrimary,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
-              ],
-            ),
+              );
+            },
           ),
         ),
       ),

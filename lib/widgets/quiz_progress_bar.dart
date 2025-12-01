@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:testmaker/utils/responsive_sizer.dart';
 
 /// ********************************************************************
 /// QuizProgressBar
@@ -29,10 +30,12 @@ class QuizProgressBar extends StatelessWidget {
     final progress =
         total == 0 ? 0 : ((currentIndex + 1) / total).clamp(0.0, 1.0);
 
-    return ClipRRect(
+    return LayoutBuilder(
+      builder: (BuildContext context, BoxConstraints constraints) {
+        return ClipRRect(
       borderRadius: BorderRadius.circular(999),
       child: Container(
-        height: 6,
+        height: ResponsiveSizer.isMobileFromConstraints(constraints) ? 5 : 6,
         decoration: BoxDecoration(
           color:
               theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
@@ -61,6 +64,8 @@ class QuizProgressBar extends StatelessWidget {
           ),
         ),
       ),
+    );
+      },
     );
   }
 }

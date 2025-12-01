@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:testmaker/models/question.dart';
 import 'package:testmaker/screens/result_screen.dart';
+import 'package:testmaker/utils/responsive_sizer.dart';
 import 'package:testmaker/widgets/quiz_option_card.dart';
 import 'package:testmaker/widgets/quiz_progress_bar.dart';
 
@@ -127,13 +128,8 @@ class _QuizScreenState extends State<QuizScreen> {
       body: SafeArea(
         child: LayoutBuilder(
           builder: (BuildContext context, BoxConstraints constraints) {
-            final isCompact = constraints.maxWidth < 600;
-
             return Padding(
-              padding: EdgeInsets.symmetric(
-                horizontal: isCompact ? 16 : 32,
-                vertical: isCompact ? 16 : 24,
-              ),
+              padding: ResponsiveSizer.paddingFromConstraints(constraints),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: <Widget>[
@@ -187,7 +183,7 @@ class _QuizScreenState extends State<QuizScreen> {
                         key: ValueKey<int>(_currentIndex),
                         theme: theme,
                         textTheme: textTheme,
-                        isCompact: isCompact,
+                        constraints: constraints,
                       ),
                     ),
                   ),
@@ -204,7 +200,7 @@ class _QuizScreenState extends State<QuizScreen> {
     required Key key,
     required ThemeData theme,
     required TextTheme textTheme,
-    required bool isCompact,
+    required BoxConstraints constraints,
   }) {
     final question = _currentQuestion;
 
@@ -212,7 +208,12 @@ class _QuizScreenState extends State<QuizScreen> {
       key: key,
       decoration: BoxDecoration(
         color: theme.colorScheme.surface,
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(
+          ResponsiveSizer.borderRadiusFromConstraints(
+            constraints,
+            multiplier: 2,
+          ),
+        ),
         boxShadow: <BoxShadow>[
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.04),
@@ -221,7 +222,9 @@ class _QuizScreenState extends State<QuizScreen> {
           ),
         ],
       ),
-      padding: EdgeInsets.all(isCompact ? 18 : 22),
+      padding: EdgeInsets.all(
+        ResponsiveSizer.cardPaddingFromConstraints(constraints),
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
