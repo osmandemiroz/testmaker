@@ -5,6 +5,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:testmaker/models/course.dart';
+import 'package:testmaker/models/flashcard.dart';
 import 'package:testmaker/models/question.dart';
 
 /// ********************************************************************
@@ -75,6 +76,7 @@ class CourseService {
       id: 'course_${now}_${name.hashCode}',
       name: name,
       quizzes: <List<Question>>[],
+      flashcards: <List<Flashcard>>[],
       pdfs: <String>[],
       createdAt: now,
       updatedAt: now,
@@ -241,6 +243,68 @@ class CourseService {
 
     courses[index] = course.copyWith(
       quizzes: updatedQuizzes,
+      updatedAt: DateTime.now().millisecondsSinceEpoch,
+    );
+
+    await _saveCourses(courses);
+  }
+
+  /// Adds a flashcard set (list of flashcards) to a course.
+  ///
+  /// The flashcard set is appended to the course's flashcards list.
+  Future<void> addFlashcardSetToCourse(
+    String courseId,
+    List<Flashcard> flashcardSet,
+  ) async {
+    await _ensureInitialized();
+
+    final courses = await getAllCourses();
+    final index = courses.indexWhere((Course c) => c.id == courseId);
+
+    if (index == -1) {
+      throw Exception('Course with id $courseId not found');
+    }
+
+    final course = courses[index];
+    final updatedFlashcards = <List<Flashcard>>[...course.flashcards, flashcardSet];
+
+    courses[index] = course.copyWith(
+      flashcards: updatedFlashcards,
+      updatedAt: DateTime.now().millisecondsSinceEpoch,
+    );
+
+    await _saveCourses(courses);
+  }
+
+  /// Deletes a flashcard set from a course by its index.
+  ///
+  /// Removes the flashcard set at the specified index from the course's flashcards list.
+  Future<void> deleteFlashcardSetFromCourse(
+    String courseId,
+    int flashcardSetIndex,
+  ) async {
+    await _ensureInitialized();
+
+    final courses = await getAllCourses();
+    final index = courses.indexWhere((Course c) => c.id == courseId);
+
+    if (index == -1) {
+      throw Exception('Course with id $courseId not found');
+    }
+
+    final course = courses[index];
+    if (flashcardSetIndex < 0 || flashcardSetIndex >= course.flashcards.length) {
+      throw Exception('Flashcard set index out of bounds');
+    }
+
+    // Remove flashcard set at the specified index
+    final updatedFlashcards = <List<Flashcard>>[
+      ...course.flashcards.sublist(0, flashcardSetIndex),
+      ...course.flashcards.sublist(flashcardSetIndex + 1),
+    ];
+
+    courses[index] = course.copyWith(
+      flashcards: updatedFlashcards,
       updatedAt: DateTime.now().millisecondsSinceEpoch,
     );
 

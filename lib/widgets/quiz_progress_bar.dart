@@ -32,7 +32,7 @@ class QuizProgressBar extends StatelessWidget {
 
     return LayoutBuilder(
       builder: (BuildContext context, BoxConstraints constraints) {
-        return ClipRRect(
+    return ClipRRect(
       borderRadius: BorderRadius.circular(999),
       child: Container(
         height: ResponsiveSizer.isMobileFromConstraints(constraints) ? 5 : 6,

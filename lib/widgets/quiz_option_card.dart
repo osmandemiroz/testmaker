@@ -75,7 +75,7 @@ class QuizOptionCard extends StatelessWidget {
 
     return LayoutBuilder(
       builder: (BuildContext context, BoxConstraints constraints) {
-        return AnimatedContainer(
+    return AnimatedContainer(
       duration: const Duration(milliseconds: 220),
       curve: Curves.easeInOutCubic,
       margin: EdgeInsets.symmetric(

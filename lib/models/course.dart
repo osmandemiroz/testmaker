@@ -1,3 +1,4 @@
+import 'package:testmaker/models/flashcard.dart';
 import 'package:testmaker/models/question.dart';
 
 /// ********************************************************************
@@ -10,6 +11,7 @@ import 'package:testmaker/models/question.dart';
 ///  - A unique identifier (id)
 ///  - A user-defined name (e.g., "Math 101", "History")
 ///  - A list of quizzes, where each quiz is a list of questions
+///  - A list of flashcard sets, where each set is a list of flashcards
 ///  - A list of PDF file paths for study materials
 ///
 /// This model is designed to be easily serializable to/from JSON
@@ -24,6 +26,7 @@ class Course {
     required this.id,
     required this.name,
     required this.quizzes,
+    required this.flashcards,
     required this.pdfs,
     required this.createdAt,
     required this.updatedAt,
@@ -38,6 +41,13 @@ class Course {
   ///   "quizzes": [
   ///     [
   ///       { "id": 1, "text": "...", "options": [...], "answerIndex": 0 },
+  ///       ...
+  ///     ],
+  ///     ...
+  ///   ],
+  ///   "flashcards": [
+  ///     [
+  ///       { "id": 1, "front": "...", "back": "...", "explanation": "..." },
   ///       ...
   ///     ],
   ///     ...
@@ -60,6 +70,19 @@ class Course {
         )
         .toList(growable: false);
 
+    final flashcardsJson = json['flashcards'] as List<dynamic>? ?? <dynamic>[];
+    final flashcards = flashcardsJson
+        .map<List<Flashcard>>(
+          (dynamic flashcardSetJson) => (flashcardSetJson as List<dynamic>)
+              .map<Flashcard>(
+                (dynamic f) => Flashcard.fromJson(
+                  f as Map<String, dynamic>,
+                ),
+              )
+              .toList(growable: false),
+        )
+        .toList(growable: false);
+
     final pdfsJson = json['pdfs'] as List<dynamic>? ?? <dynamic>[];
     final pdfs = pdfsJson
         .map<String>((dynamic pdf) => pdf as String)
@@ -69,6 +92,7 @@ class Course {
       id: json['id'] as String,
       name: json['name'] as String,
       quizzes: quizzes,
+      flashcards: flashcards,
       pdfs: pdfs,
       createdAt:
           json['createdAt'] as int? ?? DateTime.now().millisecondsSinceEpoch,
@@ -86,6 +110,10 @@ class Course {
   /// List of quizzes in this course.
   /// Each quiz is represented as a list of [Question] objects.
   final List<List<Question>> quizzes;
+
+  /// List of flashcard sets in this course.
+  /// Each flashcard set is represented as a list of [Flashcard] objects.
+  final List<List<Flashcard>> flashcards;
 
   /// List of PDF file paths in this course.
   /// Each path points to a PDF file stored locally in the app's documents directory.
@@ -109,6 +137,13 @@ class Course {
                 .toList(),
           )
           .toList(),
+      'flashcards': flashcards
+          .map<List<Map<String, dynamic>>>(
+            (List<Flashcard> flashcardSet) => flashcardSet
+                .map<Map<String, dynamic>>((Flashcard f) => f.toJson())
+                .toList(),
+          )
+          .toList(),
       'pdfs': pdfs,
       'createdAt': createdAt,
       'updatedAt': updatedAt,
@@ -117,11 +152,12 @@ class Course {
 
   /// Creates a copy of this [Course] with updated fields.
   ///
-  /// Useful for immutability when updating a course's name, quizzes, or PDFs.
+  /// Useful for immutability when updating a course's name, quizzes, flashcards, or PDFs.
   Course copyWith({
     String? id,
     String? name,
     List<List<Question>>? quizzes,
+    List<List<Flashcard>>? flashcards,
     List<String>? pdfs,
     int? createdAt,
     int? updatedAt,
@@ -130,6 +166,7 @@ class Course {
       id: id ?? this.id,
       name: name ?? this.name,
       quizzes: quizzes ?? this.quizzes,
+      flashcards: flashcards ?? this.flashcards,
       pdfs: pdfs ?? this.pdfs,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
@@ -144,6 +181,17 @@ class Course {
     return quizzes.fold<int>(
       0,
       (int sum, List<Question> quiz) => sum + quiz.length,
+    );
+  }
+
+  /// Returns the total number of flashcard sets in this course.
+  int get flashcardSetCount => flashcards.length;
+
+  /// Returns the total number of flashcards across all sets in this course.
+  int get totalFlashcardCount {
+    return flashcards.fold<int>(
+      0,
+      (int sum, List<Flashcard> flashcardSet) => sum + flashcardSet.length,
     );
   }
 

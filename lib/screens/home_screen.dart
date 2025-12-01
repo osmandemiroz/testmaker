@@ -2,10 +2,14 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:testmaker/models/course.dart';
+import 'package:testmaker/models/flashcard.dart';
 import 'package:testmaker/models/question.dart';
+import 'package:testmaker/screens/flashcard_screen.dart';
 import 'package:testmaker/screens/pdf_viewer_screen.dart';
 import 'package:testmaker/screens/quiz_screen.dart';
 import 'package:testmaker/services/course_service.dart';
+import 'package:testmaker/services/flashcard_generator_service.dart';
+import 'package:testmaker/services/flashcard_service.dart';
 import 'package:testmaker/services/pdf_text_extractor.dart';
 import 'package:testmaker/services/question_generator_service.dart';
 import 'package:testmaker/services/quiz_service.dart';
@@ -40,6 +44,7 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   final QuizService _quizService = const QuizService();
+  final FlashcardService _flashcardService = const FlashcardService();
   final CourseService _courseService = CourseService();
   final PdfTextExtractor _pdfTextExtractor = const PdfTextExtractor();
   final QuestionGeneratorService _questionGenerator =
@@ -47,14 +52,20 @@ class _HomeScreenState extends State<HomeScreen> {
     questionCount: 10,
   );
 
+  final FlashcardGeneratorService _flashcardGenerator =
+      const FlashcardGeneratorService();
+
   List<Course> _courses = <Course>[];
   Course? _selectedCourse;
   bool _isLoadingCourses = true;
   bool _isLoading = false;
   bool _isCustomLoading = false;
+  bool _isFlashcardLoading = false;
   bool _isPdfLoading = false;
   bool _isGeneratingQuestions = false;
+  bool _isGeneratingFlashcards = false;
   String? _error;
+  bool _isFabExpanded = false;
 
   @override
   void initState() {
@@ -777,6 +788,309 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  /// Uploads a flashcard JSON file to the selected course.
+  Future<void> _uploadFlashcardsToCourse(Course course) async {
+    setState(() {
+      _isFlashcardLoading = true;
+      _error = null;
+    });
+
+    try {
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: <String>['json'],
+      );
+
+      if (result == null || result.files.isEmpty) {
+        if (mounted) {
+          setState(() {
+            _isFlashcardLoading = false;
+          });
+        }
+        return;
+      }
+
+      final file = result.files.first;
+      final filePath = file.path;
+
+      if (filePath == null) {
+        if (mounted) {
+          setState(() {
+            _error = 'Selected file path could not be read.';
+            _isFlashcardLoading = false;
+          });
+        }
+        return;
+      }
+
+      final flashcards =
+          await _flashcardService.loadFlashcardsFromFile(filePath);
+
+      if (!mounted) {
+        return;
+      }
+
+      if (flashcards.isEmpty) {
+        setState(() {
+          _error = 'The selected JSON did not contain any flashcards.';
+          _isFlashcardLoading = false;
+        });
+        return;
+      }
+
+      await _courseService.addFlashcardSetToCourse(course.id, flashcards);
+
+      // Reload courses to get the updated data.
+      await _loadCourses();
+
+      if (mounted) {
+        setState(() {
+          _isFlashcardLoading = false;
+          _error = null;
+        });
+      }
+    } on Exception catch (e) {
+      if (kDebugMode) {
+        print(
+          '[HomeScreen._uploadFlashcardsToCourse] Failed to upload flashcards: $e',
+        );
+      }
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _error =
+            'Unable to read that JSON file.\nPlease make sure it contains a list of flashcards.';
+        _isFlashcardLoading = false;
+      });
+    }
+  }
+
+  /// Generates flashcards from a PDF file using the LLM.
+  ///
+  /// This method extracts text from the PDF, then uses Google's Gemini AI
+  /// to generate flashcards based on the study material content.
+  ///
+  /// First checks for API key, then prompts for flashcard count.
+  Future<void> _generateFlashcardsFromPdf(Course course, String pdfPath) async {
+    // Check if API key is set
+    final hasApiKey = await FlashcardGeneratorService.hasApiKey();
+    if (!hasApiKey) {
+      final apiKeySet = await _showApiKeyDialog();
+      if (!apiKeySet) {
+        return; // User cancelled
+      }
+    }
+
+    // Ask for flashcard count
+    final flashcardCount = await _showFlashcardCountDialog();
+    if (flashcardCount == null) {
+      return; // User cancelled
+    }
+
+    setState(() {
+      _isGeneratingFlashcards = true;
+      _error = null;
+    });
+
+    try {
+      // Extract text from PDF (limited to first 10 pages for performance)
+      final pdfText = await _pdfTextExtractor.extractTextLimited(pdfPath);
+
+      if (pdfText.isEmpty) {
+        throw Exception('No text content found in PDF');
+      }
+
+      if (kDebugMode) {
+        print(
+          '[HomeScreen._generateFlashcardsFromPdf] Extracted ${pdfText.length} characters from PDF',
+        );
+      }
+
+      // Generate flashcards using LLM with the specified count
+      final flashcards = await _flashcardGenerator.generateFlashcardsFromText(
+        pdfText,
+        flashcardCount: flashcardCount,
+      );
+
+      // Add generated flashcards to the course
+      await _courseService.addFlashcardSetToCourse(course.id, flashcards);
+
+      // Reload courses to get the updated data
+      await _loadCourses();
+
+      if (mounted) {
+        setState(() {
+          _isGeneratingFlashcards = false;
+          _error = null;
+        });
+
+        // Show success message
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                'Successfully generated ${flashcards.length} flashcards!',
+              ),
+              backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+          );
+        }
+      }
+    } on Exception catch (e) {
+      if (kDebugMode) {
+        print('[HomeScreen._generateFlashcardsFromPdf] Failed: $e');
+      }
+      if (!mounted) {
+        return;
+      }
+
+      // Extract a user-friendly error message
+      var errorMessage = e.toString();
+      if (errorMessage.contains('API key not set')) {
+        await _showApiKeyDialog();
+        setState(() {
+          _isGeneratingFlashcards = false;
+          _error = null;
+        });
+        return;
+      } else if (errorMessage.contains('No text content found')) {
+        errorMessage =
+            'Could not extract text from the PDF.\n\nPlease ensure the PDF contains readable text content.';
+      } else if (errorMessage.contains('No flashcards were generated') ||
+          errorMessage.contains('Could not parse')) {
+        errorMessage =
+            'The AI could not generate valid flashcards.\n\nThis might be because:\n'
+            '• The PDF content is too short or unclear\n'
+            '• The AI response format was unexpected\n\n'
+            'Please try again.';
+      }
+
+      setState(() {
+        _error = errorMessage;
+        _isGeneratingFlashcards = false;
+      });
+    }
+  }
+
+  /// Shows a dialog to ask the user how many flashcards to generate.
+  ///
+  /// Returns the flashcard count if confirmed, null if cancelled.
+  Future<int?> _showFlashcardCountDialog() async {
+    final controller = TextEditingController(text: '10');
+
+    final result = await showDialog<int>(
+      context: context,
+      builder: (BuildContext context) {
+        final theme = Theme.of(context);
+        final textTheme = theme.textTheme;
+
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          title: Text(
+            'Number of Flashcards',
+            style: textTheme.titleLarge?.copyWith(
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Text(
+                  'How many flashcards would you like to generate from this PDF?',
+                  style: textTheme.bodyMedium,
+                ),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: controller,
+                  decoration: InputDecoration(
+                    labelText: 'Flashcard Count',
+                    hintText: 'Enter a number (e.g., 10)',
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  keyboardType: TextInputType.number,
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Recommended: 10-30 flashcards',
+                  style: textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: () {
+                final text = controller.text.trim();
+                final count = int.tryParse(text);
+                if (count != null && count > 0 && count <= 100) {
+                  Navigator.of(context).pop(count);
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text(
+                        'Please enter a number between 1 and 100',
+                      ),
+                      behavior: SnackBarBehavior.floating,
+                    ),
+                  );
+                }
+              },
+              child: const Text('Generate'),
+            ),
+          ],
+        );
+      },
+    );
+
+    return result;
+  }
+
+  /// Starts a flashcard session from the selected course and flashcard set index.
+  ///
+  /// Flashcards are shuffled before starting to prevent users from memorizing positions.
+  Future<void> _startFlashcardsFromCourse(
+    Course course,
+    int flashcardSetIndex,
+  ) async {
+    if (flashcardSetIndex < 0 ||
+        flashcardSetIndex >= course.flashcards.length) {
+      return;
+    }
+
+    final flashcards = course.flashcards[flashcardSetIndex];
+    if (flashcards.isEmpty) {
+      return;
+    }
+
+    // Shuffle flashcards to prevent memorization
+    final shuffledFlashcards = FlashcardUtils.shuffleFlashcards(flashcards);
+
+    await Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (BuildContext context) => FlashcardScreen(
+          flashcards: shuffledFlashcards,
+        ),
+      ),
+    );
+  }
+
   /// Starts the default sample quiz.
   ///
   /// Questions and options are shuffled before starting the quiz to prevent
@@ -873,6 +1187,7 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final textTheme = theme.textTheme;
 
     return Scaffold(
       backgroundColor: theme.colorScheme.surface,
@@ -900,6 +1215,10 @@ class _HomeScreenState extends State<HomeScreen> {
           },
         ),
       ),
+      floatingActionButton: _selectedCourse != null
+          ? _buildFloatingActionButton(theme, textTheme)
+          : null,
+      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
     );
   }
 
@@ -1364,11 +1683,15 @@ class _HomeScreenState extends State<HomeScreen> {
                       letterSpacing: -0.5,
                     ),
                   ),
-                  if (course.quizCount > 0 || course.pdfCount > 0)
+                  if (course.quizCount > 0 ||
+                      course.flashcardSetCount > 0 ||
+                      course.pdfCount > 0)
                     Text(
                       [
                         if (course.quizCount > 0)
                           '${course.quizCount} quiz${course.quizCount == 1 ? '' : 'zes'} • ${course.totalQuestionCount} questions',
+                        if (course.flashcardSetCount > 0)
+                          '${course.flashcardSetCount} flashcard set${course.flashcardSetCount == 1 ? '' : 's'} • ${course.totalFlashcardCount} cards',
                         if (course.pdfCount > 0)
                           '${course.pdfCount} PDF${course.pdfCount == 1 ? '' : 's'}',
                       ].join(' • '),
@@ -1383,7 +1706,9 @@ class _HomeScreenState extends State<HomeScreen> {
           ],
         ),
         const SizedBox(height: 24),
-        if (course.quizzes.isEmpty && course.pdfs.isEmpty) ...<Widget>[
+        if (course.quizzes.isEmpty &&
+            course.flashcards.isEmpty &&
+            course.pdfs.isEmpty) ...<Widget>[
           _buildEmptyCourseState(theme, textTheme, course),
         ] else ...<Widget>[
           // PDFs section
@@ -1413,7 +1738,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                     // Generate questions button
                     Padding(
-                      padding: const EdgeInsets.only(bottom: 12),
+                      padding: const EdgeInsets.only(bottom: 6),
                       child: SizedBox(
                         height: 36,
                         child: OutlinedButton.icon(
@@ -1437,6 +1762,45 @@ class _HomeScreenState extends State<HomeScreen> {
                             _isGeneratingQuestions
                                 ? 'Generating...'
                                 : 'Generate Questions',
+                            style: textTheme.labelSmall?.copyWith(
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          style: OutlinedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(horizontal: 12),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    // Generate flashcards button
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 12),
+                      child: SizedBox(
+                        height: 36,
+                        child: OutlinedButton.icon(
+                          onPressed: _isGeneratingFlashcards
+                              ? null
+                              : () =>
+                                  _generateFlashcardsFromPdf(course, pdfPath),
+                          icon: _isGeneratingFlashcards
+                              ? SizedBox(
+                                  width: 14,
+                                  height: 14,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    valueColor: AlwaysStoppedAnimation<Color>(
+                                      theme.colorScheme.primary,
+                                    ),
+                                  ),
+                                )
+                              : const Icon(Icons.style_outlined, size: 16),
+                          label: Text(
+                            _isGeneratingFlashcards
+                                ? 'Generating...'
+                                : 'Generate Flashcards',
                             style: textTheme.labelSmall?.copyWith(
                               fontWeight: FontWeight.w600,
                             ),
@@ -1491,69 +1855,41 @@ class _HomeScreenState extends State<HomeScreen> {
               },
             ),
           ],
-        ],
-        const SizedBox(height: 16),
-        Row(
-          children: <Widget>[
-            Expanded(
-              child: SizedBox(
-                height: 48,
-                child: OutlinedButton.icon(
-                  onPressed:
-                      _isPdfLoading ? null : () => _uploadPdfToCourse(course),
-                  icon: _isPdfLoading
-                      ? SizedBox(
-                          width: 16,
-                          height: 16,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation<Color>(
-                              theme.colorScheme.primary,
-                            ),
-                          ),
-                        )
-                      : const Icon(Icons.picture_as_pdf_outlined),
-                  label: Text(_isPdfLoading ? 'Uploading...' : 'Upload PDF'),
-                  style: OutlinedButton.styleFrom(
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                ),
+          // Flashcards section
+          if (course.flashcards.isNotEmpty) ...<Widget>[
+            const SizedBox(height: 24),
+            Text(
+              'Flashcards',
+              style: textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.w600,
               ),
             ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: SizedBox(
-                height: 48,
-                child: OutlinedButton.icon(
-                  onPressed: _isCustomLoading
-                      ? null
-                      : () => _uploadQuizToCourse(course),
-                  icon: _isCustomLoading
-                      ? SizedBox(
-                          width: 16,
-                          height: 16,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation<Color>(
-                              theme.colorScheme.primary,
-                            ),
-                          ),
-                        )
-                      : const Icon(Icons.upload_file_outlined),
-                  label:
-                      Text(_isCustomLoading ? 'Uploading...' : 'Upload Quiz'),
-                  style: OutlinedButton.styleFrom(
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                ),
-              ),
+            const SizedBox(height: 12),
+            ...course.flashcards.asMap().entries.map<Widget>(
+              (MapEntry<int, List<Flashcard>> entry) {
+                final flashcardSetIndex = entry.key;
+                final flashcards = entry.value;
+                // Create a stable identifier for the flashcard set
+                final flashcardHash = Object.hashAll([
+                  course.id,
+                  flashcardSetIndex,
+                  ...flashcards.map((Flashcard f) => f.id),
+                  ...flashcards.map((Flashcard f) => f.front),
+                ]);
+
+                return _buildFlashcardCardWithSwipe(
+                  theme,
+                  textTheme,
+                  course,
+                  flashcardSetIndex,
+                  flashcards.length,
+                  flashcardHash,
+                  () => _startFlashcardsFromCourse(course, flashcardSetIndex),
+                );
+              },
             ),
           ],
-        ),
+        ],
         if (_error != null)
           Padding(
             padding: const EdgeInsets.only(top: 12),
@@ -1871,6 +2207,409 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ],
             ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// Builds a card for a flashcard set in a course with swipe-to-delete.
+  Widget _buildFlashcardCardWithSwipe(
+    ThemeData theme,
+    TextTheme textTheme,
+    Course course,
+    int flashcardSetIndex,
+    int flashcardCount,
+    int flashcardHash,
+    VoidCallback onTap,
+  ) {
+    // Use flashcard content hash as key instead of index to prevent Dismissible errors
+    // when items are deleted and indices shift
+    return Dismissible(
+      key: Key('flashcard_${course.id}_$flashcardHash'),
+      direction: DismissDirection.endToStart,
+      background: Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        decoration: BoxDecoration(
+          color: theme.colorScheme.error,
+          borderRadius: BorderRadius.circular(16),
+        ),
+        alignment: Alignment.centerRight,
+        padding: const EdgeInsets.only(right: 20),
+        child: Icon(
+          Icons.delete_outlined,
+          color: theme.colorScheme.onError,
+          size: 24,
+        ),
+      ),
+      confirmDismiss: (DismissDirection direction) async {
+        final confirmed = await showDialog<bool>(
+          context: context,
+          builder: (BuildContext context) {
+            final theme = Theme.of(context);
+            final textTheme = theme.textTheme;
+
+            return AlertDialog(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+              ),
+              title: Text(
+                'Delete Flashcard Set?',
+                style: textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              content: Text(
+                'Are you sure you want to delete Flashcard Set ${flashcardSetIndex + 1}? '
+                'This action cannot be undone.',
+                style: textTheme.bodyMedium,
+              ),
+              actions: <Widget>[
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(false),
+                  child: const Text('Cancel'),
+                ),
+                FilledButton(
+                  onPressed: () => Navigator.of(context).pop(true),
+                  style: FilledButton.styleFrom(
+                    backgroundColor: theme.colorScheme.error,
+                    foregroundColor: theme.colorScheme.onError,
+                  ),
+                  child: const Text('Delete'),
+                ),
+              ],
+            );
+          },
+        );
+
+        return confirmed ?? false;
+      },
+      onDismissed: (DismissDirection direction) {
+        // Immediately update state synchronously before async operations
+        if (mounted &&
+            _selectedCourse != null &&
+            _selectedCourse!.id == course.id) {
+          final currentCourse = _selectedCourse!;
+          if (flashcardSetIndex >= 0 &&
+              flashcardSetIndex < currentCourse.flashcards.length) {
+            // Update state immediately to remove the flashcard set from the widget tree
+            final updatedFlashcards = <List<Flashcard>>[
+              ...currentCourse.flashcards.sublist(0, flashcardSetIndex),
+              ...currentCourse.flashcards.sublist(flashcardSetIndex + 1),
+            ];
+            setState(() {
+              _selectedCourse =
+                  currentCourse.copyWith(flashcards: updatedFlashcards);
+            });
+            // Then perform async deletion
+            _deleteFlashcardSetFromCourse(currentCourse, flashcardSetIndex);
+          }
+        }
+      },
+      child: _buildFlashcardCard(
+        theme,
+        textTheme,
+        flashcardSetIndex,
+        flashcardCount,
+        onTap,
+      ),
+    );
+  }
+
+  /// Builds a card for a flashcard set in a course.
+  Widget _buildFlashcardCard(
+    ThemeData theme,
+    TextTheme textTheme,
+    int flashcardSetIndex,
+    int flashcardCount,
+    VoidCallback onTap,
+  ) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      child: Material(
+        color: theme.colorScheme.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(16),
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(16),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              children: <Widget>[
+                Container(
+                  width: 48,
+                  height: 48,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(12),
+                    color: theme.colorScheme.secondaryContainer,
+                  ),
+                  child: Icon(
+                    Icons.style_outlined,
+                    color: theme.colorScheme.onSecondaryContainer,
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: <Widget>[
+                      Text(
+                        'Flashcard Set ${flashcardSetIndex + 1}',
+                        style: textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        '$flashcardCount flashcard${flashcardCount == 1 ? '' : 's'}',
+                        style: textTheme.bodySmall?.copyWith(
+                          color: theme.colorScheme.onSurface
+                              .withValues(alpha: 0.7),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Icon(
+                  Icons.arrow_forward_ios,
+                  size: 16,
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// Deletes a flashcard set from a course.
+  ///
+  /// Note: State update should already be done in onDismissed before calling this.
+  /// This method performs the async deletion and reloads from storage.
+  Future<void> _deleteFlashcardSetFromCourse(
+    Course course,
+    int flashcardSetIndex,
+  ) async {
+    try {
+      await _courseService.deleteFlashcardSetFromCourse(
+        course.id,
+        flashcardSetIndex,
+      );
+
+      if (mounted) {
+        await _loadCourses();
+        // Update _selectedCourse to match the latest data from storage
+        if (_selectedCourse?.id == course.id) {
+          setState(() {
+            _selectedCourse = _courses.firstWhere(
+              (Course c) => c.id == course.id,
+              orElse: () => _selectedCourse!,
+            );
+          });
+        }
+      }
+    } on Exception catch (e) {
+      if (kDebugMode) {
+        print(
+          '[HomeScreen._deleteFlashcardSetFromCourse] Failed to delete flashcard set: $e',
+        );
+      }
+      // Reload courses even on error to ensure UI matches storage
+      if (mounted) {
+        await _loadCourses();
+        if (_selectedCourse?.id == course.id) {
+          setState(() {
+            _selectedCourse = _courses.firstWhere(
+              (Course c) => c.id == course.id,
+              orElse: () => _selectedCourse!,
+            );
+          });
+        }
+      }
+    }
+  }
+
+  /// Builds the floating action button with dropdown menu for upload options.
+  ///
+  /// This FAB appears when a course is selected and provides quick access to
+  /// upload PDFs, quizzes, and flashcards. The menu expands with smooth animations
+  /// following Apple's Human Interface Guidelines with a modern, visually appealing design.
+  Widget _buildFloatingActionButton(ThemeData theme, TextTheme textTheme) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.end,
+      children: <Widget>[
+        // Expanded menu items with smooth slide-up and fade animations
+        if (_isFabExpanded) ...<Widget>[
+          _buildAnimatedFabMenuItem(
+            theme: theme,
+            textTheme: textTheme,
+            icon: Icons.style_outlined,
+            label: 'Upload Flashcards',
+            isLoading: _isFlashcardLoading,
+            delay: 0,
+            onTap: _selectedCourse != null
+                ? () {
+                    setState(() {
+                      _isFabExpanded = false;
+                    });
+                    _uploadFlashcardsToCourse(_selectedCourse!);
+                  }
+                : null,
+          ),
+          const SizedBox(height: 12),
+          _buildAnimatedFabMenuItem(
+            theme: theme,
+            textTheme: textTheme,
+            icon: Icons.upload_file_outlined,
+            label: 'Upload Quiz',
+            isLoading: _isCustomLoading,
+            delay: 50,
+            onTap: _selectedCourse != null
+                ? () {
+                    setState(() {
+                      _isFabExpanded = false;
+                    });
+                    _uploadQuizToCourse(_selectedCourse!);
+                  }
+                : null,
+          ),
+          const SizedBox(height: 12),
+          _buildAnimatedFabMenuItem(
+            theme: theme,
+            textTheme: textTheme,
+            icon: Icons.picture_as_pdf_outlined,
+            label: 'Upload PDF',
+            isLoading: _isPdfLoading,
+            delay: 100,
+            onTap: _selectedCourse != null
+                ? () {
+                    setState(() {
+                      _isFabExpanded = false;
+                    });
+                    _uploadPdfToCourse(_selectedCourse!);
+                  }
+                : null,
+          ),
+          const SizedBox(height: 16),
+        ],
+        // Main FAB button with smooth icon transformation
+        FloatingActionButton(
+          onPressed: () {
+            setState(() {
+              _isFabExpanded = !_isFabExpanded;
+            });
+          },
+          backgroundColor: theme.colorScheme.primary,
+          foregroundColor: theme.colorScheme.onPrimary,
+          elevation: _isFabExpanded ? 8 : 4,
+          child: AnimatedSwitcher(
+            duration: const Duration(milliseconds: 300),
+            transitionBuilder: (Widget child, Animation<double> animation) {
+              return RotationTransition(
+                turns: animation,
+                child: ScaleTransition(
+                  scale: animation,
+                  child: child,
+                ),
+              );
+            },
+            child: Icon(
+              _isFabExpanded ? Icons.close : Icons.add,
+              key: ValueKey<bool>(_isFabExpanded),
+              size: 28,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// Builds an animated menu item for the FAB dropdown with staggered animation.
+  Widget _buildAnimatedFabMenuItem({
+    required ThemeData theme,
+    required TextTheme textTheme,
+    required IconData icon,
+    required String label,
+    required bool isLoading,
+    required int delay,
+    required VoidCallback? onTap,
+  }) {
+    return TweenAnimationBuilder<double>(
+      tween: Tween<double>(
+        begin: 0,
+        end: _isFabExpanded ? 1.0 : 0.0,
+      ),
+      duration: Duration(milliseconds: 300 + delay),
+      curve: Curves.easeOutCubic,
+      builder: (BuildContext context, double value, Widget? child) {
+        return Transform.translate(
+          offset: Offset(0, 20 * (1 - value)),
+          child: Opacity(
+            opacity: value,
+            child: _buildFabMenuItem(
+              theme: theme,
+              textTheme: textTheme,
+              icon: icon,
+              label: label,
+              isLoading: isLoading,
+              onTap: onTap,
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  /// Builds a menu item for the FAB dropdown.
+  Widget _buildFabMenuItem({
+    required ThemeData theme,
+    required TextTheme textTheme,
+    required IconData icon,
+    required String label,
+    required bool isLoading,
+    required VoidCallback? onTap,
+  }) {
+    return Material(
+      color: theme.colorScheme.surfaceContainerHighest,
+      borderRadius: BorderRadius.circular(28),
+      elevation: 4,
+      shadowColor: Colors.black.withValues(alpha: 0.2),
+      child: InkWell(
+        onTap: isLoading ? null : onTap,
+        borderRadius: BorderRadius.circular(28),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              if (isLoading)
+                SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    valueColor: AlwaysStoppedAnimation<Color>(
+                      theme.colorScheme.primary,
+                    ),
+                  ),
+                )
+              else
+                Icon(
+                  icon,
+                  size: 20,
+                  color: theme.colorScheme.primary,
+                ),
+              const SizedBox(width: 12),
+              Text(
+                label,
+                style: textTheme.labelLarge?.copyWith(
+                  fontWeight: FontWeight.w600,
+                  color: theme.colorScheme.onSurface,
+                ),
+              ),
+            ],
           ),
         ),
       ),
