@@ -37,10 +37,27 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
   final GlobalKey<SfPdfViewerState> _pdfViewerKey = GlobalKey();
   int _currentPage = 1;
   int _totalPages = 0;
+  bool _isLoading = true;
+  String? _errorMessage;
 
   @override
   void initState() {
     super.initState();
+    _checkFileExists();
+  }
+
+  Future<void> _checkFileExists() async {
+    final file = File(widget.pdfPath);
+    if (!await file.exists()) {
+      setState(() {
+        _isLoading = false;
+        _errorMessage = 'PDF file not found at: ${widget.pdfPath}';
+      });
+      return;
+    }
+    setState(() {
+      _isLoading = false;
+    });
   }
 
   @override
@@ -79,19 +96,117 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
           SizedBox(width: 8),
         ],
       ),
-      body: SfPdfViewer.file(
-        File(widget.pdfPath),
+      body: _buildBody(theme, textTheme),
+    );
+  }
+
+  Widget _buildBody(ThemeData theme, TextTheme textTheme) {
+    if (_isLoading) {
+      return Center(
+        child: CircularProgressIndicator(
+          color: theme.colorScheme.primary,
+        ),
+      );
+    }
+
+    if (_errorMessage != null) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: <Widget>[
+              Icon(
+                Icons.error_outline,
+                size: 64,
+                color: theme.colorScheme.error,
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Unable to load PDF',
+                style: textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.w600,
+                  color: theme.colorScheme.onSurface,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 8),
+              Text(
+                _errorMessage!,
+                style: textTheme.bodyMedium?.copyWith(
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    final file = File(widget.pdfPath);
+    if (!file.existsSync()) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: <Widget>[
+              Icon(
+                Icons.error_outline,
+                size: 64,
+                color: theme.colorScheme.error,
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'PDF file not found',
+                style: textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.w600,
+                  color: theme.colorScheme.onSurface,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'The file at the specified path does not exist.',
+                style: textTheme.bodyMedium?.copyWith(
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    return SizedBox.expand(
+      child: SfPdfViewer.file(
+        file,
         key: _pdfViewerKey,
+        enableDoubleTapZooming: true,
+        enableTextSelection: true,
         onDocumentLoaded: (PdfDocumentLoadedDetails details) {
-          setState(() {
-            _totalPages = details.document.pages.count;
-            _currentPage = 1;
-          });
+          if (mounted) {
+            setState(() {
+              _totalPages = details.document.pages.count;
+              _currentPage = 1;
+            });
+          }
         },
         onPageChanged: (PdfPageChangedDetails details) {
-          setState(() {
-            _currentPage = details.newPageNumber;
-          });
+          if (mounted) {
+            setState(() {
+              _currentPage = details.newPageNumber;
+            });
+          }
+        },
+        onDocumentLoadFailed: (PdfDocumentLoadFailedDetails details) {
+          if (mounted) {
+            setState(() {
+              _errorMessage = 'Failed to load PDF: ${details.error}';
+            });
+          }
         },
       ),
     );
