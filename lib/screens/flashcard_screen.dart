@@ -214,24 +214,26 @@ class _FlashcardScreenState extends State<FlashcardScreen>
                                             ) *
                                             1.2,
                                       ),
-                                      child: isFrontVisible
-                                          ? _buildFront(
-                                              theme,
-                                              textTheme,
-                                              constraints,
-                                              index,
-                                            )
-                                          : Transform(
-                                              alignment: Alignment.center,
-                                              transform: Matrix4.identity()
-                                                ..rotateY(3.14159),
-                                              child: _buildBack(
+                                      child: SingleChildScrollView(
+                                        child: isFrontVisible
+                                            ? _buildFront(
                                                 theme,
                                                 textTheme,
                                                 constraints,
                                                 index,
+                                              )
+                                            : Transform(
+                                                alignment: Alignment.center,
+                                                transform: Matrix4.identity()
+                                                  ..rotateY(3.14159),
+                                                child: _buildBack(
+                                                  theme,
+                                                  textTheme,
+                                                  constraints,
+                                                  index,
+                                                ),
                                               ),
-                                            ),
+                                      ),
                                     ),
                                   );
                                 },
@@ -364,6 +366,7 @@ class _FlashcardScreenState extends State<FlashcardScreen>
   ) {
     final flashcard = widget.flashcards[index];
     return Column(
+      mainAxisSize: MainAxisSize.min,
       mainAxisAlignment: MainAxisAlignment.center,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
@@ -414,6 +417,7 @@ class _FlashcardScreenState extends State<FlashcardScreen>
   ) {
     final flashcard = widget.flashcards[index];
     return Column(
+      mainAxisSize: MainAxisSize.min,
       mainAxisAlignment: MainAxisAlignment.center,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
