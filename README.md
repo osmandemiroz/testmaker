@@ -27,6 +27,8 @@ TestMaker is a sleek, modern Flutter application that revolutionizes how you cre
 - 🎴 **Interactive Flashcards** - Swipe through flashcards with smooth 3D flip animations
 - 💾 **Local Storage** - All data stored locally, works offline
 - 🎲 **Randomized Content** - Prevent memorization with shuffled questions, options, and flashcards
+- ✏️ **Custom Naming** - Rename quizzes, PDFs, and flashcard sets for better organization
+- 🏗️ **MVC Architecture** - Clean, maintainable codebase with separation of concerns
 
 ---
 
@@ -46,8 +48,9 @@ TestMaker is a sleek, modern Flutter application that revolutionizes how you cre
 | 🎨 **Modern Animated UI** | Card-based layouts with smooth transitions, 3D flip animations, and progress indicators |
 | 📊 **Result Summaries** | Detailed score breakdown with percentage and feedback |
 | 👆 **Swipe Navigation** | Intuitive swipe gestures for navigating through flashcards |
+| ✏️ **Custom Naming** | Long-press any quiz, PDF, or flashcard set to rename it with custom names |
 | 📱 **Responsive Design** | Fully responsive UI that adapts to all screen sizes (mobile, tablet, desktop) |
-| 🏗️ **Clean Architecture** | Null-safe, layered architecture with separation of concerns |
+| 🏗️ **MVC Architecture** | Clean MVC architecture with controllers, models, and views for maintainability |
 
 ---
 
@@ -63,10 +66,12 @@ TestMaker follows **Apple's Human Interface Guidelines** to deliver an exception
 - 👆 Intuitive swipe gestures for deletion
 
 The codebase emphasizes:
-- 🔧 Separation of concerns (models, services, screens, widgets)
+- 🏗️ **MVC Architecture** - Clean separation with controllers managing business logic, models for data, and views for UI
+- 🔧 Separation of concerns (models, controllers, services, screens, widgets)
 - ✅ Null safety throughout
 - 🛡️ Comprehensive error handling
 - 📝 Extensive code comments for maintainability
+- 🔄 Reactive state management using ChangeNotifier pattern
 
 ---
 
@@ -190,6 +195,7 @@ flutter run
 | **View PDF** | Tap on any PDF card in a course |
 | **Start Quiz** | Tap on any quiz card (questions are randomized) |
 | **Study Flashcards** | Tap on any flashcard set → Swipe left/right to navigate, tap to flip |
+| **Rename Items** | Long-press any quiz, PDF, or flashcard set card → Enter new name → Save |
 | **Delete Items** | Swipe left on any course, quiz, flashcard set, or PDF → Confirm deletion |
 
 ---
@@ -249,6 +255,10 @@ lib/
 │   ├── question.dart              # Question model with JSON serialization
 │   ├── flashcard.dart             # Flashcard model with JSON serialization
 │   └── course.dart                # Course model for organizing quizzes/flashcards/PDFs
+├── controllers/
+│   ├── home_controller.dart       # Business logic for course management and content operations
+│   ├── quiz_controller.dart       # Quiz state management and navigation
+│   └── flashcard_controller.dart  # Flashcard state management and navigation
 ├── services/
 │   ├── quiz_service.dart          # Loads questions from assets or JSON files
 │   ├── flashcard_service.dart     # Loads flashcards from assets or JSON files

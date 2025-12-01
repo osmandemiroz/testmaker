@@ -13,6 +13,7 @@ import 'package:testmaker/models/question.dart';
 ///  - A list of quizzes, where each quiz is a list of questions
 ///  - A list of flashcard sets, where each set is a list of flashcards
 ///  - A list of PDF file paths for study materials
+///  - Custom names for quizzes, flashcard sets, and PDFs (optional)
 ///
 /// This model is designed to be easily serializable to/from JSON
 /// for local storage via SharedPreferences.
@@ -22,6 +23,8 @@ class Course {
   ///
   /// [id] must be unique. If not provided, a new UUID-style ID is generated.
   /// [createdAt] and [updatedAt] default to the current timestamp if not provided.
+  /// [quizNames], [flashcardSetNames], and [pdfNames] are optional maps
+  /// that store custom names for items. If not provided, default names are used.
   const Course({
     required this.id,
     required this.name,
@@ -30,6 +33,9 @@ class Course {
     required this.pdfs,
     required this.createdAt,
     required this.updatedAt,
+    this.quizNames,
+    this.flashcardSetNames,
+    this.pdfNames,
   });
 
   /// Creates a [Course] from a JSON map.
@@ -88,6 +94,21 @@ class Course {
         .map<String>((dynamic pdf) => pdf as String)
         .toList(growable: false);
 
+    final quizNamesJson = json['quizNames'] as Map<String, dynamic>?;
+    final quizNames = quizNamesJson?.map<int, String>(
+      (String key, dynamic value) => MapEntry(int.parse(key), value as String),
+    );
+
+    final flashcardSetNamesJson = json['flashcardSetNames'] as Map<String, dynamic>?;
+    final flashcardSetNames = flashcardSetNamesJson?.map<int, String>(
+      (String key, dynamic value) => MapEntry(int.parse(key), value as String),
+    );
+
+    final pdfNamesJson = json['pdfNames'] as Map<String, dynamic>?;
+    final pdfNames = pdfNamesJson?.map<int, String>(
+      (String key, dynamic value) => MapEntry(int.parse(key), value as String),
+    );
+
     return Course(
       id: json['id'] as String,
       name: json['name'] as String,
@@ -98,6 +119,9 @@ class Course {
           json['createdAt'] as int? ?? DateTime.now().millisecondsSinceEpoch,
       updatedAt:
           json['updatedAt'] as int? ?? DateTime.now().millisecondsSinceEpoch,
+      quizNames: quizNames,
+      flashcardSetNames: flashcardSetNames,
+      pdfNames: pdfNames,
     );
   }
 
@@ -125,6 +149,18 @@ class Course {
   /// Timestamp when this course was last modified (milliseconds since epoch).
   final int updatedAt;
 
+  /// Map of quiz indices to custom names.
+  /// If a quiz doesn't have a custom name, a default name is used.
+  final Map<int, String>? quizNames;
+
+  /// Map of flashcard set indices to custom names.
+  /// If a flashcard set doesn't have a custom name, a default name is used.
+  final Map<int, String>? flashcardSetNames;
+
+  /// Map of PDF indices to custom names.
+  /// If a PDF doesn't have a custom name, the filename is used.
+  final Map<int, String>? pdfNames;
+
   /// Converts this [Course] to a JSON map.
   Map<String, dynamic> toJson() {
     return <String, dynamic>{
@@ -147,6 +183,18 @@ class Course {
       'pdfs': pdfs,
       'createdAt': createdAt,
       'updatedAt': updatedAt,
+      if (quizNames != null && quizNames!.isNotEmpty)
+        'quizNames': quizNames!.map<String, String>(
+          (int key, String value) => MapEntry(key.toString(), value),
+        ),
+      if (flashcardSetNames != null && flashcardSetNames!.isNotEmpty)
+        'flashcardSetNames': flashcardSetNames!.map<String, String>(
+          (int key, String value) => MapEntry(key.toString(), value),
+        ),
+      if (pdfNames != null && pdfNames!.isNotEmpty)
+        'pdfNames': pdfNames!.map<String, String>(
+          (int key, String value) => MapEntry(key.toString(), value),
+        ),
     };
   }
 
@@ -161,6 +209,9 @@ class Course {
     List<String>? pdfs,
     int? createdAt,
     int? updatedAt,
+    Map<int, String>? quizNames,
+    Map<int, String>? flashcardSetNames,
+    Map<int, String>? pdfNames,
   }) {
     return Course(
       id: id ?? this.id,
@@ -170,7 +221,33 @@ class Course {
       pdfs: pdfs ?? this.pdfs,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
+      quizNames: quizNames ?? this.quizNames,
+      flashcardSetNames: flashcardSetNames ?? this.flashcardSetNames,
+      pdfNames: pdfNames ?? this.pdfNames,
     );
+  }
+
+  /// Gets the name for a quiz at the given index.
+  /// Returns a default name if no custom name is set.
+  String getQuizName(int index) {
+    return quizNames?[index] ?? 'Quiz ${index + 1}';
+  }
+
+  /// Gets the name for a flashcard set at the given index.
+  /// Returns a default name if no custom name is set.
+  String getFlashcardSetName(int index) {
+    return flashcardSetNames?[index] ?? 'Flashcard Set ${index + 1}';
+  }
+
+  /// Gets the name for a PDF at the given index.
+  /// Returns the filename if no custom name is set.
+  String getPdfName(int index, String pdfPath) {
+    if (pdfNames?[index] != null) {
+      return pdfNames![index]!;
+    }
+    // Extract filename from path
+    final fileName = pdfPath.split('/').last;
+    return fileName.length > 30 ? '${fileName.substring(0, 30)}...' : fileName;
   }
 
   /// Returns the total number of quizzes in this course.

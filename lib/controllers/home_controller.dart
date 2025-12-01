@@ -468,4 +468,158 @@ class HomeController extends ChangeNotifier {
     _error = null;
     notifyListeners();
   }
+
+  /// Renames a quiz in the selected course.
+  Future<bool> renameQuiz(int quizIndex, String newName) async {
+    if (_selectedCourse == null) {
+      return false;
+    }
+
+    if (quizIndex < 0 || quizIndex >= _selectedCourse!.quizzes.length) {
+      return false;
+    }
+
+    if (newName.trim().isEmpty) {
+      return false;
+    }
+
+    try {
+      final updatedQuizNames = Map<int, String>.from(
+        _selectedCourse!.quizNames ?? <int, String>{},
+      );
+      updatedQuizNames[quizIndex] = newName.trim();
+
+      final updatedCourse = _selectedCourse!.copyWith(
+        quizNames: updatedQuizNames,
+        updatedAt: DateTime.now().millisecondsSinceEpoch,
+      );
+
+      await _courseService.updateCourse(updatedCourse);
+      await _loadCourses();
+
+      // Update selected course reference
+      if (_courses.isNotEmpty) {
+        try {
+          final refreshedCourse = _courses.firstWhere(
+            (Course c) => c.id == _selectedCourse!.id,
+          );
+          _selectedCourse = refreshedCourse;
+        } on Exception catch (_) {
+          // Course not found, ignore
+        }
+      }
+
+      return true;
+    } on Exception catch (e) {
+      if (kDebugMode) {
+        print('[HomeController.renameQuiz] Failed: $e');
+      }
+      _error = 'Failed to rename quiz';
+      notifyListeners();
+      return false;
+    }
+  }
+
+  /// Renames a flashcard set in the selected course.
+  Future<bool> renameFlashcardSet(int flashcardSetIndex, String newName) async {
+    if (_selectedCourse == null) {
+      return false;
+    }
+
+    if (flashcardSetIndex < 0 ||
+        flashcardSetIndex >= _selectedCourse!.flashcards.length) {
+      return false;
+    }
+
+    if (newName.trim().isEmpty) {
+      return false;
+    }
+
+    try {
+      final updatedFlashcardSetNames = Map<int, String>.from(
+        _selectedCourse!.flashcardSetNames ?? <int, String>{},
+      );
+      updatedFlashcardSetNames[flashcardSetIndex] = newName.trim();
+
+      final updatedCourse = _selectedCourse!.copyWith(
+        flashcardSetNames: updatedFlashcardSetNames,
+        updatedAt: DateTime.now().millisecondsSinceEpoch,
+      );
+
+      await _courseService.updateCourse(updatedCourse);
+      await _loadCourses();
+
+      // Update selected course reference
+      if (_courses.isNotEmpty) {
+        try {
+          final refreshedCourse = _courses.firstWhere(
+            (Course c) => c.id == _selectedCourse!.id,
+          );
+          _selectedCourse = refreshedCourse;
+        } on Exception catch (_) {
+          // Course not found, ignore
+        }
+      }
+
+      return true;
+    } on Exception catch (e) {
+      if (kDebugMode) {
+        print('[HomeController.renameFlashcardSet] Failed: $e');
+      }
+      _error = 'Failed to rename flashcard set';
+      notifyListeners();
+      return false;
+    }
+  }
+
+  /// Renames a PDF in the selected course.
+  Future<bool> renamePdf(int pdfIndex, String newName) async {
+    if (_selectedCourse == null) {
+      return false;
+    }
+
+    if (pdfIndex < 0 || pdfIndex >= _selectedCourse!.pdfs.length) {
+      return false;
+    }
+
+    if (newName.trim().isEmpty) {
+      return false;
+    }
+
+    try {
+      final updatedPdfNames = Map<int, String>.from(
+        _selectedCourse!.pdfNames ?? <int, String>{},
+      );
+      updatedPdfNames[pdfIndex] = newName.trim();
+
+      final updatedCourse = _selectedCourse!.copyWith(
+        pdfNames: updatedPdfNames,
+        updatedAt: DateTime.now().millisecondsSinceEpoch,
+      );
+
+      await _courseService.updateCourse(updatedCourse);
+      await _loadCourses();
+
+      // Update selected course reference
+      if (_courses.isNotEmpty) {
+        try {
+          final refreshedCourse = _courses.firstWhere(
+            (Course c) => c.id == _selectedCourse!.id,
+          );
+          _selectedCourse = refreshedCourse;
+        } on Exception catch (_) {
+          // Course not found, ignore
+        }
+      }
+
+      return true;
+    } on Exception catch (e) {
+      if (kDebugMode) {
+        print('[HomeController.renamePdf] Failed: $e');
+      }
+      _error = 'Failed to rename PDF';
+      notifyListeners();
+      return false;
+    }
+  }
 }
