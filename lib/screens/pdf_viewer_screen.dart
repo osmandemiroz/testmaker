@@ -112,7 +112,7 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
     if (_errorMessage != null) {
       return Center(
         child: Padding(
-          padding: const EdgeInsets.all(24.0),
+          padding: const EdgeInsets.all(24),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: <Widget>[
@@ -148,7 +148,7 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
     if (!file.existsSync()) {
       return Center(
         child: Padding(
-          padding: const EdgeInsets.all(24.0),
+          padding: const EdgeInsets.all(24),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: <Widget>[
@@ -184,8 +184,6 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
       child: SfPdfViewer.file(
         file,
         key: _pdfViewerKey,
-        enableDoubleTapZooming: true,
-        enableTextSelection: true,
         onDocumentLoaded: (PdfDocumentLoadedDetails details) {
           if (mounted) {
             setState(() {

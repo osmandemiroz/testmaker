@@ -32,7 +32,6 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       theme: _buildLightTheme(),
       darkTheme: _buildDarkTheme(),
-      themeMode: ThemeMode.system, // Follow system theme
       home: const HomeScreen(),
     );
   }
@@ -50,9 +49,7 @@ class MyApp extends StatelessWidget {
 
     // Create iOS-inspired color scheme
     final colorScheme = ColorScheme.light(
-      brightness: Brightness.light,
       primary: iosBlue,
-      onPrimary: Colors.white,
       primaryContainer: iosBlue.withValues(alpha: 0.1),
       onPrimaryContainer: iosBlue,
       secondary: iosSystemGray,
@@ -62,11 +59,8 @@ class MyApp extends StatelessWidget {
       tertiary: iosSystemGray2,
       onTertiary: Colors.white,
       error: const Color(0xFFFF3B30), // iOS red
-      onError: Colors.white,
       errorContainer: const Color(0xFFFF3B30).withValues(alpha: 0.1),
       onErrorContainer: const Color(0xFFFF3B30),
-      surface: Colors.white,
-      onSurface: iosLabel,
       surfaceContainerHighest: iosSystemGray6,
       surfaceContainerHigh: iosSystemGray5,
       surfaceContainer: Colors.white,
@@ -91,7 +85,7 @@ class MyApp extends StatelessWidget {
         platform: TargetPlatform.iOS,
       ),
       // iOS-style AppBar
-      appBarTheme: AppBarTheme(
+      appBarTheme: const AppBarTheme(
         elevation: 0,
         scrolledUnderElevation: 0,
         centerTitle: true,
@@ -99,13 +93,13 @@ class MyApp extends StatelessWidget {
         foregroundColor: iosLabel,
         surfaceTintColor: Colors.transparent,
         systemOverlayStyle: SystemUiOverlayStyle.dark,
-        titleTextStyle: const TextStyle(
+        titleTextStyle: TextStyle(
           color: iosLabel,
           fontSize: 17,
           fontWeight: FontWeight.w600,
           letterSpacing: -0.41,
         ),
-        iconTheme: const IconThemeData(
+        iconTheme: IconThemeData(
           color: iosBlue,
           size: 24,
         ),
@@ -158,7 +152,7 @@ class MyApp extends StatelessWidget {
           elevation: 0,
           foregroundColor: iosBlue,
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          side: BorderSide(color: iosSystemGray4, width: 0.5),
+          side: const BorderSide(color: iosSystemGray4, width: 0.5),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(10),
           ),
@@ -194,7 +188,7 @@ class MyApp extends StatelessWidget {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
-          borderSide: BorderSide(color: iosBlue, width: 2),
+          borderSide: const BorderSide(color: iosBlue, width: 2),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
@@ -204,7 +198,7 @@ class MyApp extends StatelessWidget {
             const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       ),
       // iOS-style Dividers
-      dividerTheme: DividerThemeData(
+      dividerTheme: const DividerThemeData(
         color: iosSystemGray4,
         thickness: 0.5,
         space: 1,
@@ -223,7 +217,7 @@ class MyApp extends StatelessWidget {
           fontWeight: FontWeight.w600,
           letterSpacing: -0.41,
         ),
-        contentTextStyle: TextStyle(
+        contentTextStyle: const TextStyle(
           color: iosSecondaryLabel,
           fontSize: 17,
           fontWeight: FontWeight.w400,
@@ -327,7 +321,6 @@ class MyApp extends StatelessWidget {
 
     // Create iOS dark mode color scheme
     final colorScheme = ColorScheme.dark(
-      brightness: Brightness.dark,
       primary: iosBlue,
       onPrimary: Colors.white,
       primaryContainer: iosBlue.withValues(alpha: 0.2),
@@ -343,7 +336,6 @@ class MyApp extends StatelessWidget {
       errorContainer: const Color(0xFFFF453A).withValues(alpha: 0.2),
       onErrorContainer: const Color(0xFFFF453A),
       surface: iosSystemGray5,
-      onSurface: iosLabel,
       surfaceContainerHighest: iosSystemGray5,
       surfaceContainerHigh: iosSystemGray4,
       surfaceContainer: iosSystemGray5,
@@ -367,7 +359,7 @@ class MyApp extends StatelessWidget {
         platform: TargetPlatform.iOS,
       ),
       // iOS-style AppBar (dark)
-      appBarTheme: AppBarTheme(
+      appBarTheme: const AppBarTheme(
         elevation: 0,
         scrolledUnderElevation: 0,
         centerTitle: true,
@@ -375,13 +367,13 @@ class MyApp extends StatelessWidget {
         foregroundColor: iosLabel,
         surfaceTintColor: Colors.transparent,
         systemOverlayStyle: SystemUiOverlayStyle.light,
-        titleTextStyle: const TextStyle(
+        titleTextStyle: TextStyle(
           color: iosLabel,
           fontSize: 17,
           fontWeight: FontWeight.w600,
           letterSpacing: -0.41,
         ),
-        iconTheme: const IconThemeData(
+        iconTheme: IconThemeData(
           color: iosBlue,
           size: 24,
         ),
@@ -434,7 +426,7 @@ class MyApp extends StatelessWidget {
           elevation: 0,
           foregroundColor: iosBlue,
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          side: BorderSide(color: iosSystemGray4, width: 0.5),
+          side: const BorderSide(color: iosSystemGray4, width: 0.5),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(10),
           ),
@@ -480,7 +472,7 @@ class MyApp extends StatelessWidget {
             const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       ),
       // iOS-style Dividers (dark)
-      dividerTheme: DividerThemeData(
+      dividerTheme: const DividerThemeData(
         color: iosSystemGray4,
         thickness: 0.5,
         space: 1,
