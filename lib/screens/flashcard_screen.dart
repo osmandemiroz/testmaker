@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:testmaker/controllers/flashcard_controller.dart';
 import 'package:testmaker/models/flashcard.dart';
 import 'package:testmaker/utils/responsive_sizer.dart';
 import 'package:testmaker/widgets/quiz_progress_bar.dart';
@@ -26,17 +27,16 @@ class FlashcardScreen extends StatefulWidget {
 
 class _FlashcardScreenState extends State<FlashcardScreen>
     with SingleTickerProviderStateMixin {
-  int _currentIndex = 0;
-  final Map<int, bool> _flippedStates = <int, bool>{};
+  late final FlashcardController _controller;
   late AnimationController _flipController;
   late Animation<double> _flipAnimation;
   late PageController _pageController;
 
-  bool _isCurrentCardFlipped() => _flippedStates[_currentIndex] ?? false;
-
   @override
   void initState() {
     super.initState();
+    _controller = FlashcardController(widget.flashcards);
+    _controller.addListener(_onControllerChanged);
     _flipController = AnimationController(
       duration: const Duration(milliseconds: 400),
       vsync: this,
@@ -47,14 +47,30 @@ class _FlashcardScreenState extends State<FlashcardScreen>
         curve: Curves.easeInOut,
       ),
     );
-    _pageController = PageController(initialPage: _currentIndex);
+    _pageController = PageController(initialPage: _controller.currentIndex);
   }
 
   @override
   void dispose() {
+    _controller
+      ..removeListener(_onControllerChanged)
+      ..dispose();
     _flipController.dispose();
     _pageController.dispose();
     super.dispose();
+  }
+
+  void _onControllerChanged() {
+    if (mounted) {
+      setState(() {});
+      // Sync animation controller with the current card's flip state
+      final isFlipped = _controller.isCurrentCardFlipped;
+      if (isFlipped) {
+        _flipController.value = 1.0;
+      } else {
+        _flipController.value = 0.0;
+      }
+    }
   }
 
   void _flipCard() {
@@ -62,10 +78,8 @@ class _FlashcardScreenState extends State<FlashcardScreen>
       return;
     }
 
-    final currentFlipped = _isCurrentCardFlipped();
-    setState(() {
-      _flippedStates[_currentIndex] = !currentFlipped;
-    });
+    final currentFlipped = _controller.isCurrentCardFlipped;
+    _controller.flipCurrentCard();
 
     if (!currentFlipped) {
       _flipController.forward();
@@ -75,16 +89,7 @@ class _FlashcardScreenState extends State<FlashcardScreen>
   }
 
   void _onPageChanged(int index) {
-    setState(() {
-      _currentIndex = index;
-      // Sync animation controller with the new card's flip state
-      final isFlipped = _flippedStates[index] ?? false;
-      if (isFlipped) {
-        _flipController.value = 1.0;
-      } else {
-        _flipController.value = 0.0;
-      }
-    });
+    _controller.goToCard(index);
   }
 
   @override
@@ -107,8 +112,8 @@ class _FlashcardScreenState extends State<FlashcardScreen>
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: <Widget>[
                   QuizProgressBar(
-                    currentIndex: _currentIndex,
-                    total: widget.flashcards.length,
+                    currentIndex: _controller.currentIndex,
+                    total: _controller.totalCards,
                   ),
                   SizedBox(
                     height: ResponsiveSizer.spacingFromConstraints(
@@ -119,14 +124,14 @@ class _FlashcardScreenState extends State<FlashcardScreen>
                   Row(
                     children: <Widget>[
                       Text(
-                        'Card ${_currentIndex + 1}',
+                        'Card ${_controller.currentIndex + 1}',
                         style: textTheme.labelLarge?.copyWith(
                           fontWeight: FontWeight.w600,
                         ),
                       ),
                       const Spacer(),
                       Text(
-                        '${_currentIndex + 1} of ${widget.flashcards.length}',
+                        '${_controller.currentIndex + 1} of ${_controller.totalCards}',
                         style: textTheme.labelMedium?.copyWith(
                           color: theme.colorScheme.onSurface
                               .withValues(alpha: 0.6),
@@ -149,20 +154,25 @@ class _FlashcardScreenState extends State<FlashcardScreen>
                           onPageChanged: _onPageChanged,
                           itemCount: widget.flashcards.length,
                           itemBuilder: (BuildContext context, int index) {
-                            final isCardFlipped = _flippedStates[index] ?? false;
-                            final isCurrentCard = index == _currentIndex;
-                            
+                            final isCardFlipped =
+                                _controller.isCardFlipped(index);
+                            final isCurrentCard =
+                                index == _controller.currentIndex;
+
                             return GestureDetector(
                               onTap: isCurrentCard ? _flipCard : null,
                               child: AnimatedBuilder(
-                                animation: isCurrentCard ? _flipAnimation : const AlwaysStoppedAnimation(0),
+                                animation: isCurrentCard
+                                    ? _flipAnimation
+                                    : const AlwaysStoppedAnimation(0),
                                 builder: (BuildContext context, Widget? child) {
                                   // For current card, use animation value; for others, use stored state
-                                  final animationValue = isCurrentCard && _flipController.isAnimating
+                                  final animationValue = isCurrentCard &&
+                                          _flipController.isAnimating
                                       ? _flipAnimation.value
                                       : (isCardFlipped ? 1.0 : 0.0);
-                                  final angle =
-                                      animationValue * 3.14159; // π radians = 180 degrees
+                                  final angle = animationValue *
+                                      3.14159; // π radians = 180 degrees
                                   final isFrontVisible =
                                       angle < 1.5708; // π/2 = 90 degrees
 
@@ -230,7 +240,7 @@ class _FlashcardScreenState extends State<FlashcardScreen>
                           },
                         ),
                         // Left edge indicator (Previous)
-                        if (_currentIndex > 0)
+                        if (!_controller.isFirstCard)
                           Positioned(
                             left: 0,
                             top: 0,
@@ -240,12 +250,14 @@ class _FlashcardScreenState extends State<FlashcardScreen>
                                 width: 40,
                                 height: 40,
                                 decoration: BoxDecoration(
-                                  color: theme.colorScheme.surfaceContainerHighest
+                                  color: theme
+                                      .colorScheme.surfaceContainerHighest
                                       .withValues(alpha: 0.9),
                                   shape: BoxShape.circle,
                                   boxShadow: <BoxShadow>[
                                     BoxShadow(
-                                      color: Colors.black.withValues(alpha: 0.1),
+                                      color:
+                                          Colors.black.withValues(alpha: 0.1),
                                       blurRadius: 8,
                                       offset: const Offset(2, 0),
                                     ),
@@ -260,7 +272,7 @@ class _FlashcardScreenState extends State<FlashcardScreen>
                             ),
                           ),
                         // Right edge indicator (Next)
-                        if (_currentIndex < widget.flashcards.length - 1)
+                        if (!_controller.isLastCard)
                           Positioned(
                             right: 0,
                             top: 0,
@@ -270,12 +282,14 @@ class _FlashcardScreenState extends State<FlashcardScreen>
                                 width: 40,
                                 height: 40,
                                 decoration: BoxDecoration(
-                                  color: theme.colorScheme.surfaceContainerHighest
+                                  color: theme
+                                      .colorScheme.surfaceContainerHighest
                                       .withValues(alpha: 0.9),
                                   shape: BoxShape.circle,
                                   boxShadow: <BoxShadow>[
                                     BoxShadow(
-                                      color: Colors.black.withValues(alpha: 0.1),
+                                      color:
+                                          Colors.black.withValues(alpha: 0.1),
                                       blurRadius: 8,
                                       offset: const Offset(-2, 0),
                                     ),
@@ -303,12 +317,14 @@ class _FlashcardScreenState extends State<FlashcardScreen>
                     child: FilledButton.icon(
                       onPressed: _flipCard,
                       icon: Icon(
-                        _isCurrentCardFlipped()
+                        _controller.isCurrentCardFlipped
                             ? Icons.refresh
                             : Icons.flip,
                       ),
                       label: Text(
-                        _isCurrentCardFlipped() ? 'Flip Back' : 'Flip Card',
+                        _controller.isCurrentCardFlipped
+                            ? 'Flip Back'
+                            : 'Flip Card',
                       ),
                       style: FilledButton.styleFrom(
                         padding: EdgeInsets.symmetric(

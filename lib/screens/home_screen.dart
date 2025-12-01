@@ -1,16 +1,12 @@
-import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:testmaker/controllers/home_controller.dart';
 import 'package:testmaker/models/course.dart';
 import 'package:testmaker/models/flashcard.dart';
 import 'package:testmaker/models/question.dart';
 import 'package:testmaker/screens/flashcard_screen.dart';
 import 'package:testmaker/screens/pdf_viewer_screen.dart';
 import 'package:testmaker/screens/quiz_screen.dart';
-import 'package:testmaker/services/course_service.dart';
-import 'package:testmaker/services/flashcard_generator_service.dart';
-import 'package:testmaker/services/flashcard_service.dart';
-import 'package:testmaker/services/pdf_text_extractor.dart';
 import 'package:testmaker/services/question_generator_service.dart';
 import 'package:testmaker/services/quiz_service.dart';
 import 'package:testmaker/utils/responsive_sizer.dart';
@@ -43,149 +39,44 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  final QuizService _quizService = const QuizService();
-  final FlashcardService _flashcardService = const FlashcardService();
-  final CourseService _courseService = CourseService();
-  final PdfTextExtractor _pdfTextExtractor = const PdfTextExtractor();
-  final QuestionGeneratorService _questionGenerator =
-      const QuestionGeneratorService(
-    questionCount: 10,
-  );
-
-  final FlashcardGeneratorService _flashcardGenerator =
-      const FlashcardGeneratorService();
-
-  List<Course> _courses = <Course>[];
-  Course? _selectedCourse;
-  bool _isLoadingCourses = true;
-  bool _isLoading = false;
-  bool _isCustomLoading = false;
-  bool _isFlashcardLoading = false;
-  bool _isPdfLoading = false;
-  bool _isGeneratingQuestions = false;
-  bool _isGeneratingFlashcards = false;
-  String? _error;
-  bool _isFabExpanded = false;
+  late final HomeController _controller;
 
   @override
   void initState() {
     super.initState();
-    _loadCourses();
-    _loadApiKey();
+    _controller = HomeController();
+    _controller
+      ..addListener(_onControllerChanged)
+      ..initialize();
   }
 
-  /// Loads the API key from local storage on app start.
-  Future<void> _loadApiKey() async {
-    await QuestionGeneratorService.getApiKey();
+  @override
+  void dispose() {
+    _controller
+      ..removeListener(_onControllerChanged)
+      ..dispose();
+    super.dispose();
   }
 
-  /// Loads all courses from local storage.
-  ///
-  /// Also updates the selected course reference to ensure it points to
-  /// the latest data from storage.
-  Future<void> _loadCourses() async {
-    setState(() {
-      _isLoadingCourses = true;
-    });
-
-    try {
-      final courses = await _courseService.getAllCourses();
-      if (mounted) {
-        // Update selected course to point to the latest data from storage
-        Course? updatedSelectedCourse;
-        if (_selectedCourse != null) {
-          try {
-            updatedSelectedCourse = courses.firstWhere(
-              (Course c) => c.id == _selectedCourse!.id,
-            );
-          } on Exception catch (_) {
-            // Selected course was deleted, clear selection
-            updatedSelectedCourse = null;
-          }
-        }
-
-        setState(() {
-          _courses = courses;
-          _selectedCourse = updatedSelectedCourse;
-          _isLoadingCourses = false;
-        });
-      }
-    } on Exception catch (e) {
-      if (kDebugMode) {
-        print('[HomeScreen._loadCourses] Failed to load courses: $e');
-      }
-      if (mounted) {
-        setState(() {
-          _isLoadingCourses = false;
-        });
-      }
+  void _onControllerChanged() {
+    if (mounted) {
+      setState(() {});
     }
   }
 
   /// Creates a new course with the given name.
-  ///
-  /// After creation, reloads courses from storage and selects the newly
-  /// created course to ensure UI consistency.
   Future<void> _createCourse(String name) async {
-    if (name.trim().isEmpty) {
-      return;
-    }
-
-    try {
-      // Create the course and get the returned course object
-      final newCourse = await _courseService.createCourse(name.trim());
-
-      // Reload courses from storage to ensure consistency
-      if (mounted) {
-        await _loadCourses();
-
-        // Find and select the newly created course by ID (more reliable than using last)
-        if (mounted && _courses.isNotEmpty) {
-          try {
-            final createdCourse = _courses.firstWhere(
-              (Course c) => c.id == newCourse.id,
-            );
-            setState(() {
-              _selectedCourse = createdCourse;
-            });
-          } on Exception catch (e) {
-            if (kDebugMode) {
-              print('[HomeScreen._createCourse] Failed to select course: $e');
-            }
-            // If course not found (shouldn't happen), select the last one
-            if (mounted) {
-              setState(() {
-                _selectedCourse = _courses.last;
-              });
-            }
-          }
-        }
-      }
-    } on Exception catch (e) {
-      if (kDebugMode) {
-        print('[HomeScreen._createCourse] Failed to create course: $e');
-      }
-      // Reload courses even on error to ensure UI matches storage
-      if (mounted) {
-        await _loadCourses();
-      }
-    }
+    await _controller.createCourse(name);
   }
 
   /// Shows a beautifully designed dialog to create a new course.
-  ///
-  /// This dialog follows Apple's Human Interface Guidelines with:
-  ///  - Generous padding and spacing
-  ///  - Soft rounded corners and subtle shadows
-  ///  - Smooth animations and transitions
-  ///  - Clear visual hierarchy and focus states
   Future<void> _showCreateCourseDialog() async {
-    final controller = TextEditingController();
+    final textController = TextEditingController();
     final result = await showDialog<String>(
       context: context,
       barrierColor: Colors.black.withValues(alpha: 0.4),
       builder: (BuildContext context) {
-        return _CreateCourseDialog(controller: controller);
+        return _CreateCourseDialog(controller: textController);
       },
     );
 
@@ -195,92 +86,15 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   /// Deletes a course from local storage.
-  ///
-  /// After deletion, reloads courses from storage to ensure UI consistency.
   Future<void> _deleteCourse(Course course) async {
-    try {
-      await _courseService.deleteCourse(course.id);
-
-      // Reload courses from storage to ensure consistency
-      if (mounted) {
-        await _loadCourses();
-
-        // Clear selection if the deleted course was selected
-        if (mounted && _selectedCourse?.id == course.id) {
-          setState(() {
-            _selectedCourse = null;
-          });
-        }
-      }
-    } on Exception catch (e) {
-      if (kDebugMode) {
-        print('[HomeScreen._deleteCourse] Failed to delete course: $e');
-      }
-      // Even if deletion fails, reload to ensure UI matches storage
-      if (mounted) {
-        await _loadCourses();
-      }
-    }
+    await _controller.deleteCourse(course.id);
   }
 
   /// Uploads a PDF file to the selected course.
-  Future<void> _uploadPdfToCourse(Course course) async {
-    setState(() {
-      _isPdfLoading = true;
-      _error = null;
-    });
-
-    try {
-      final result = await FilePicker.platform.pickFiles(
-        type: FileType.custom,
-        allowedExtensions: <String>['pdf'],
-      );
-
-      if (result == null || result.files.isEmpty) {
-        if (mounted) {
-          setState(() {
-            _isPdfLoading = false;
-          });
-        }
-        return;
-      }
-
-      final file = result.files.first;
-      final filePath = file.path;
-
-      if (filePath == null) {
-        if (mounted) {
-          setState(() {
-            _error = 'Selected file path could not be read.';
-            _isPdfLoading = false;
-          });
-        }
-        return;
-      }
-
-      await _courseService.addPdfToCourse(course.id, filePath);
-
-      // Reload courses to get the updated data.
-      await _loadCourses();
-
-      if (mounted) {
-        setState(() {
-          _isPdfLoading = false;
-          _error = null;
-        });
-      }
-    } on Exception catch (e) {
-      if (kDebugMode) {
-        print('[HomeScreen._uploadPdfToCourse] Failed to upload PDF: $e');
-      }
-      if (!mounted) {
-        return;
-      }
-      setState(() {
-        _error = 'Unable to read that PDF file. Please try again.';
-        _isPdfLoading = false;
-      });
-    }
+  Future<void> _uploadPdfToCourse(Course? course) async {
+    if (course == null) return;
+    _controller.selectCourse(course);
+    await _controller.uploadPdfToCourse();
   }
 
   /// Opens a PDF viewer for the given PDF path.
@@ -296,11 +110,6 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   /// Generates questions from a PDF file using the LLM.
-  ///
-  /// This method extracts text from the PDF, then uses Google's Gemini AI
-  /// to generate quiz questions based on the study material content.
-  ///
-  /// First checks for API key, then prompts for question count.
   Future<void> _generateQuestionsFromPdf(Course course, String pdfPath) async {
     // Check if API key is set
     final hasApiKey = await QuestionGeneratorService.hasApiKey();
@@ -317,92 +126,23 @@ class _HomeScreenState extends State<HomeScreen> {
       return; // User cancelled
     }
 
-    setState(() {
-      _isGeneratingQuestions = true;
-      _error = null;
-    });
+    _controller.selectCourse(course);
+    final success = await _controller.generateQuestionsFromPdf(
+      pdfPath,
+      questionCount,
+    );
 
-    try {
-      // Extract text from PDF (limited to first 10 pages for performance)
-      final pdfText = await _pdfTextExtractor.extractTextLimited(pdfPath);
-
-      if (pdfText.isEmpty) {
-        throw Exception('No text content found in PDF');
-      }
-
-      if (kDebugMode) {
-        print(
-          '[HomeScreen._generateQuestionsFromPdf] Extracted ${pdfText.length} characters from PDF',
-        );
-      }
-
-      // Generate questions using LLM with the specified count
-      final questions = await _questionGenerator.generateQuestionsFromText(
-        pdfText,
-        questionCount: questionCount,
+    if (success && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Successfully generated $questionCount questions!'),
+          backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
       );
-
-      // Add generated questions to the course
-      await _courseService.addQuizToCourse(course.id, questions);
-
-      // Reload courses to get the updated data
-      await _loadCourses();
-
-      if (mounted) {
-        setState(() {
-          _isGeneratingQuestions = false;
-          _error = null;
-        });
-
-        // Show success message
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                'Successfully generated ${questions.length} questions!',
-              ),
-              backgroundColor: Theme.of(context).colorScheme.primaryContainer,
-              behavior: SnackBarBehavior.floating,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-            ),
-          );
-        }
-      }
-    } on Exception catch (e) {
-      if (kDebugMode) {
-        print('[HomeScreen._generateQuestionsFromPdf] Failed: $e');
-      }
-      if (!mounted) {
-        return;
-      }
-
-      // Extract a user-friendly error message
-      var errorMessage = e.toString();
-      if (errorMessage.contains('API key not set')) {
-        await _showApiKeyDialog();
-        setState(() {
-          _isGeneratingQuestions = false;
-          _error = null;
-        });
-        return;
-      } else if (errorMessage.contains('No text content found')) {
-        errorMessage =
-            'Could not extract text from the PDF.\n\nPlease ensure the PDF contains readable text content.';
-      } else if (errorMessage.contains('No questions were generated') ||
-          errorMessage.contains('Could not parse')) {
-        errorMessage =
-            'The AI could not generate valid questions.\n\nThis might be because:\n'
-            '• The PDF content is too short or unclear\n'
-            '• The AI response format was unexpected\n\n'
-            'Please try again.';
-      }
-
-      setState(() {
-        _error = errorMessage;
-        _isGeneratingQuestions = false;
-      });
     }
   }
 
@@ -615,155 +355,22 @@ class _HomeScreenState extends State<HomeScreen> {
   ///
   /// Immediately updates the local state to remove the PDF from the UI,
   /// then performs the async deletion and reloads from storage.
-  Future<void> _deletePdfFromCourse(Course course, String pdfPath) async {
-    // Immediately update local state to remove the PDF from the widget tree
-    // This prevents the Dismissible widget error
-    if (mounted && _selectedCourse?.id == course.id) {
-      final updatedPdfs =
-          course.pdfs.where((String path) => path != pdfPath).toList();
-      setState(() {
-        _selectedCourse = course.copyWith(pdfs: updatedPdfs);
-      });
-    }
-
-    try {
-      await _courseService.deletePdfFromCourse(course.id, pdfPath);
-
-      if (mounted) {
-        await _loadCourses();
-        if (_selectedCourse?.id == course.id) {
-          setState(() {
-            _selectedCourse = _courses.firstWhere(
-              (Course c) => c.id == course.id,
-            );
-          });
-        }
-      }
-    } on Exception catch (e) {
-      if (kDebugMode) {
-        print('[HomeScreen._deletePdfFromCourse] Failed to delete PDF: $e');
-      }
-      // Reload courses even on error to ensure UI matches storage
-      if (mounted) {
-        await _loadCourses();
-      }
-    }
+  Future<void> _deletePdfFromCourse(Course course, int pdfIndex) async {
+    _controller.selectCourse(course);
+    await _controller.deletePdfFromCourse(pdfIndex);
   }
 
   /// Deletes a quiz from a course.
-  ///
-  /// Note: State update should already be done in onDismissed before calling this.
-  /// This method performs the async deletion and reloads from storage.
   Future<void> _deleteQuizFromCourse(Course course, int quizIndex) async {
-    try {
-      await _courseService.deleteQuizFromCourse(course.id, quizIndex);
-
-      if (mounted) {
-        await _loadCourses();
-        // Update _selectedCourse to match the latest data from storage
-        if (_selectedCourse?.id == course.id) {
-          setState(() {
-            _selectedCourse = _courses.firstWhere(
-              (Course c) => c.id == course.id,
-              orElse: () => _selectedCourse!,
-            );
-          });
-        }
-      }
-    } on Exception catch (e) {
-      if (kDebugMode) {
-        print('[HomeScreen._deleteQuizFromCourse] Failed to delete quiz: $e');
-      }
-      // Reload courses even on error to ensure UI matches storage
-      if (mounted) {
-        await _loadCourses();
-        if (_selectedCourse?.id == course.id) {
-          setState(() {
-            _selectedCourse = _courses.firstWhere(
-              (Course c) => c.id == course.id,
-              orElse: () => _selectedCourse!,
-            );
-          });
-        }
-      }
-    }
+    _controller.selectCourse(course);
+    await _controller.deleteQuizFromCourse(quizIndex);
   }
 
   /// Uploads a quiz JSON file to the selected course.
-  Future<void> _uploadQuizToCourse(Course course) async {
-    setState(() {
-      _isCustomLoading = true;
-      _error = null;
-    });
-
-    try {
-      final result = await FilePicker.platform.pickFiles(
-        type: FileType.custom,
-        allowedExtensions: <String>['json'],
-      );
-
-      if (result == null || result.files.isEmpty) {
-        if (mounted) {
-          setState(() {
-            _isCustomLoading = false;
-          });
-        }
-        return;
-      }
-
-      final file = result.files.first;
-      final filePath = file.path;
-
-      if (filePath == null) {
-        if (mounted) {
-          setState(() {
-            _error = 'Selected file path could not be read.';
-            _isCustomLoading = false;
-          });
-        }
-        return;
-      }
-
-      final questions = await _quizService.loadQuestionsFromFile(filePath);
-
-      if (!mounted) {
-        return;
-      }
-
-      if (questions.isEmpty) {
-        setState(() {
-          _error = 'The selected JSON did not contain any questions.';
-          _isCustomLoading = false;
-        });
-        return;
-      }
-
-      await _courseService.addQuizToCourse(course.id, questions);
-
-      // Reload courses to get the updated data.
-      await _loadCourses();
-
-      if (mounted) {
-        setState(() {
-          _isCustomLoading = false;
-          _error = null;
-        });
-      }
-    } on Exception catch (e) {
-      if (kDebugMode) {
-        print(
-          '[HomeScreen._uploadQuizToCourse] Failed to upload quiz: $e',
-        );
-      }
-      if (!mounted) {
-        return;
-      }
-      setState(() {
-        _error =
-            'Unable to read that JSON file.\nPlease make sure it contains a list of questions.';
-        _isCustomLoading = false;
-      });
-    }
+  Future<void> _uploadQuizToCourse(Course? course) async {
+    if (course == null) return;
+    _controller.selectCourse(course);
+    await _controller.uploadQuizToCourse();
   }
 
   /// Starts a quiz from the selected course and quiz index.
@@ -789,92 +396,16 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   /// Uploads a flashcard JSON file to the selected course.
-  Future<void> _uploadFlashcardsToCourse(Course course) async {
-    setState(() {
-      _isFlashcardLoading = true;
-      _error = null;
-    });
-
-    try {
-      final result = await FilePicker.platform.pickFiles(
-        type: FileType.custom,
-        allowedExtensions: <String>['json'],
-      );
-
-      if (result == null || result.files.isEmpty) {
-        if (mounted) {
-          setState(() {
-            _isFlashcardLoading = false;
-          });
-        }
-        return;
-      }
-
-      final file = result.files.first;
-      final filePath = file.path;
-
-      if (filePath == null) {
-        if (mounted) {
-          setState(() {
-            _error = 'Selected file path could not be read.';
-            _isFlashcardLoading = false;
-          });
-        }
-        return;
-      }
-
-      final flashcards =
-          await _flashcardService.loadFlashcardsFromFile(filePath);
-
-      if (!mounted) {
-        return;
-      }
-
-      if (flashcards.isEmpty) {
-        setState(() {
-          _error = 'The selected JSON did not contain any flashcards.';
-          _isFlashcardLoading = false;
-        });
-        return;
-      }
-
-      await _courseService.addFlashcardSetToCourse(course.id, flashcards);
-
-      // Reload courses to get the updated data.
-      await _loadCourses();
-
-      if (mounted) {
-        setState(() {
-          _isFlashcardLoading = false;
-          _error = null;
-        });
-      }
-    } on Exception catch (e) {
-      if (kDebugMode) {
-        print(
-          '[HomeScreen._uploadFlashcardsToCourse] Failed to upload flashcards: $e',
-        );
-      }
-      if (!mounted) {
-        return;
-      }
-      setState(() {
-        _error =
-            'Unable to read that JSON file.\nPlease make sure it contains a list of flashcards.';
-        _isFlashcardLoading = false;
-      });
-    }
+  Future<void> _uploadFlashcardsToCourse(Course? course) async {
+    if (course == null) return;
+    _controller.selectCourse(course);
+    await _controller.uploadFlashcardsToCourse();
   }
 
   /// Generates flashcards from a PDF file using the LLM.
-  ///
-  /// This method extracts text from the PDF, then uses Google's Gemini AI
-  /// to generate flashcards based on the study material content.
-  ///
-  /// First checks for API key, then prompts for flashcard count.
   Future<void> _generateFlashcardsFromPdf(Course course, String pdfPath) async {
     // Check if API key is set
-    final hasApiKey = await FlashcardGeneratorService.hasApiKey();
+    final hasApiKey = await QuestionGeneratorService.hasApiKey();
     if (!hasApiKey) {
       final apiKeySet = await _showApiKeyDialog();
       if (!apiKeySet) {
@@ -888,92 +419,23 @@ class _HomeScreenState extends State<HomeScreen> {
       return; // User cancelled
     }
 
-    setState(() {
-      _isGeneratingFlashcards = true;
-      _error = null;
-    });
+    _controller.selectCourse(course);
+    final success = await _controller.generateFlashcardsFromPdf(
+      pdfPath,
+      flashcardCount,
+    );
 
-    try {
-      // Extract text from PDF (limited to first 10 pages for performance)
-      final pdfText = await _pdfTextExtractor.extractTextLimited(pdfPath);
-
-      if (pdfText.isEmpty) {
-        throw Exception('No text content found in PDF');
-      }
-
-      if (kDebugMode) {
-        print(
-          '[HomeScreen._generateFlashcardsFromPdf] Extracted ${pdfText.length} characters from PDF',
-        );
-      }
-
-      // Generate flashcards using LLM with the specified count
-      final flashcards = await _flashcardGenerator.generateFlashcardsFromText(
-        pdfText,
-        flashcardCount: flashcardCount,
+    if (success && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Successfully generated $flashcardCount flashcards!'),
+          backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
       );
-
-      // Add generated flashcards to the course
-      await _courseService.addFlashcardSetToCourse(course.id, flashcards);
-
-      // Reload courses to get the updated data
-      await _loadCourses();
-
-      if (mounted) {
-        setState(() {
-          _isGeneratingFlashcards = false;
-          _error = null;
-        });
-
-        // Show success message
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                'Successfully generated ${flashcards.length} flashcards!',
-              ),
-              backgroundColor: Theme.of(context).colorScheme.primaryContainer,
-              behavior: SnackBarBehavior.floating,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-            ),
-          );
-        }
-      }
-    } on Exception catch (e) {
-      if (kDebugMode) {
-        print('[HomeScreen._generateFlashcardsFromPdf] Failed: $e');
-      }
-      if (!mounted) {
-        return;
-      }
-
-      // Extract a user-friendly error message
-      var errorMessage = e.toString();
-      if (errorMessage.contains('API key not set')) {
-        await _showApiKeyDialog();
-        setState(() {
-          _isGeneratingFlashcards = false;
-          _error = null;
-        });
-        return;
-      } else if (errorMessage.contains('No text content found')) {
-        errorMessage =
-            'Could not extract text from the PDF.\n\nPlease ensure the PDF contains readable text content.';
-      } else if (errorMessage.contains('No flashcards were generated') ||
-          errorMessage.contains('Could not parse')) {
-        errorMessage =
-            'The AI could not generate valid flashcards.\n\nThis might be because:\n'
-            '• The PDF content is too short or unclear\n'
-            '• The AI response format was unexpected\n\n'
-            'Please try again.';
-      }
-
-      setState(() {
-        _error = errorMessage;
-        _isGeneratingFlashcards = false;
-      });
     }
   }
 
@@ -1092,27 +554,23 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   /// Starts the default sample quiz.
-  ///
-  /// Questions and options are shuffled before starting the quiz to prevent
-  /// users from memorizing positions. A new random order is generated each time.
   Future<void> _startQuiz() async {
-    setState(() {
-      _isLoading = true;
-      _error = null;
-    });
-
     try {
-      final questions = await _quizService.loadQuestions(); // [HomeScreen]
+      const quizService = QuizService();
+      final questions = await quizService.loadQuestions();
 
       if (!mounted) {
         return;
       }
 
       if (questions.isEmpty) {
-        setState(() {
-          _error = 'No questions found in the quiz file.';
-          _isLoading = false;
-        });
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('No questions found in the quiz file.'),
+            ),
+          );
+        }
         return;
       }
 
@@ -1122,23 +580,18 @@ class _HomeScreenState extends State<HomeScreen> {
       await Navigator.of(context).push(
         _createQuizRoute(shuffledQuestions),
       );
-
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
     } on Exception catch (e) {
       if (kDebugMode) {
         print('[HomeScreen._startQuiz] Failed to load quiz: $e');
       }
-      if (!mounted) {
-        return;
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content:
+                Text('Unable to load the quiz. Please check the JSON file.'),
+          ),
+        );
       }
-      setState(() {
-        _error = 'Unable to load the quiz. Please check the JSON file.';
-        _isLoading = false;
-      });
     }
   }
 
@@ -1215,7 +668,7 @@ class _HomeScreenState extends State<HomeScreen> {
           },
         ),
       ),
-      floatingActionButton: _selectedCourse != null
+      floatingActionButton: _controller.selectedCourse != null
           ? _buildFloatingActionButton(theme, textTheme)
           : null,
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
@@ -1246,10 +699,9 @@ class _HomeScreenState extends State<HomeScreen> {
             padding: const EdgeInsets.all(20),
             child: InkWell(
               onTap: () {
-                setState(() {
-                  _selectedCourse = null;
-                  _error = null;
-                });
+                _controller
+                  ..selectCourse(null)
+                  ..clearError();
               },
               borderRadius: BorderRadius.circular(12),
               child: Padding(
@@ -1283,18 +735,19 @@ class _HomeScreenState extends State<HomeScreen> {
           const Divider(height: 1),
           // Course list
           Expanded(
-            child: _isLoadingCourses
+            child: _controller.isLoadingCourses
                 ? const Center(
                     child: CircularProgressIndicator(),
                   )
-                : _courses.isEmpty
+                : _controller.courses.isEmpty
                     ? _buildEmptyCoursesState(theme, textTheme)
                     : ListView.builder(
                         padding: const EdgeInsets.symmetric(vertical: 8),
-                        itemCount: _courses.length,
+                        itemCount: _controller.courses.length,
                         itemBuilder: (BuildContext context, int index) {
-                          final course = _courses[index];
-                          final isSelected = _selectedCourse?.id == course.id;
+                          final course = _controller.courses[index];
+                          final isSelected =
+                              _controller.selectedCourse?.id == course.id;
 
                           return _buildCourseItemWithSwipe(
                             theme,
@@ -1412,10 +865,9 @@ class _HomeScreenState extends State<HomeScreen> {
   ) {
     return InkWell(
       onTap: () {
-        setState(() {
-          _selectedCourse = course;
-          _error = null;
-        });
+        _controller
+          ..selectCourse(course)
+          ..clearError();
       },
       child: Container(
         margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -1522,7 +974,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: <Widget>[
-                  if (_selectedCourse == null) ...<Widget>[
+                  if (_controller.selectedCourse == null) ...<Widget>[
                     _buildWelcomeContent(theme, textTheme),
                   ] else ...<Widget>[
                     _buildCourseContent(theme, textTheme),
@@ -1589,11 +1041,11 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
         const SizedBox(height: 24),
         _buildUploadArea(theme, textTheme),
-        if (_error != null)
+        if (_controller.error != null)
           Padding(
             padding: const EdgeInsets.only(top: 12),
             child: Text(
-              _error!,
+              _controller.error!,
               style: textTheme.bodySmall?.copyWith(
                 color: theme.colorScheme.error,
               ),
@@ -1603,7 +1055,7 @@ class _HomeScreenState extends State<HomeScreen> {
         SizedBox(
           height: 54,
           child: ElevatedButton(
-            onPressed: _isLoading ? null : _startQuiz,
+            onPressed: _startQuiz,
             style: ElevatedButton.styleFrom(
               elevation: 0,
               backgroundColor: theme.colorScheme.primary,
@@ -1619,26 +1071,13 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             child: AnimatedSwitcher(
               duration: const Duration(milliseconds: 200),
-              child: _isLoading
-                  ? SizedBox(
-                      key: const ValueKey<String>('loader'),
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2.5,
-                        valueColor: AlwaysStoppedAnimation<Color>(
-                          theme.colorScheme.onPrimary,
-                        ),
-                      ),
-                    )
-                  : Text(
-                      'Start Sample Quiz',
-                      key: const ValueKey<String>('label'),
-                      style: textTheme.labelLarge?.copyWith(
-                        color: theme.colorScheme.onPrimary,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
+              child: Text(
+                'Start Sample Quiz',
+                style: textTheme.labelLarge?.copyWith(
+                  color: theme.colorScheme.onPrimary,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
             ),
           ),
         ),
@@ -1655,11 +1094,11 @@ class _HomeScreenState extends State<HomeScreen> {
     TextTheme textTheme,
   ) {
     // Guard against null _selectedCourse (shouldn't happen, but safety first)
-    if (_selectedCourse == null) {
+    if (_controller.selectedCourse == null) {
       return const SizedBox.shrink();
     }
 
-    final course = _selectedCourse!;
+    final course = _controller.selectedCourse!;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1742,11 +1181,11 @@ class _HomeScreenState extends State<HomeScreen> {
                       child: SizedBox(
                         height: 36,
                         child: OutlinedButton.icon(
-                          onPressed: _isGeneratingQuestions
+                          onPressed: _controller.isGeneratingQuestions
                               ? null
                               : () =>
                                   _generateQuestionsFromPdf(course, pdfPath),
-                          icon: _isGeneratingQuestions
+                          icon: _controller.isGeneratingQuestions
                               ? SizedBox(
                                   width: 14,
                                   height: 14,
@@ -1759,7 +1198,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                 )
                               : const Icon(Icons.auto_awesome, size: 16),
                           label: Text(
-                            _isGeneratingQuestions
+                            _controller.isGeneratingQuestions
                                 ? 'Generating...'
                                 : 'Generate Questions',
                             style: textTheme.labelSmall?.copyWith(
@@ -1781,11 +1220,11 @@ class _HomeScreenState extends State<HomeScreen> {
                       child: SizedBox(
                         height: 36,
                         child: OutlinedButton.icon(
-                          onPressed: _isGeneratingFlashcards
+                          onPressed: _controller.isGeneratingFlashcards
                               ? null
                               : () =>
                                   _generateFlashcardsFromPdf(course, pdfPath),
-                          icon: _isGeneratingFlashcards
+                          icon: _controller.isGeneratingFlashcards
                               ? SizedBox(
                                   width: 14,
                                   height: 14,
@@ -1798,7 +1237,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                 )
                               : const Icon(Icons.style_outlined, size: 16),
                           label: Text(
-                            _isGeneratingFlashcards
+                            _controller.isGeneratingFlashcards
                                 ? 'Generating...'
                                 : 'Generate Flashcards',
                             style: textTheme.labelSmall?.copyWith(
@@ -1890,11 +1329,11 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ],
         ],
-        if (_error != null)
+        if (_controller.error != null)
           Padding(
             padding: const EdgeInsets.only(top: 12),
             child: Text(
-              _error!,
+              _controller.error!,
               style: textTheme.bodySmall?.copyWith(
                 color: theme.colorScheme.error,
               ),
@@ -1975,7 +1414,7 @@ class _HomeScreenState extends State<HomeScreen> {
         return confirmed ?? false;
       },
       onDismissed: (DismissDirection direction) {
-        _deletePdfFromCourse(course, pdfPath);
+        _deletePdfFromCourse(course, pdfIndex);
       },
       child: _buildPdfCard(theme, textTheme, pdfIndex, fileName, pdfPath),
     );
@@ -2125,18 +1564,17 @@ class _HomeScreenState extends State<HomeScreen> {
         // Immediately update state synchronously before async operations
         // This ensures the Dismissible widget is removed from the tree immediately
         if (mounted &&
-            _selectedCourse != null &&
-            _selectedCourse!.id == course.id) {
-          final currentCourse = _selectedCourse!;
+            _controller.selectedCourse != null &&
+            _controller.selectedCourse!.id == course.id) {
+          final currentCourse = _controller.selectedCourse!;
           if (quizIndex >= 0 && quizIndex < currentCourse.quizzes.length) {
             // Update state immediately to remove the quiz from the widget tree
             final updatedQuizzes = <List<Question>>[
               ...currentCourse.quizzes.sublist(0, quizIndex),
               ...currentCourse.quizzes.sublist(quizIndex + 1),
             ];
-            setState(() {
-              _selectedCourse = currentCourse.copyWith(quizzes: updatedQuizzes);
-            });
+            _controller
+                .selectCourse(currentCourse.copyWith(quizzes: updatedQuizzes));
             // Then perform async deletion
             _deleteQuizFromCourse(currentCourse, quizIndex);
           }
@@ -2287,9 +1725,9 @@ class _HomeScreenState extends State<HomeScreen> {
       onDismissed: (DismissDirection direction) {
         // Immediately update state synchronously before async operations
         if (mounted &&
-            _selectedCourse != null &&
-            _selectedCourse!.id == course.id) {
-          final currentCourse = _selectedCourse!;
+            _controller.selectedCourse != null &&
+            _controller.selectedCourse!.id == course.id) {
+          final currentCourse = _controller.selectedCourse!;
           if (flashcardSetIndex >= 0 &&
               flashcardSetIndex < currentCourse.flashcards.length) {
             // Update state immediately to remove the flashcard set from the widget tree
@@ -2297,10 +1735,9 @@ class _HomeScreenState extends State<HomeScreen> {
               ...currentCourse.flashcards.sublist(0, flashcardSetIndex),
               ...currentCourse.flashcards.sublist(flashcardSetIndex + 1),
             ];
-            setState(() {
-              _selectedCourse =
-                  currentCourse.copyWith(flashcards: updatedFlashcards);
-            });
+            _controller.selectCourse(
+              currentCourse.copyWith(flashcards: updatedFlashcards),
+            );
             // Then perform async deletion
             _deleteFlashcardSetFromCourse(currentCourse, flashcardSetIndex);
           }
@@ -2391,43 +1828,8 @@ class _HomeScreenState extends State<HomeScreen> {
     Course course,
     int flashcardSetIndex,
   ) async {
-    try {
-      await _courseService.deleteFlashcardSetFromCourse(
-        course.id,
-        flashcardSetIndex,
-      );
-
-      if (mounted) {
-        await _loadCourses();
-        // Update _selectedCourse to match the latest data from storage
-        if (_selectedCourse?.id == course.id) {
-          setState(() {
-            _selectedCourse = _courses.firstWhere(
-              (Course c) => c.id == course.id,
-              orElse: () => _selectedCourse!,
-            );
-          });
-        }
-      }
-    } on Exception catch (e) {
-      if (kDebugMode) {
-        print(
-          '[HomeScreen._deleteFlashcardSetFromCourse] Failed to delete flashcard set: $e',
-        );
-      }
-      // Reload courses even on error to ensure UI matches storage
-      if (mounted) {
-        await _loadCourses();
-        if (_selectedCourse?.id == course.id) {
-          setState(() {
-            _selectedCourse = _courses.firstWhere(
-              (Course c) => c.id == course.id,
-              orElse: () => _selectedCourse!,
-            );
-          });
-        }
-      }
-    }
+    _controller.selectCourse(course);
+    await _controller.deleteFlashcardSetFromCourse(flashcardSetIndex);
   }
 
   /// Builds the floating action button with dropdown menu for upload options.
@@ -2441,20 +1843,18 @@ class _HomeScreenState extends State<HomeScreen> {
       crossAxisAlignment: CrossAxisAlignment.end,
       children: <Widget>[
         // Expanded menu items with smooth slide-up and fade animations
-        if (_isFabExpanded) ...<Widget>[
+        if (_controller.isFabExpanded) ...<Widget>[
           _buildAnimatedFabMenuItem(
             theme: theme,
             textTheme: textTheme,
             icon: Icons.style_outlined,
             label: 'Upload Flashcards',
-            isLoading: _isFlashcardLoading,
+            isLoading: _controller.isFlashcardLoading,
             delay: 0,
-            onTap: _selectedCourse != null
+            onTap: _controller.selectedCourse != null
                 ? () {
-                    setState(() {
-                      _isFabExpanded = false;
-                    });
-                    _uploadFlashcardsToCourse(_selectedCourse!);
+                    _controller.closeFab();
+                    _uploadFlashcardsToCourse(_controller.selectedCourse);
                   }
                 : null,
           ),
@@ -2464,14 +1864,12 @@ class _HomeScreenState extends State<HomeScreen> {
             textTheme: textTheme,
             icon: Icons.upload_file_outlined,
             label: 'Upload Quiz',
-            isLoading: _isCustomLoading,
+            isLoading: _controller.isCustomLoading,
             delay: 50,
-            onTap: _selectedCourse != null
+            onTap: _controller.selectedCourse != null
                 ? () {
-                    setState(() {
-                      _isFabExpanded = false;
-                    });
-                    _uploadQuizToCourse(_selectedCourse!);
+                    _controller.closeFab();
+                    _uploadQuizToCourse(_controller.selectedCourse);
                   }
                 : null,
           ),
@@ -2481,14 +1879,12 @@ class _HomeScreenState extends State<HomeScreen> {
             textTheme: textTheme,
             icon: Icons.picture_as_pdf_outlined,
             label: 'Upload PDF',
-            isLoading: _isPdfLoading,
+            isLoading: _controller.isPdfLoading,
             delay: 100,
-            onTap: _selectedCourse != null
+            onTap: _controller.selectedCourse != null
                 ? () {
-                    setState(() {
-                      _isFabExpanded = false;
-                    });
-                    _uploadPdfToCourse(_selectedCourse!);
+                    _controller.closeFab();
+                    _uploadPdfToCourse(_controller.selectedCourse);
                   }
                 : null,
           ),
@@ -2497,13 +1893,11 @@ class _HomeScreenState extends State<HomeScreen> {
         // Main FAB button with smooth icon transformation
         FloatingActionButton(
           onPressed: () {
-            setState(() {
-              _isFabExpanded = !_isFabExpanded;
-            });
+            _controller.toggleFab();
           },
           backgroundColor: theme.colorScheme.primary,
           foregroundColor: theme.colorScheme.onPrimary,
-          elevation: _isFabExpanded ? 8 : 4,
+          elevation: _controller.isFabExpanded ? 8 : 4,
           child: AnimatedSwitcher(
             duration: const Duration(milliseconds: 300),
             transitionBuilder: (Widget child, Animation<double> animation) {
@@ -2516,8 +1910,8 @@ class _HomeScreenState extends State<HomeScreen> {
               );
             },
             child: Icon(
-              _isFabExpanded ? Icons.close : Icons.add,
-              key: ValueKey<bool>(_isFabExpanded),
+              _controller.isFabExpanded ? Icons.close : Icons.add,
+              key: ValueKey<bool>(_controller.isFabExpanded),
               size: 28,
             ),
           ),
@@ -2539,7 +1933,7 @@ class _HomeScreenState extends State<HomeScreen> {
     return TweenAnimationBuilder<double>(
       tween: Tween<double>(
         begin: 0,
-        end: _isFabExpanded ? 1.0 : 0.0,
+        end: _controller.isFabExpanded ? 1.0 : 0.0,
       ),
       duration: Duration(milliseconds: 300 + delay),
       curve: Curves.easeOutCubic,

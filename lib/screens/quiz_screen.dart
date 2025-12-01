@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:testmaker/controllers/quiz_controller.dart';
 import 'package:testmaker/models/question.dart';
 import 'package:testmaker/screens/result_screen.dart';
 import 'package:testmaker/utils/responsive_sizer.dart';
@@ -27,51 +28,32 @@ class QuizScreen extends StatefulWidget {
 }
 
 class _QuizScreenState extends State<QuizScreen> {
-  int _currentIndex = 0;
-  int _score = 0;
-  int? _selectedIndex;
-  bool _revealAnswer = false;
-  bool _isTransitioning = false;
-  final List<Map<String, dynamic>> _incorrectAnswers = <Map<String, dynamic>>[];
+  late final QuizController _controller;
 
-  Question get _currentQuestion => widget.questions[_currentIndex];
+  @override
+  void initState() {
+    super.initState();
+    _controller = QuizController(widget.questions);
+    _controller.addListener(_onControllerChanged);
+  }
+
+  @override
+  void dispose() {
+    _controller
+      ..removeListener(_onControllerChanged)
+      ..dispose();
+    super.dispose();
+  }
+
+  void _onControllerChanged() {
+    if (mounted) {
+      setState(() {});
+    }
+  }
 
   Future<void> _onOptionSelected(int index) async {
-    if (_isTransitioning || _revealAnswer) {
-      return;
-    }
-
-    setState(() {
-      _selectedIndex = index;
-      _revealAnswer = true;
-      _isTransitioning = true;
-    });
-
-    if (index == _currentQuestion.answerIndex) {
-      _score += 1;
-    } else {
-      // Track incorrect answer for review
-      _incorrectAnswers.add(<String, dynamic>{
-        'question': _currentQuestion,
-        'selectedIndex': index,
-      });
-    }
-
-    // Short pause so the user can see the feedback colors before moving on.
-    await Future<void>.delayed(const Duration(milliseconds: 700));
-
-    if (!mounted) {
-      return;
-    }
-
-    if (_currentIndex < widget.questions.length - 1) {
-      setState(() {
-        _currentIndex += 1;
-        _selectedIndex = null;
-        _revealAnswer = false;
-        _isTransitioning = false;
-      });
-    } else {
+    final isComplete = await _controller.selectOption(index);
+    if (isComplete && mounted) {
       await _goToResults();
     }
   }
@@ -90,9 +72,10 @@ class _QuizScreenState extends State<QuizScreen> {
           Animation<double> secondaryAnimation,
         ) {
           return ResultScreen(
-            totalQuestions: widget.questions.length,
-            correctAnswers: _score,
-            incorrectAnswers: hasExplanations ? _incorrectAnswers : null,
+            totalQuestions: _controller.totalQuestions,
+            correctAnswers: _controller.score,
+            incorrectAnswers:
+                hasExplanations ? _controller.incorrectAnswers : null,
           );
         },
         transitionsBuilder: (
@@ -134,21 +117,21 @@ class _QuizScreenState extends State<QuizScreen> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: <Widget>[
                   QuizProgressBar(
-                    currentIndex: _currentIndex,
-                    total: widget.questions.length,
+                    currentIndex: _controller.currentIndex,
+                    total: _controller.totalQuestions,
                   ),
                   const SizedBox(height: 16),
                   Row(
                     children: <Widget>[
                       Text(
-                        'Question ${_currentIndex + 1}',
+                        'Question ${_controller.currentIndex + 1}',
                         style: textTheme.labelLarge?.copyWith(
                           fontWeight: FontWeight.w600,
                         ),
                       ),
                       const Spacer(),
                       Text(
-                        '${_currentIndex + 1} of ${widget.questions.length}',
+                        '${_controller.currentIndex + 1} of ${_controller.totalQuestions}',
                         style: textTheme.labelMedium?.copyWith(
                           color: theme.colorScheme.onSurface
                               .withValues(alpha: 0.6),
@@ -180,7 +163,7 @@ class _QuizScreenState extends State<QuizScreen> {
                         );
                       },
                       child: _buildQuestionCard(
-                        key: ValueKey<int>(_currentIndex),
+                        key: ValueKey<int>(_controller.currentIndex),
                         theme: theme,
                         textTheme: textTheme,
                         constraints: constraints,
@@ -202,7 +185,7 @@ class _QuizScreenState extends State<QuizScreen> {
     required TextTheme textTheme,
     required BoxConstraints constraints,
   }) {
-    final question = _currentQuestion;
+    final question = _controller.currentQuestion;
 
     return Container(
       key: key,
@@ -241,7 +224,7 @@ class _QuizScreenState extends State<QuizScreen> {
               itemCount: question.options.length,
               itemBuilder: (BuildContext context, int index) {
                 final option = question.options[index];
-                final isSelected = _selectedIndex == index;
+                final isSelected = _controller.selectedIndex == index;
                 final isCorrect = question.answerIndex == index;
 
                 return QuizOptionCard(
@@ -249,7 +232,7 @@ class _QuizScreenState extends State<QuizScreen> {
                   index: index,
                   isSelected: isSelected,
                   isCorrect: isCorrect,
-                  isRevealed: _revealAnswer,
+                  isRevealed: _controller.revealAnswer,
                   onTap: () => _onOptionSelected(index),
                 );
               },
