@@ -1,14 +1,15 @@
 <div align="center">
 
-# 📚 TestMaker
+## 📚 TestMaker
 
-**A modern Flutter quiz application with AI-powered question generation**
+**A modern Flutter quiz & flashcard application with AI-powered content generation**
 
-*Transform your PDFs into interactive quizzes with a beautiful, Apple-inspired interface*
+*Transform your PDFs into interactive quizzes and flashcards with a beautiful, Apple-inspired interface.*
 
 [![Flutter](https://img.shields.io/badge/Flutter-3.6.1+-02569B?logo=flutter&logoColor=white)](https://flutter.dev)
 [![Dart](https://img.shields.io/badge/Dart-3.6.1+-0175C2?logo=dart&logoColor=white)](https://dart.dev)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![Platform](https://img.shields.io/badge/Platform-Android%20%7C%20iOS%20%7C%20Desktop-lightgrey)](#-requirements)
 
 ---
 
@@ -75,12 +76,32 @@ The codebase emphasizes:
 
 ---
 
+## 📑 Table of Contents
+
+- **[Overview](#-overview)**
+- **[Key Highlights](#-key-highlights)**
+- **[Design Philosophy](#-design-philosophy)**
+- **[Requirements](#-requirements)**
+- **[Quick Start](#-quick-start)**
+- **[Usage Guide](#-usage-guide)**
+  - **[Using Your Own JSON Quiz](#-using-your-own-json-quiz)**
+  - **[Flashcard JSON Format](#-flashcard-json-format)**
+  - **[Course Management](#-course-management)**
+  - **[AI-Powered Content Generation](#-ai-powered-content-generation)**
+- **[Data Storage](#-data-storage)**
+- **[Project Structure](#-project-structure)**
+- **[Development](#-development)**
+- **[Contributing](#-contributing)**
+- **[License](#-license)**
+
+---
+
 ## 📋 Requirements
 
 - **Flutter SDK**: `>=3.6.1 <4.0.0`
 - **Dart SDK**: `>=3.6.1 <4.0.0`
 
-### 📦 Dependencies
+### 📦 Core Dependencies
 
 | Package | Purpose |
 |---------|---------|
@@ -91,6 +112,17 @@ The codebase emphasizes:
 | `syncfusion_flutter_pdfviewer` | PDF viewing |
 | `http` | API calls to Google Gemini AI |
 | `url_launcher` | Opening external URLs (e.g., API key registration) |
+
+---
+
+## 🖼️ Screenshots
+
+> _Tip: Add real screenshots here (`/screenshots` directory) to showcase the Apple-inspired UI._
+
+- **Home Screen** – Sidebar navigation with courses, quizzes, flashcards, and PDFs
+- **Quiz Flow** – Animated question cards, progress bar, and score summary
+- **Flashcards** – Swipeable 3D flip cards with front/back content
+- **PDF Viewer** – Integrated viewer with navigation and action buttons
 
 ---
 
@@ -110,7 +142,7 @@ flutter pub get
 flutter run
 ```
 
-### 🎯 Quick Quiz
+### 🎯 Quick Quiz (Sample)
 
 1. Launch the app
 2. Tap **"Start Sample Quiz"** on the home screen
@@ -127,7 +159,7 @@ flutter run
 3. Tap to select a `.json` file following the format below
 4. The app will parse and start the quiz automatically
 
-#### 📄 JSON Format
+#### 📄 Quiz JSON Format
 
 ```json
 [
@@ -204,7 +236,7 @@ flutter run
 
 Transform your PDFs into interactive quizzes and flashcards in seconds!
 
-#### Quiz Generation
+#### 🧠 Quiz Generation
 
 1. **Upload a PDF** to a course (see Course Management above)
 2. **Tap "Generate Questions"** below the PDF card
@@ -215,7 +247,7 @@ Transform your PDFs into interactive quizzes and flashcards in seconds!
 5. **Wait for Generation** - The app extracts text and generates questions
 6. **Quiz Ready!** - The generated quiz is automatically added to your course
 
-#### Flashcard Generation
+#### 🧠 Flashcard Generation
 
 1. **Upload a PDF** to a course (see Course Management above)
 2. **Tap "Generate Flashcards"** below the PDF card
@@ -233,6 +265,19 @@ Transform your PDFs into interactive quizzes and flashcards in seconds!
 
 ---
 
+## 🔑 API Key Configuration
+
+TestMaker uses **Google Gemini** for AI-powered quiz and flashcard generation.
+
+- **Step 1**: Obtain an API key from [Google AI Studio](https://makersuite.google.com/app/apikey)
+- **Step 2**: Launch the app and trigger **Generate Questions** or **Generate Flashcards**
+- **Step 3**: Enter your API key when prompted (it is stored locally for reuse)
+- **Step 4**: You can update/change the key at any time by triggering generation again
+
+> ⚠️ **Security Note**: Your API key is stored locally on your device and is **never** uploaded to any external server by this app.
+
+---
+
 ## 💾 Data Storage
 
 All data is stored **locally** on your device:
@@ -246,7 +291,7 @@ All data is stored **locally** on your device:
 
 ---
 
-## 📁 Project Structure
+## 🧱 Architecture & Project Structure
 
 ```
 lib/
@@ -328,7 +373,7 @@ See the [LICENSE](LICENSE) file for more details.
 
 **Made with ❤️ using Flutter**
 
-*Inspired by Apple's Human Interface Guidelines*
+*Designed following Apple’s Human Interface Guidelines — clean, minimal, and delightful to use.*
 
 [⬆ Back to Top](#-testmaker)
 
