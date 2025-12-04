@@ -1,6 +1,8 @@
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
 import 'package:testmaker/models/course.dart';
+import 'package:testmaker/models/flashcard.dart';
+import 'package:testmaker/models/question.dart';
 import 'package:testmaker/services/course_service.dart';
 import 'package:testmaker/services/flashcard_generator_service.dart';
 import 'package:testmaker/services/flashcard_service.dart';
@@ -467,6 +469,181 @@ class HomeController extends ChangeNotifier {
   void clearError() {
     _error = null;
     notifyListeners();
+  }
+
+  /// Reorders PDFs in the selected course.
+  Future<bool> reorderPdfsInCourse(int oldIndex, int newIndex) async {
+    if (_selectedCourse == null) {
+      return false;
+    }
+
+    // Optimistically update the UI immediately to prevent visual glitch
+    final updatedPdfs = <String>[..._selectedCourse!.pdfs];
+    final item = updatedPdfs.removeAt(oldIndex);
+    updatedPdfs.insert(newIndex, item);
+
+    // Reorder pdfNames map
+    Map<int, String>? updatedPdfNames;
+    if (_selectedCourse!.pdfNames != null &&
+        _selectedCourse!.pdfNames!.isNotEmpty) {
+      updatedPdfNames = <int, String>{};
+      final oldIndices = List<int>.generate(
+        _selectedCourse!.pdfs.length,
+        (int i) => i,
+      );
+      final movedIndex = oldIndices.removeAt(oldIndex);
+      oldIndices.insert(newIndex, movedIndex);
+      for (var newIdx = 0; newIdx < updatedPdfs.length; newIdx++) {
+        final oldIdx = oldIndices[newIdx];
+        if (_selectedCourse!.pdfNames!.containsKey(oldIdx)) {
+          updatedPdfNames[newIdx] = _selectedCourse!.pdfNames![oldIdx]!;
+        }
+      }
+    }
+
+    _selectedCourse = _selectedCourse!.copyWith(
+      pdfs: updatedPdfs,
+      pdfNames: updatedPdfNames,
+      updatedAt: DateTime.now().millisecondsSinceEpoch,
+    );
+    notifyListeners();
+
+    try {
+      await _courseService.reorderPdfsInCourse(
+        _selectedCourse!.id,
+        oldIndex,
+        newIndex,
+      );
+      await _loadCourses();
+      return true;
+    } on Exception catch (e) {
+      if (kDebugMode) {
+        print('[HomeController.reorderPdfsInCourse] Failed: $e');
+      }
+      _error = 'Failed to reorder PDFs';
+      // Reload to revert optimistic update
+      await _loadCourses();
+      notifyListeners();
+      return false;
+    }
+  }
+
+  /// Reorders quizzes in the selected course.
+  Future<bool> reorderQuizzesInCourse(int oldIndex, int newIndex) async {
+    if (_selectedCourse == null) {
+      return false;
+    }
+
+    // Optimistically update the UI immediately to prevent visual glitch
+    final updatedQuizzes = <List<Question>>[..._selectedCourse!.quizzes];
+    final item = updatedQuizzes.removeAt(oldIndex);
+    updatedQuizzes.insert(newIndex, item);
+
+    // Reorder quizNames map
+    Map<int, String>? updatedQuizNames;
+    if (_selectedCourse!.quizNames != null &&
+        _selectedCourse!.quizNames!.isNotEmpty) {
+      updatedQuizNames = <int, String>{};
+      final oldIndices = List<int>.generate(
+        _selectedCourse!.quizzes.length,
+        (int i) => i,
+      );
+      final movedIndex = oldIndices.removeAt(oldIndex);
+      oldIndices.insert(newIndex, movedIndex);
+      for (var newIdx = 0; newIdx < updatedQuizzes.length; newIdx++) {
+        final oldIdx = oldIndices[newIdx];
+        if (_selectedCourse!.quizNames!.containsKey(oldIdx)) {
+          updatedQuizNames[newIdx] = _selectedCourse!.quizNames![oldIdx]!;
+        }
+      }
+    }
+
+    _selectedCourse = _selectedCourse!.copyWith(
+      quizzes: updatedQuizzes,
+      quizNames: updatedQuizNames,
+      updatedAt: DateTime.now().millisecondsSinceEpoch,
+    );
+    notifyListeners();
+
+    try {
+      await _courseService.reorderQuizzesInCourse(
+        _selectedCourse!.id,
+        oldIndex,
+        newIndex,
+      );
+      await _loadCourses();
+      return true;
+    } on Exception catch (e) {
+      if (kDebugMode) {
+        print('[HomeController.reorderQuizzesInCourse] Failed: $e');
+      }
+      _error = 'Failed to reorder quizzes';
+      // Reload to revert optimistic update
+      await _loadCourses();
+      notifyListeners();
+      return false;
+    }
+  }
+
+  /// Reorders flashcard sets in the selected course.
+  Future<bool> reorderFlashcardSetsInCourse(
+    int oldIndex,
+    int newIndex,
+  ) async {
+    if (_selectedCourse == null) {
+      return false;
+    }
+
+    // Optimistically update the UI immediately to prevent visual glitch
+    final updatedFlashcards = <List<Flashcard>>[..._selectedCourse!.flashcards];
+    final item = updatedFlashcards.removeAt(oldIndex);
+    updatedFlashcards.insert(newIndex, item);
+
+    // Reorder flashcardSetNames map
+    Map<int, String>? updatedFlashcardSetNames;
+    if (_selectedCourse!.flashcardSetNames != null &&
+        _selectedCourse!.flashcardSetNames!.isNotEmpty) {
+      updatedFlashcardSetNames = <int, String>{};
+      final oldIndices = List<int>.generate(
+        _selectedCourse!.flashcards.length,
+        (int i) => i,
+      );
+      final movedIndex = oldIndices.removeAt(oldIndex);
+      oldIndices.insert(newIndex, movedIndex);
+      for (var newIdx = 0; newIdx < updatedFlashcards.length; newIdx++) {
+        final oldIdx = oldIndices[newIdx];
+        if (_selectedCourse!.flashcardSetNames!.containsKey(oldIdx)) {
+          updatedFlashcardSetNames[newIdx] =
+              _selectedCourse!.flashcardSetNames![oldIdx]!;
+        }
+      }
+    }
+
+    _selectedCourse = _selectedCourse!.copyWith(
+      flashcards: updatedFlashcards,
+      flashcardSetNames: updatedFlashcardSetNames,
+      updatedAt: DateTime.now().millisecondsSinceEpoch,
+    );
+    notifyListeners();
+
+    try {
+      await _courseService.reorderFlashcardSetsInCourse(
+        _selectedCourse!.id,
+        oldIndex,
+        newIndex,
+      );
+      await _loadCourses();
+      return true;
+    } on Exception catch (e) {
+      if (kDebugMode) {
+        print('[HomeController.reorderFlashcardSetsInCourse] Failed: $e');
+      }
+      _error = 'Failed to reorder flashcard sets';
+      // Reload to revert optimistic update
+      await _loadCourses();
+      notifyListeners();
+      return false;
+    }
   }
 
   /// Renames a quiz in the selected course.

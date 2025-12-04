@@ -59,7 +59,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _onControllerChanged() {
-      if (mounted) {
+    if (mounted) {
       setState(() {});
     }
   }
@@ -197,16 +197,16 @@ class _HomeScreenState extends State<HomeScreen> {
     );
 
     if (success && mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
           content: Text('Successfully generated $questionCount questions!'),
-              backgroundColor: Theme.of(context).colorScheme.primaryContainer,
-              behavior: SnackBarBehavior.floating,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-            ),
-          );
+          backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+      );
     }
   }
 
@@ -994,7 +994,8 @@ class _HomeScreenState extends State<HomeScreen> {
                 multiplier: 0.5,
               ),
             ),
-            padding: ResponsiveSizer.listItemPaddingFromConstraints(constraints),
+            padding:
+                ResponsiveSizer.listItemPaddingFromConstraints(constraints),
             decoration: BoxDecoration(
               color: isSelected
                   ? theme.colorScheme.primaryContainer.withValues(alpha: 0.5)
@@ -1018,36 +1019,36 @@ class _HomeScreenState extends State<HomeScreen> {
                     multiplier: 1.5,
                   ),
                 ),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: <Widget>[
-                  Text(
-                    course.name,
-                    style: textTheme.bodyMedium?.copyWith(
-                      fontWeight:
-                          isSelected ? FontWeight.w600 : FontWeight.w500,
-                      color: isSelected
-                          ? theme.colorScheme.onPrimaryContainer
-                          : null,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  if (course.quizCount > 0)
-                    Text(
-                      '${course.quizCount} quiz${course.quizCount == 1 ? '' : 'zes'}',
-                      style: textTheme.bodySmall?.copyWith(
-                        color:
-                            theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: <Widget>[
+                      Text(
+                        course.name,
+                        style: textTheme.bodyMedium?.copyWith(
+                          fontWeight:
+                              isSelected ? FontWeight.w600 : FontWeight.w500,
+                          color: isSelected
+                              ? theme.colorScheme.onPrimaryContainer
+                              : null,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
-                    ),
-                ],
-              ),
+                      if (course.quizCount > 0)
+                        Text(
+                          '${course.quizCount} quiz${course.quizCount == 1 ? '' : 'zes'}',
+                          style: textTheme.bodySmall?.copyWith(
+                            color: theme.colorScheme.onSurface
+                                .withValues(alpha: 0.6),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+              ],
             ),
-          ],
-        ),
           );
         },
       ),
@@ -1107,27 +1108,27 @@ class _HomeScreenState extends State<HomeScreen> {
 
     return LayoutBuilder(
       builder: (BuildContext context, BoxConstraints constraints) {
-    return SingleChildScrollView(
+        return SingleChildScrollView(
           padding: ResponsiveSizer.paddingFromConstraints(constraints),
-      child: Center(
-        child: ConstrainedBox(
+          child: Center(
+            child: ConstrainedBox(
               constraints: BoxConstraints(
                 maxWidth:
                     ResponsiveSizer.maxContentWidthFromConstraints(constraints),
               ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: <Widget>[
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: <Widget>[
                   if (_controller.selectedCourse == null) ...<Widget>[
-                _buildWelcomeContent(theme, textTheme),
-              ] else ...<Widget>[
-                _buildCourseContent(theme, textTheme),
-              ],
-            ],
+                    _buildWelcomeContent(theme, textTheme),
+                  ] else ...<Widget>[
+                    _buildCourseContent(theme, textTheme, constraints),
+                  ],
+                ],
+              ),
+            ),
           ),
-        ),
-      ),
         );
       },
     );
@@ -1160,102 +1161,111 @@ class _HomeScreenState extends State<HomeScreen> {
                           constraints,
                         ),
                       ),
-                  Text(
-                    'Create and take beautiful, focused quizzes.',
-                    style: textTheme.bodyMedium?.copyWith(
-                      color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+                      Text(
+                        'Create and take beautiful, focused quizzes.',
+                        style: textTheme.bodyMedium?.copyWith(
+                          color: theme.colorScheme.onSurface
+                              .withValues(alpha: 0.7),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                // Settings button in upper right corner
+                IconButton(
+                  onPressed: _showSettingsDialog,
+                  icon: Icon(
+                    Icons.settings_outlined,
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+                  ),
+                  tooltip: 'Settings',
+                  style: IconButton.styleFrom(
+                    padding: EdgeInsets.all(
+                      ResponsiveSizer.spacingFromConstraints(constraints),
+                    ),
+                    minimumSize: Size(
+                      ResponsiveSizer.iconContainerSizeFromConstraints(
+                        constraints,
+                      ),
+                      ResponsiveSizer.iconContainerSizeFromConstraints(
+                        constraints,
+                      ),
+                    ),
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(
+              height:
+                  ResponsiveSizer.sectionSpacingFromConstraints(constraints),
+            ),
+            Hero(
+              tag: 'quiz-card',
+              child: _buildHeroCard(theme, textTheme, constraints),
+            ),
+            SizedBox(
+              height:
+                  ResponsiveSizer.sectionSpacingFromConstraints(constraints),
+            ),
+            _buildUploadArea(theme, textTheme, constraints),
+            if (_controller.error != null)
+              Padding(
+                padding: EdgeInsets.only(
+                  top: ResponsiveSizer.spacingFromConstraints(
+                    constraints,
+                    multiplier: 1.5,
+                  ),
+                ),
+                child: Text(
+                  _controller.error!,
+                  style: textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.error,
+                  ),
+                ),
+              ),
+            SizedBox(
+              height:
+                  ResponsiveSizer.sectionSpacingFromConstraints(constraints),
+            ),
+            SizedBox(
+              height:
+                  ResponsiveSizer.buttonHeightFromConstraints(constraints) + 10,
+              child: ElevatedButton(
+                onPressed: _startQuiz,
+                style: ElevatedButton.styleFrom(
+                  elevation: 0,
+                  backgroundColor: theme.colorScheme.primary,
+                  foregroundColor: theme.colorScheme.onPrimary,
+                  disabledBackgroundColor:
+                      theme.colorScheme.surfaceContainerHighest,
+                  disabledForegroundColor:
+                      theme.colorScheme.onSurface.withValues(alpha: 0.4),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(
+                      ResponsiveSizer.borderRadiusFromConstraints(constraints),
                     ),
                   ),
-                ],
-              ),
-            ),
-            // Settings button in upper right corner
-            IconButton(
-              onPressed: _showSettingsDialog,
-              icon: Icon(
-                Icons.settings_outlined,
-                color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
-              ),
-              tooltip: 'Settings',
-              style: IconButton.styleFrom(
-                padding: EdgeInsets.all(
-                  ResponsiveSizer.spacingFromConstraints(constraints),
+                  padding: EdgeInsets.symmetric(
+                    horizontal: ResponsiveSizer.spacingFromConstraints(
+                      constraints,
+                      multiplier: 3,
+                    ),
+                  ),
                 ),
-                minimumSize: Size(
-                  ResponsiveSizer.iconContainerSizeFromConstraints(constraints),
-                  ResponsiveSizer.iconContainerSizeFromConstraints(constraints),
+                child: AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 200),
+                  child: Text(
+                    'Start Sample Quiz',
+                    style: textTheme.labelLarge?.copyWith(
+                      color: theme.colorScheme.onPrimary,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
                 ),
-                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
               ),
             ),
           ],
-        ),
-        SizedBox(
-          height: ResponsiveSizer.sectionSpacingFromConstraints(constraints),
-        ),
-        Hero(
-          tag: 'quiz-card',
-          child: _buildHeroCard(theme, textTheme, constraints),
-        ),
-        SizedBox(
-          height: ResponsiveSizer.sectionSpacingFromConstraints(constraints),
-        ),
-        _buildUploadArea(theme, textTheme, constraints),
-        if (_controller.error != null)
-          Padding(
-            padding: EdgeInsets.only(
-              top: ResponsiveSizer.spacingFromConstraints(
-                constraints,
-                multiplier: 1.5,
-              ),
-            ),
-            child: Text(
-              _controller.error!,
-              style: textTheme.bodySmall?.copyWith(
-                color: theme.colorScheme.error,
-              ),
-            ),
-          ),
-        SizedBox(
-          height: ResponsiveSizer.sectionSpacingFromConstraints(constraints),
-        ),
-        SizedBox(
-          height: ResponsiveSizer.buttonHeightFromConstraints(constraints) + 10,
-          child: ElevatedButton(
-            onPressed: _startQuiz,
-            style: ElevatedButton.styleFrom(
-              elevation: 0,
-              backgroundColor: theme.colorScheme.primary,
-              foregroundColor: theme.colorScheme.onPrimary,
-              disabledBackgroundColor:
-                  theme.colorScheme.surfaceContainerHighest,
-              disabledForegroundColor:
-                  theme.colorScheme.onSurface.withValues(alpha: 0.4),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(
-                  ResponsiveSizer.borderRadiusFromConstraints(constraints),
-                ),
-              ),
-              padding: EdgeInsets.symmetric(
-                horizontal: ResponsiveSizer.spacingFromConstraints(
-                  constraints,
-                  multiplier: 3,
-                ),
-              ),
-            ),
-            child: AnimatedSwitcher(
-              duration: const Duration(milliseconds: 200),
-              child: Text(
-                      'Start Sample Quiz',
-                      style: textTheme.labelLarge?.copyWith(
-                        color: theme.colorScheme.onPrimary,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-            ),
-          ),
-        ),
-      ],
         );
       },
     );
@@ -1268,6 +1278,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildCourseContent(
     ThemeData theme,
     TextTheme textTheme,
+    BoxConstraints constraints,
   ) {
     // Guard against null _selectedCourse (shouldn't happen, but safety first)
     if (_controller.selectedCourse == null) {
@@ -1284,9 +1295,17 @@ class _HomeScreenState extends State<HomeScreen> {
             Icon(
               Icons.folder,
               color: theme.colorScheme.primary,
-              size: 28,
+              size: ResponsiveSizer.iconSizeFromConstraints(
+                constraints,
+                multiplier: 1.4,
+              ),
             ),
-            const SizedBox(width: 12),
+            SizedBox(
+              width: ResponsiveSizer.spacingFromConstraints(
+                constraints,
+                multiplier: 1.5,
+              ),
+            ),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -1320,11 +1339,13 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ],
         ),
-        const SizedBox(height: 24),
+        SizedBox(
+          height: ResponsiveSizer.sectionSpacingFromConstraints(constraints),
+        ),
         if (course.quizzes.isEmpty &&
             course.flashcards.isEmpty &&
             course.pdfs.isEmpty) ...<Widget>[
-          _buildEmptyCourseState(theme, textTheme, course),
+          _buildEmptyCourseState(theme, textTheme, course, constraints),
         ] else ...<Widget>[
           // PDFs section
           if (course.pdfs.isNotEmpty) ...<Widget>[
@@ -1334,106 +1355,42 @@ class _HomeScreenState extends State<HomeScreen> {
                 fontWeight: FontWeight.w600,
               ),
             ),
-            const SizedBox(height: 12),
-            ...course.pdfs.asMap().entries.map<Widget>(
-              (MapEntry<int, String> entry) {
-                final pdfIndex = entry.key;
-                final pdfPath = entry.value;
+            SizedBox(
+              height: ResponsiveSizer.spacingFromConstraints(
+                constraints,
+                multiplier: 1.5,
+              ),
+            ),
+            ReorderableListView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: course.pdfs.length,
+              onReorder: (int oldIndex, int newIndex) async {
+                if (oldIndex < newIndex) {
+                  newIndex -= 1;
+                }
+                await _controller.reorderPdfsInCourse(oldIndex, newIndex);
+              },
+              itemBuilder: (BuildContext context, int index) {
+                final pdfPath = course.pdfs[index];
                 final fileName = pdfPath.split('/').last;
 
-                return Column(
-                  children: <Widget>[
-                    _buildPdfCardWithSwipe(
-                      theme,
-                      textTheme,
-                      course,
-                      pdfIndex,
-                      fileName,
-                      pdfPath,
-                    ),
-                    // Generate questions button
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 6),
-                      child: SizedBox(
-                        height: 36,
-                        child: OutlinedButton.icon(
-                          onPressed: _controller.isGeneratingQuestions
-                              ? null
-                              : () =>
-                                  _generateQuestionsFromPdf(course, pdfPath),
-                          icon: _controller.isGeneratingQuestions
-                              ? SizedBox(
-                                  width: 14,
-                                  height: 14,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    valueColor: AlwaysStoppedAnimation<Color>(
-                                      theme.colorScheme.primary,
-                                    ),
-                                  ),
-                                )
-                              : const Icon(Icons.auto_awesome, size: 16),
-                          label: Text(
-                            _controller.isGeneratingQuestions
-                                ? 'Generating...'
-                                : 'Generate Questions',
-                            style: textTheme.labelSmall?.copyWith(
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                          style: OutlinedButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(horizontal: 12),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                    // Generate flashcards button
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 12),
-                      child: SizedBox(
-                        height: 36,
-                        child: OutlinedButton.icon(
-                          onPressed: _controller.isGeneratingFlashcards
-                              ? null
-                              : () =>
-                                  _generateFlashcardsFromPdf(course, pdfPath),
-                          icon: _controller.isGeneratingFlashcards
-                              ? SizedBox(
-                                  width: 14,
-                                  height: 14,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    valueColor: AlwaysStoppedAnimation<Color>(
-                                      theme.colorScheme.primary,
-                                    ),
-                                  ),
-                                )
-                              : const Icon(Icons.style_outlined, size: 16),
-                          label: Text(
-                            _controller.isGeneratingFlashcards
-                                ? 'Generating...'
-                                : 'Generate Flashcards',
-                            style: textTheme.labelSmall?.copyWith(
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                          style: OutlinedButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(horizontal: 12),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
+                return _buildReorderablePdfItem(
+                  key: Key('pdf_${course.id}_$index'),
+                  theme: theme,
+                  textTheme: textTheme,
+                  course: course,
+                  pdfIndex: index,
+                  fileName: fileName,
+                  pdfPath: pdfPath,
+                  constraints: constraints,
                 );
               },
             ),
-            const SizedBox(height: 24),
+            SizedBox(
+              height:
+                  ResponsiveSizer.sectionSpacingFromConstraints(constraints),
+            ),
           ],
           // Quizzes section
           if (course.quizzes.isNotEmpty) ...<Widget>[
@@ -1443,63 +1400,97 @@ class _HomeScreenState extends State<HomeScreen> {
                 fontWeight: FontWeight.w600,
               ),
             ),
-            const SizedBox(height: 12),
-            ...course.quizzes.asMap().entries.map<Widget>(
-              (MapEntry<int, List<Question>> entry) {
-                final quizIndex = entry.key;
-                final questions = entry.value;
+            SizedBox(
+              height: ResponsiveSizer.spacingFromConstraints(
+                constraints,
+                multiplier: 1.5,
+              ),
+            ),
+            ReorderableListView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: course.quizzes.length,
+              onReorder: (int oldIndex, int newIndex) async {
+                if (oldIndex < newIndex) {
+                  newIndex -= 1;
+                }
+                await _controller.reorderQuizzesInCourse(oldIndex, newIndex);
+              },
+              itemBuilder: (BuildContext context, int index) {
+                final questions = course.quizzes[index];
                 // Create a stable identifier for the quiz based on its content
-                // This prevents Dismissible errors when quizzes are deleted
-                // Use a combination of course ID, quiz index, and content hash for uniqueness
                 final quizHash = Object.hashAll([
                   course.id,
-                  quizIndex,
+                  index,
                   ...questions.map((Question q) => q.id),
                   ...questions.map((Question q) => q.text),
                 ]);
 
-                return _buildQuizCardWithSwipe(
-                  theme,
-                  textTheme,
-                  course,
-                  quizIndex,
-                  questions.length,
-                  quizHash,
-                  () => _startQuizFromCourse(course, quizIndex),
+                return _buildReorderableQuizItem(
+                  key: Key('quiz_${course.id}_$index'),
+                  theme: theme,
+                  textTheme: textTheme,
+                  course: course,
+                  quizIndex: index,
+                  questionCount: questions.length,
+                  quizHash: quizHash,
+                  onTap: () => _startQuizFromCourse(course, index),
+                  constraints: constraints,
                 );
               },
             ),
           ],
           // Flashcards section
           if (course.flashcards.isNotEmpty) ...<Widget>[
-            const SizedBox(height: 24),
+            SizedBox(
+              height:
+                  ResponsiveSizer.sectionSpacingFromConstraints(constraints),
+            ),
             Text(
               'Flashcards',
               style: textTheme.titleMedium?.copyWith(
                 fontWeight: FontWeight.w600,
               ),
             ),
-            const SizedBox(height: 12),
-            ...course.flashcards.asMap().entries.map<Widget>(
-              (MapEntry<int, List<Flashcard>> entry) {
-                final flashcardSetIndex = entry.key;
-                final flashcards = entry.value;
+            SizedBox(
+              height: ResponsiveSizer.spacingFromConstraints(
+                constraints,
+                multiplier: 1.5,
+              ),
+            ),
+            ReorderableListView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: course.flashcards.length,
+              onReorder: (int oldIndex, int newIndex) async {
+                if (oldIndex < newIndex) {
+                  newIndex -= 1;
+                }
+                await _controller.reorderFlashcardSetsInCourse(
+                  oldIndex,
+                  newIndex,
+                );
+              },
+              itemBuilder: (BuildContext context, int index) {
+                final flashcards = course.flashcards[index];
                 // Create a stable identifier for the flashcard set
                 final flashcardHash = Object.hashAll([
                   course.id,
-                  flashcardSetIndex,
+                  index,
                   ...flashcards.map((Flashcard f) => f.id),
                   ...flashcards.map((Flashcard f) => f.front),
                 ]);
 
-                return _buildFlashcardCardWithSwipe(
-                  theme,
-                  textTheme,
-                  course,
-                  flashcardSetIndex,
-                  flashcards.length,
-                  flashcardHash,
-                  () => _startFlashcardsFromCourse(course, flashcardSetIndex),
+                return _buildReorderableFlashcardItem(
+                  key: Key('flashcard_${course.id}_$index'),
+                  theme: theme,
+                  textTheme: textTheme,
+                  course: course,
+                  flashcardSetIndex: index,
+                  flashcardCount: flashcards.length,
+                  flashcardHash: flashcardHash,
+                  onTap: () => _startFlashcardsFromCourse(course, index),
+                  constraints: constraints,
                 );
               },
             ),
@@ -1533,19 +1524,32 @@ class _HomeScreenState extends State<HomeScreen> {
     return Dismissible(
       key: Key('pdf_${course.id}_${pdfPath.hashCode}'),
       direction: DismissDirection.endToStart,
-      background: Container(
-        margin: const EdgeInsets.only(bottom: 12),
-        decoration: BoxDecoration(
-          color: theme.colorScheme.error,
-          borderRadius: BorderRadius.circular(16),
-        ),
-        alignment: Alignment.centerRight,
-        padding: const EdgeInsets.only(right: 20),
-        child: Icon(
-          Icons.delete_outlined,
-          color: theme.colorScheme.onError,
-          size: 24,
-        ),
+      background: LayoutBuilder(
+        builder: (BuildContext context, BoxConstraints constraints) {
+          return Container(
+            margin: EdgeInsets.only(
+              bottom: ResponsiveSizer.itemSpacingFromConstraints(constraints),
+            ),
+            decoration: BoxDecoration(
+              color: theme.colorScheme.error,
+              borderRadius: BorderRadius.circular(
+                ResponsiveSizer.borderRadiusFromConstraints(constraints),
+              ),
+            ),
+            alignment: Alignment.centerRight,
+            padding: EdgeInsets.only(
+              right: ResponsiveSizer.spacingFromConstraints(
+                constraints,
+                multiplier: 2.5,
+              ),
+            ),
+            child: Icon(
+              Icons.delete_outlined,
+              color: theme.colorScheme.onError,
+              size: ResponsiveSizer.iconSizeFromConstraints(constraints),
+            ),
+          );
+        },
       ),
       confirmDismiss: (DismissDirection direction) async {
         final confirmed = await showDialog<bool>(
@@ -1671,47 +1675,47 @@ class _HomeScreenState extends State<HomeScreen> {
                         multiplier: 2,
                       ),
                     ),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: <Widget>[
-                      Text(
-                        pdfName,
-                        style: textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.w600,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: <Widget>[
+                          Text(
+                            pdfName,
+                            style: textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.w600,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          SizedBox(
+                            height: ResponsiveSizer.spacingFromConstraints(
+                              constraints,
+                              multiplier: 0.5,
+                            ),
+                          ),
+                          Text(
+                            'PDF Document',
+                            style: textTheme.bodySmall?.copyWith(
+                              color: theme.colorScheme.onSurface
+                                  .withValues(alpha: 0.7),
+                            ),
+                          ),
+                        ],
                       ),
-                      SizedBox(
-                        height: ResponsiveSizer.spacingFromConstraints(
-                          constraints,
-                          multiplier: 0.5,
-                        ),
+                    ),
+                    Icon(
+                      Icons.arrow_forward_ios,
+                      size: ResponsiveSizer.iconSizeFromConstraints(
+                        constraints,
+                        multiplier: 0.8,
                       ),
-                      Text(
-                        'PDF Document',
-                        style: textTheme.bodySmall?.copyWith(
-                          color: theme.colorScheme.onSurface
-                              .withValues(alpha: 0.7),
-                        ),
-                      ),
-                    ],
-                  ),
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
+                    ),
+                  ],
                 ),
-                Icon(
-                  Icons.arrow_forward_ios,
-                  size: ResponsiveSizer.iconSizeFromConstraints(
-                    constraints,
-                    multiplier: 0.8,
-                  ),
-                  color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
-                ),
-              ],
+              ),
             ),
           ),
-        ),
-        ),
         );
       },
     );
@@ -1732,19 +1736,32 @@ class _HomeScreenState extends State<HomeScreen> {
     return Dismissible(
       key: Key('quiz_${course.id}_$quizHash'),
       direction: DismissDirection.endToStart,
-      background: Container(
-        margin: const EdgeInsets.only(bottom: 12),
-        decoration: BoxDecoration(
-          color: theme.colorScheme.error,
-          borderRadius: BorderRadius.circular(16),
-        ),
-        alignment: Alignment.centerRight,
-        padding: const EdgeInsets.only(right: 20),
-        child: Icon(
-          Icons.delete_outlined,
-          color: theme.colorScheme.onError,
-          size: 24,
-        ),
+      background: LayoutBuilder(
+        builder: (BuildContext context, BoxConstraints constraints) {
+          return Container(
+            margin: EdgeInsets.only(
+              bottom: ResponsiveSizer.itemSpacingFromConstraints(constraints),
+            ),
+            decoration: BoxDecoration(
+              color: theme.colorScheme.error,
+              borderRadius: BorderRadius.circular(
+                ResponsiveSizer.borderRadiusFromConstraints(constraints),
+              ),
+            ),
+            alignment: Alignment.centerRight,
+            padding: EdgeInsets.only(
+              right: ResponsiveSizer.spacingFromConstraints(
+                constraints,
+                multiplier: 2.5,
+              ),
+            ),
+            child: Icon(
+              Icons.delete_outlined,
+              color: theme.colorScheme.onError,
+              size: ResponsiveSizer.iconSizeFromConstraints(constraints),
+            ),
+          );
+        },
       ),
       confirmDismiss: (DismissDirection direction) async {
         final confirmed = await showDialog<bool>(
@@ -1829,69 +1846,105 @@ class _HomeScreenState extends State<HomeScreen> {
     VoidCallback onTap,
   ) {
     final quizName = course.getQuizName(quizIndex);
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      child: Material(
-        color: theme.colorScheme.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(16),
-        child: InkWell(
-          onTap: onTap,
-          onLongPress: () => _showRenameDialog(
-            title: 'Rename Quiz',
-            currentName: quizName,
-            onSave: (String newName) async {
-              await _controller.renameQuiz(quizIndex, newName);
-            },
-          ),
-          borderRadius: BorderRadius.circular(16),
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Row(
-              children: <Widget>[
-                Container(
-                  width: 48,
-                  height: 48,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(12),
-                    color: theme.colorScheme.primaryContainer,
-                  ),
-                  child: Icon(
-                    Icons.quiz_outlined,
-                    color: theme.colorScheme.onPrimaryContainer,
-                  ),
+    return LayoutBuilder(
+      builder: (BuildContext context, BoxConstraints constraints) {
+        return Container(
+          margin: ResponsiveSizer.cardMarginFromConstraints(constraints),
+          child: Material(
+            color: theme.colorScheme.surfaceContainerLow,
+            borderRadius: BorderRadius.circular(
+              ResponsiveSizer.borderRadiusFromConstraints(constraints),
+            ),
+            child: InkWell(
+              onTap: onTap,
+              onLongPress: () => _showRenameDialog(
+                title: 'Rename Quiz',
+                currentName: quizName,
+                onSave: (String newName) async {
+                  await _controller.renameQuiz(quizIndex, newName);
+                },
+              ),
+              borderRadius: BorderRadius.circular(
+                ResponsiveSizer.borderRadiusFromConstraints(constraints),
+              ),
+              child: Padding(
+                padding: EdgeInsets.all(
+                  ResponsiveSizer.cardPaddingFromConstraints(constraints),
                 ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: <Widget>[
-                      Text(
-                        quizName,
-                        style: textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.w600,
+                child: Row(
+                  children: <Widget>[
+                    Container(
+                      width: ResponsiveSizer.iconContainerSizeFromConstraints(
+                        constraints,
+                        multiplier: 1.2,
+                      ),
+                      height: ResponsiveSizer.iconContainerSizeFromConstraints(
+                        constraints,
+                        multiplier: 1.2,
+                      ),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(
+                          ResponsiveSizer.borderRadiusFromConstraints(
+                            constraints,
+                          ),
+                        ),
+                        color: theme.colorScheme.primaryContainer,
+                      ),
+                      child: Icon(
+                        Icons.quiz_outlined,
+                        color: theme.colorScheme.onPrimaryContainer,
+                        size: ResponsiveSizer.iconSizeFromConstraints(
+                          constraints,
                         ),
                       ),
-                      const SizedBox(height: 4),
-                      Text(
-                        '$questionCount question${questionCount == 1 ? '' : 's'}',
-                        style: textTheme.bodySmall?.copyWith(
-                          color: theme.colorScheme.onSurface
-                              .withValues(alpha: 0.7),
-                        ),
+                    ),
+                    SizedBox(
+                      width: ResponsiveSizer.spacingFromConstraints(
+                        constraints,
+                        multiplier: 2,
                       ),
-                    ],
-                  ),
+                    ),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: <Widget>[
+                          Text(
+                            quizName,
+                            style: textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          SizedBox(
+                            height: ResponsiveSizer.spacingFromConstraints(
+                              constraints,
+                              multiplier: 0.5,
+                            ),
+                          ),
+                          Text(
+                            '$questionCount question${questionCount == 1 ? '' : 's'}',
+                            style: textTheme.bodySmall?.copyWith(
+                              color: theme.colorScheme.onSurface
+                                  .withValues(alpha: 0.7),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Icon(
+                      Icons.arrow_forward_ios,
+                      size: ResponsiveSizer.iconSizeFromConstraints(
+                        constraints,
+                        multiplier: 0.8,
+                      ),
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
+                    ),
+                  ],
                 ),
-                Icon(
-                  Icons.arrow_forward_ios,
-                  size: 16,
-                  color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
-                ),
-              ],
+              ),
             ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 
@@ -1910,19 +1963,32 @@ class _HomeScreenState extends State<HomeScreen> {
     return Dismissible(
       key: Key('flashcard_${course.id}_$flashcardHash'),
       direction: DismissDirection.endToStart,
-      background: Container(
-        margin: const EdgeInsets.only(bottom: 12),
-        decoration: BoxDecoration(
-          color: theme.colorScheme.error,
-          borderRadius: BorderRadius.circular(16),
-        ),
-        alignment: Alignment.centerRight,
-        padding: const EdgeInsets.only(right: 20),
-        child: Icon(
-          Icons.delete_outlined,
-          color: theme.colorScheme.onError,
-          size: 24,
-        ),
+      background: LayoutBuilder(
+        builder: (BuildContext context, BoxConstraints constraints) {
+          return Container(
+            margin: EdgeInsets.only(
+              bottom: ResponsiveSizer.itemSpacingFromConstraints(constraints),
+            ),
+            decoration: BoxDecoration(
+              color: theme.colorScheme.error,
+              borderRadius: BorderRadius.circular(
+                ResponsiveSizer.borderRadiusFromConstraints(constraints),
+              ),
+            ),
+            alignment: Alignment.centerRight,
+            padding: EdgeInsets.only(
+              right: ResponsiveSizer.spacingFromConstraints(
+                constraints,
+                multiplier: 2.5,
+              ),
+            ),
+            child: Icon(
+              Icons.delete_outlined,
+              color: theme.colorScheme.onError,
+              size: ResponsiveSizer.iconSizeFromConstraints(constraints),
+            ),
+          );
+        },
       ),
       confirmDismiss: (DismissDirection direction) async {
         final confirmed = await showDialog<bool>(
@@ -2008,69 +2074,108 @@ class _HomeScreenState extends State<HomeScreen> {
     VoidCallback onTap,
   ) {
     final flashcardSetName = course.getFlashcardSetName(flashcardSetIndex);
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      child: Material(
-        color: theme.colorScheme.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(16),
-        child: InkWell(
-          onTap: onTap,
-          onLongPress: () => _showRenameDialog(
-            title: 'Rename Flashcard Set',
-            currentName: flashcardSetName,
-            onSave: (String newName) async {
-              await _controller.renameFlashcardSet(flashcardSetIndex, newName);
-            },
-          ),
-          borderRadius: BorderRadius.circular(16),
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Row(
-              children: <Widget>[
-                Container(
-                  width: 48,
-                  height: 48,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(12),
-                    color: theme.colorScheme.secondaryContainer,
-                  ),
-                  child: Icon(
-                    Icons.style_outlined,
-                    color: theme.colorScheme.onSecondaryContainer,
-                  ),
+    return LayoutBuilder(
+      builder: (BuildContext context, BoxConstraints constraints) {
+        return Container(
+          margin: ResponsiveSizer.cardMarginFromConstraints(constraints),
+          child: Material(
+            color: theme.colorScheme.surfaceContainerLow,
+            borderRadius: BorderRadius.circular(
+              ResponsiveSizer.borderRadiusFromConstraints(constraints),
+            ),
+            child: InkWell(
+              onTap: onTap,
+              onLongPress: () => _showRenameDialog(
+                title: 'Rename Flashcard Set',
+                currentName: flashcardSetName,
+                onSave: (String newName) async {
+                  await _controller.renameFlashcardSet(
+                    flashcardSetIndex,
+                    newName,
+                  );
+                },
+              ),
+              borderRadius: BorderRadius.circular(
+                ResponsiveSizer.borderRadiusFromConstraints(constraints),
+              ),
+              child: Padding(
+                padding: EdgeInsets.all(
+                  ResponsiveSizer.cardPaddingFromConstraints(constraints),
                 ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: <Widget>[
-                      Text(
-                        flashcardSetName,
-                        style: textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.w600,
+                child: Row(
+                  children: <Widget>[
+                    Container(
+                      width: ResponsiveSizer.iconContainerSizeFromConstraints(
+                        constraints,
+                        multiplier: 1.2,
+                      ),
+                      height: ResponsiveSizer.iconContainerSizeFromConstraints(
+                        constraints,
+                        multiplier: 1.2,
+                      ),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(
+                          ResponsiveSizer.borderRadiusFromConstraints(
+                            constraints,
+                          ),
+                        ),
+                        color: theme.colorScheme.secondaryContainer,
+                      ),
+                      child: Icon(
+                        Icons.style_outlined,
+                        color: theme.colorScheme.onSecondaryContainer,
+                        size: ResponsiveSizer.iconSizeFromConstraints(
+                          constraints,
                         ),
                       ),
-                      const SizedBox(height: 4),
-                      Text(
-                        '$flashcardCount flashcard${flashcardCount == 1 ? '' : 's'}',
-                        style: textTheme.bodySmall?.copyWith(
-                          color: theme.colorScheme.onSurface
-                              .withValues(alpha: 0.7),
-                        ),
+                    ),
+                    SizedBox(
+                      width: ResponsiveSizer.spacingFromConstraints(
+                        constraints,
+                        multiplier: 2,
                       ),
-                    ],
-                  ),
+                    ),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: <Widget>[
+                          Text(
+                            flashcardSetName,
+                            style: textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          SizedBox(
+                            height: ResponsiveSizer.spacingFromConstraints(
+                              constraints,
+                              multiplier: 0.5,
+                            ),
+                          ),
+                          Text(
+                            '$flashcardCount flashcard${flashcardCount == 1 ? '' : 's'}',
+                            style: textTheme.bodySmall?.copyWith(
+                              color: theme.colorScheme.onSurface
+                                  .withValues(alpha: 0.7),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Icon(
+                      Icons.arrow_forward_ios,
+                      size: ResponsiveSizer.iconSizeFromConstraints(
+                        constraints,
+                        multiplier: 0.8,
+                      ),
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
+                    ),
+                  ],
                 ),
-                Icon(
-                  Icons.arrow_forward_ios,
-                  size: 16,
-                  color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
-                ),
-              ],
+              ),
             ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 
@@ -2084,6 +2189,291 @@ class _HomeScreenState extends State<HomeScreen> {
   ) async {
     _controller.selectCourse(course);
     await _controller.deleteFlashcardSetFromCourse(flashcardSetIndex);
+  }
+
+  /// Builds a reorderable PDF item with drag handle for ReorderableListView.
+  Widget _buildReorderablePdfItem({
+    required Key key,
+    required ThemeData theme,
+    required TextTheme textTheme,
+    required Course course,
+    required int pdfIndex,
+    required String fileName,
+    required String pdfPath,
+    required BoxConstraints constraints,
+  }) {
+    return LayoutBuilder(
+      key: key,
+      builder: (BuildContext context, BoxConstraints itemConstraints) {
+        return Column(
+          children: <Widget>[
+            Row(
+              children: <Widget>[
+                // Drag handle icon wrapped in ReorderableDragStartListener
+                ReorderableDragStartListener(
+                  index: pdfIndex,
+                  child: Padding(
+                    padding: EdgeInsets.only(
+                      right: ResponsiveSizer.spacingFromConstraints(
+                        itemConstraints,
+                      ),
+                    ),
+                    child: Icon(
+                      Icons.drag_handle,
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
+                      size: ResponsiveSizer.iconSizeFromConstraints(
+                        itemConstraints,
+                      ),
+                    ),
+                  ),
+                ),
+                // PDF card (expanded to fill remaining space)
+                Expanded(
+                  child: _buildPdfCardWithSwipe(
+                    theme,
+                    textTheme,
+                    course,
+                    pdfIndex,
+                    fileName,
+                    pdfPath,
+                  ),
+                ),
+              ],
+            ),
+            // Generate questions button
+            Padding(
+              padding: EdgeInsets.only(
+                left: ResponsiveSizer.spacingFromConstraints(
+                      itemConstraints,
+                    ) *
+                    2,
+                bottom: ResponsiveSizer.spacingFromConstraints(
+                  itemConstraints,
+                  multiplier: 0.75,
+                ),
+              ),
+              child: SizedBox(
+                height: ResponsiveSizer.buttonHeightFromConstraints(
+                      itemConstraints,
+                    ) *
+                    0.75,
+                child: OutlinedButton.icon(
+                  onPressed: _controller.isGeneratingQuestions
+                      ? null
+                      : () => _generateQuestionsFromPdf(course, pdfPath),
+                  icon: _controller.isGeneratingQuestions
+                      ? SizedBox(
+                          width: 14,
+                          height: 14,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              theme.colorScheme.primary,
+                            ),
+                          ),
+                        )
+                      : Icon(
+                          Icons.auto_awesome,
+                          size: ResponsiveSizer.iconSizeFromConstraints(
+                            itemConstraints,
+                            multiplier: 0.8,
+                          ),
+                        ),
+                  label: Text(
+                    _controller.isGeneratingQuestions
+                        ? 'Generating...'
+                        : 'Generate Questions',
+                    style: textTheme.labelSmall?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  style: OutlinedButton.styleFrom(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: ResponsiveSizer.spacingFromConstraints(
+                        itemConstraints,
+                        multiplier: 1.5,
+                      ),
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(
+                        ResponsiveSizer.borderRadiusFromConstraints(
+                          itemConstraints,
+                          multiplier: 0.67,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            // Generate flashcards button
+            Padding(
+              padding: EdgeInsets.only(
+                left: ResponsiveSizer.spacingFromConstraints(
+                      itemConstraints,
+                    ) *
+                    2,
+                bottom: ResponsiveSizer.spacingFromConstraints(
+                  itemConstraints,
+                  multiplier: 1.5,
+                ),
+              ),
+              child: SizedBox(
+                height: ResponsiveSizer.buttonHeightFromConstraints(
+                      itemConstraints,
+                    ) *
+                    0.75,
+                child: OutlinedButton.icon(
+                  onPressed: _controller.isGeneratingFlashcards
+                      ? null
+                      : () => _generateFlashcardsFromPdf(course, pdfPath),
+                  icon: _controller.isGeneratingFlashcards
+                      ? SizedBox(
+                          width: 14,
+                          height: 14,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              theme.colorScheme.primary,
+                            ),
+                          ),
+                        )
+                      : Icon(
+                          Icons.style_outlined,
+                          size: ResponsiveSizer.iconSizeFromConstraints(
+                            itemConstraints,
+                            multiplier: 0.8,
+                          ),
+                        ),
+                  label: Text(
+                    _controller.isGeneratingFlashcards
+                        ? 'Generating...'
+                        : 'Generate Flashcards',
+                    style: textTheme.labelSmall?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  style: OutlinedButton.styleFrom(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: ResponsiveSizer.spacingFromConstraints(
+                        itemConstraints,
+                        multiplier: 1.5,
+                      ),
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(
+                        ResponsiveSizer.borderRadiusFromConstraints(
+                          itemConstraints,
+                          multiplier: 0.67,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  /// Builds a reorderable quiz item with drag handle for ReorderableListView.
+  Widget _buildReorderableQuizItem({
+    required Key key,
+    required ThemeData theme,
+    required TextTheme textTheme,
+    required Course course,
+    required int quizIndex,
+    required int questionCount,
+    required int quizHash,
+    required VoidCallback onTap,
+    required BoxConstraints constraints,
+  }) {
+    return LayoutBuilder(
+      key: key,
+      builder: (BuildContext context, BoxConstraints itemConstraints) {
+        return Row(
+          children: <Widget>[
+            // Drag handle icon wrapped in ReorderableDragStartListener
+            ReorderableDragStartListener(
+              index: quizIndex,
+              child: Padding(
+                padding: EdgeInsets.only(
+                  right: ResponsiveSizer.spacingFromConstraints(itemConstraints),
+                ),
+                child: Icon(
+                  Icons.drag_handle,
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
+                  size: ResponsiveSizer.iconSizeFromConstraints(itemConstraints),
+                ),
+              ),
+            ),
+            // Quiz card (expanded to fill remaining space)
+            Expanded(
+              child: _buildQuizCardWithSwipe(
+                theme,
+                textTheme,
+                course,
+                quizIndex,
+                questionCount,
+                quizHash,
+                onTap,
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  /// Builds a reorderable flashcard item with drag handle for ReorderableListView.
+  Widget _buildReorderableFlashcardItem({
+    required Key key,
+    required ThemeData theme,
+    required TextTheme textTheme,
+    required Course course,
+    required int flashcardSetIndex,
+    required int flashcardCount,
+    required int flashcardHash,
+    required VoidCallback onTap,
+    required BoxConstraints constraints,
+  }) {
+    return LayoutBuilder(
+      key: key,
+      builder: (BuildContext context, BoxConstraints itemConstraints) {
+        return Row(
+          children: <Widget>[
+            // Drag handle icon wrapped in ReorderableDragStartListener
+            ReorderableDragStartListener(
+              index: flashcardSetIndex,
+              child: Padding(
+                padding: EdgeInsets.only(
+                  right: ResponsiveSizer.spacingFromConstraints(itemConstraints),
+                ),
+                child: Icon(
+                  Icons.drag_handle,
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
+                  size: ResponsiveSizer.iconSizeFromConstraints(itemConstraints),
+                ),
+              ),
+            ),
+            // Flashcard card (expanded to fill remaining space)
+            Expanded(
+              child: _buildFlashcardCardWithSwipe(
+                theme,
+                textTheme,
+                course,
+                flashcardSetIndex,
+                flashcardCount,
+                flashcardHash,
+                onTap,
+              ),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   /// Builds the floating action button with dropdown menu for upload options.
@@ -2224,42 +2614,71 @@ class _HomeScreenState extends State<HomeScreen> {
       borderRadius: BorderRadius.circular(28),
       elevation: 4,
       shadowColor: Colors.black.withValues(alpha: 0.2),
-      child: InkWell(
-        onTap: isLoading ? null : onTap,
-        borderRadius: BorderRadius.circular(28),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: <Widget>[
-              if (isLoading)
-                SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    valueColor: AlwaysStoppedAnimation<Color>(
-                      theme.colorScheme.primary,
-                    ),
-                  ),
-                )
-              else
-                Icon(
-                  icon,
-                  size: 20,
-                  color: theme.colorScheme.primary,
+      child: LayoutBuilder(
+        builder: (BuildContext context, BoxConstraints constraints) {
+          return InkWell(
+            onTap: isLoading ? null : onTap,
+            borderRadius: BorderRadius.circular(
+              ResponsiveSizer.borderRadiusFromConstraints(
+                constraints,
+                multiplier: 2.33,
+              ),
+            ),
+            child: Container(
+              padding: EdgeInsets.symmetric(
+                horizontal: ResponsiveSizer.spacingFromConstraints(
+                  constraints,
+                  multiplier: 2.5,
                 ),
-              const SizedBox(width: 12),
-              Text(
-                label,
-                style: textTheme.labelLarge?.copyWith(
-                  fontWeight: FontWeight.w600,
-                  color: theme.colorScheme.onSurface,
+                vertical: ResponsiveSizer.spacingFromConstraints(
+                  constraints,
+                  multiplier: 1.5,
                 ),
               ),
-            ],
-          ),
-        ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: <Widget>[
+                  if (isLoading)
+                    SizedBox(
+                      width: ResponsiveSizer.iconSizeFromConstraints(
+                        constraints,
+                      ),
+                      height: ResponsiveSizer.iconSizeFromConstraints(
+                        constraints,
+                      ),
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                          theme.colorScheme.primary,
+                        ),
+                      ),
+                    )
+                  else
+                    Icon(
+                      icon,
+                      size: ResponsiveSizer.iconSizeFromConstraints(
+                        constraints,
+                      ),
+                      color: theme.colorScheme.primary,
+                    ),
+                  SizedBox(
+                    width: ResponsiveSizer.spacingFromConstraints(
+                      constraints,
+                      multiplier: 1.5,
+                    ),
+                  ),
+                  Text(
+                    label,
+                    style: textTheme.labelLarge?.copyWith(
+                      fontWeight: FontWeight.w600,
+                      color: theme.colorScheme.onSurface,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
       ),
     );
   }
@@ -2269,12 +2688,18 @@ class _HomeScreenState extends State<HomeScreen> {
     ThemeData theme,
     TextTheme textTheme,
     Course course,
+    BoxConstraints constraints,
   ) {
     return Container(
-      padding: const EdgeInsets.all(32),
+      padding: ResponsiveSizer.emptyStatePaddingFromConstraints(constraints),
       decoration: BoxDecoration(
         color: theme.colorScheme.surfaceContainerLowest,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(
+          ResponsiveSizer.borderRadiusFromConstraints(
+            constraints,
+            multiplier: 1.67,
+          ),
+        ),
         border: Border.all(
           color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5),
         ),
@@ -2283,17 +2708,25 @@ class _HomeScreenState extends State<HomeScreen> {
         children: <Widget>[
           Icon(
             Icons.quiz_outlined,
-            size: 48,
+            size:
+                ResponsiveSizer.emptyStateIconSizeFromConstraints(constraints),
             color: theme.colorScheme.onSurface.withValues(alpha: 0.3),
           ),
-          const SizedBox(height: 16),
+          SizedBox(
+            height: ResponsiveSizer.spacingFromConstraints(
+              constraints,
+              multiplier: 2,
+            ),
+          ),
           Text(
             'No quizzes yet',
             style: textTheme.titleMedium?.copyWith(
               fontWeight: FontWeight.w600,
             ),
           ),
-          const SizedBox(height: 8),
+          SizedBox(
+            height: ResponsiveSizer.spacingFromConstraints(constraints),
+          ),
           Text(
             'Upload a JSON file to add your first quiz to ${course.name}',
             style: textTheme.bodySmall?.copyWith(
@@ -2310,13 +2743,13 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildCompactLayout(ThemeData theme) {
     return LayoutBuilder(
       builder: (BuildContext context, BoxConstraints constraints) {
-    return Scaffold(
-      backgroundColor: theme.colorScheme.surface,
-      drawer: Drawer(
+        return Scaffold(
+          backgroundColor: theme.colorScheme.surface,
+          drawer: Drawer(
             width: ResponsiveSizer.sidebarWidthFromConstraints(constraints),
             child: _buildSidebar(theme, constraints),
-      ),
-      body: _buildMainContent(theme),
+          ),
+          body: _buildMainContent(theme),
         );
       },
     );
@@ -2570,28 +3003,28 @@ class _CreateCourseDialogState extends State<_CreateCourseDialog>
                     constraints,
                   ),
                 ),
-            decoration: BoxDecoration(
-              color: theme.colorScheme.surface,
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.surface,
                   borderRadius: BorderRadius.circular(
                     ResponsiveSizer.borderRadiusFromConstraints(
                       constraints,
                       multiplier: 1.4,
                     ),
                   ),
-              boxShadow: <BoxShadow>[
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.15),
-                  blurRadius: 40,
-                  offset: const Offset(0, 20),
+                  boxShadow: <BoxShadow>[
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.15),
+                      blurRadius: 40,
+                      offset: const Offset(0, 20),
+                    ),
+                  ],
                 ),
-              ],
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: <Widget>[
-                // Header section with icon
-                Container(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: <Widget>[
+                    // Header section with icon
+                    Container(
                       padding: EdgeInsets.fromLTRB(
                         ResponsiveSizer.horizontalPaddingFromConstraints(
                               constraints,
@@ -2609,10 +3042,10 @@ class _CreateCourseDialogState extends State<_CreateCourseDialog>
                           constraints,
                         ),
                       ),
-                  child: Column(
-                    children: <Widget>[
-                      // Icon container
-                      Container(
+                      child: Column(
+                        children: <Widget>[
+                          // Icon container
+                          Container(
                             width: ResponsiveSizer.scaleWidthFromConstraints(
                               constraints,
                               64,
@@ -2621,34 +3054,34 @@ class _CreateCourseDialogState extends State<_CreateCourseDialog>
                               constraints,
                               64,
                             ),
-                        decoration: BoxDecoration(
+                            decoration: BoxDecoration(
                               borderRadius: BorderRadius.circular(
                                 ResponsiveSizer.borderRadiusFromConstraints(
                                   constraints,
                                   multiplier: 1.5,
                                 ),
                               ),
-                          gradient: LinearGradient(
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                            colors: <Color>[
-                              theme.colorScheme.primary,
+                              gradient: LinearGradient(
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                                colors: <Color>[
+                                  theme.colorScheme.primary,
                                   theme.colorScheme.primary
                                       .withValues(alpha: 0.8),
-                            ],
-                          ),
-                          boxShadow: <BoxShadow>[
-                            BoxShadow(
-                              color: theme.colorScheme.primary
-                                  .withValues(alpha: 0.3),
-                              blurRadius: 20,
-                              offset: const Offset(0, 8),
+                                ],
+                              ),
+                              boxShadow: <BoxShadow>[
+                                BoxShadow(
+                                  color: theme.colorScheme.primary
+                                      .withValues(alpha: 0.3),
+                                  blurRadius: 20,
+                                  offset: const Offset(0, 8),
+                                ),
+                              ],
                             ),
-                          ],
-                        ),
-                        child: Icon(
-                          Icons.add,
-                          color: theme.colorScheme.onPrimary,
+                            child: Icon(
+                              Icons.add,
+                              color: theme.colorScheme.onPrimary,
                               size: ResponsiveSizer.iconSizeFromConstraints(
                                 constraints,
                                 multiplier: 1.6,
@@ -2661,145 +3094,145 @@ class _CreateCourseDialogState extends State<_CreateCourseDialog>
                               multiplier: 2.5,
                             ),
                           ),
-                      // Title
-                      Text(
-                        'New Course',
-                        style: textTheme.headlineSmall?.copyWith(
-                          fontWeight: FontWeight.w700,
-                          letterSpacing: -0.5,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                      const SizedBox(height: 8),
-                      // Subtitle
-                      Text(
-                        'Give your course a name to get started',
-                        style: textTheme.bodyMedium?.copyWith(
-                          color: theme.colorScheme.onSurface
-                              .withValues(alpha: 0.7),
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                    ],
-                  ),
-                ),
-                // Input section
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 28),
-                  child: Focus(
-                    onFocusChange: (bool hasFocus) {
-                      setState(() {
-                        _isFocused = hasFocus;
-                      });
-                    },
-                    child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 200),
-                      curve: Curves.easeOutCubic,
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(
-                          color: _isFocused
-                              ? theme.colorScheme.primary
-                              : theme.colorScheme.outlineVariant
-                                  .withValues(alpha: 0.5),
-                          width: _isFocused ? 2 : 1,
-                        ),
-                        color: _isFocused
-                            ? theme.colorScheme.primaryContainer
-                                .withValues(alpha: 0.1)
-                            : theme.colorScheme.surfaceContainerHighest,
-                      ),
-                      child: TextField(
-                        controller: widget.controller,
-                        autofocus: true,
-                        style: textTheme.bodyLarge?.copyWith(
-                          fontWeight: FontWeight.w500,
-                        ),
-                        decoration: InputDecoration(
-                          hintText: 'e.g., Math 101, History, Science',
-                          hintStyle: textTheme.bodyLarge?.copyWith(
-                            color: theme.colorScheme.onSurface
-                                .withValues(alpha: 0.4),
+                          // Title
+                          Text(
+                            'New Course',
+                            style: textTheme.headlineSmall?.copyWith(
+                              fontWeight: FontWeight.w700,
+                              letterSpacing: -0.5,
+                            ),
+                            textAlign: TextAlign.center,
                           ),
-                          border: InputBorder.none,
-                          contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 20,
-                            vertical: 18,
+                          const SizedBox(height: 8),
+                          // Subtitle
+                          Text(
+                            'Give your course a name to get started',
+                            style: textTheme.bodyMedium?.copyWith(
+                              color: theme.colorScheme.onSurface
+                                  .withValues(alpha: 0.7),
+                            ),
+                            textAlign: TextAlign.center,
                           ),
-                        ),
-                        onSubmitted: (String value) {
-                          if (value.trim().isNotEmpty) {
-                            Navigator.of(context).pop(value.trim());
-                          }
-                        },
+                        ],
                       ),
                     ),
-                  ),
-                ),
-                const SizedBox(height: 28),
-                // Action buttons
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(28, 0, 28, 28),
-                  child: Row(
-                    children: <Widget>[
-                      // Cancel button
-                      Expanded(
-                        child: OutlinedButton(
-                          onPressed: () => Navigator.of(context).pop(),
-                          style: OutlinedButton.styleFrom(
-                                padding:
-                                    const EdgeInsets.symmetric(vertical: 16),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(14),
+                    // Input section
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 28),
+                      child: Focus(
+                        onFocusChange: (bool hasFocus) {
+                          setState(() {
+                            _isFocused = hasFocus;
+                          });
+                        },
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 200),
+                          curve: Curves.easeOutCubic,
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(
+                              color: _isFocused
+                                  ? theme.colorScheme.primary
+                                  : theme.colorScheme.outlineVariant
+                                      .withValues(alpha: 0.5),
+                              width: _isFocused ? 2 : 1,
                             ),
-                            side: BorderSide(
-                              color: theme.colorScheme.outlineVariant
-                                  .withValues(alpha: 0.5),
-                            ),
+                            color: _isFocused
+                                ? theme.colorScheme.primaryContainer
+                                    .withValues(alpha: 0.1)
+                                : theme.colorScheme.surfaceContainerHighest,
                           ),
-                          child: Text(
-                            'Cancel',
-                            style: textTheme.labelLarge?.copyWith(
-                              fontWeight: FontWeight.w600,
+                          child: TextField(
+                            controller: widget.controller,
+                            autofocus: true,
+                            style: textTheme.bodyLarge?.copyWith(
+                              fontWeight: FontWeight.w500,
                             ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      // Create button
-                      Expanded(
-                        flex: 2,
-                        child: FilledButton(
-                          onPressed: () {
-                            if (widget.controller.text.trim().isNotEmpty) {
-                              Navigator.of(context)
-                                  .pop(widget.controller.text.trim());
-                            }
-                          },
-                          style: FilledButton.styleFrom(
-                                padding:
-                                    const EdgeInsets.symmetric(vertical: 16),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(14),
+                            decoration: InputDecoration(
+                              hintText: 'e.g., Math 101, History, Science',
+                              hintStyle: textTheme.bodyLarge?.copyWith(
+                                color: theme.colorScheme.onSurface
+                                    .withValues(alpha: 0.4),
+                              ),
+                              border: InputBorder.none,
+                              contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 20,
+                                vertical: 18,
+                              ),
                             ),
-                            backgroundColor: theme.colorScheme.primary,
-                            foregroundColor: theme.colorScheme.onPrimary,
-                            elevation: 0,
-                          ),
-                          child: Text(
-                            'Create',
-                            style: textTheme.labelLarge?.copyWith(
-                              fontWeight: FontWeight.w600,
-                              color: theme.colorScheme.onPrimary,
-                            ),
+                            onSubmitted: (String value) {
+                              if (value.trim().isNotEmpty) {
+                                Navigator.of(context).pop(value.trim());
+                              }
+                            },
                           ),
                         ),
                       ),
-                    ],
-                  ),
+                    ),
+                    const SizedBox(height: 28),
+                    // Action buttons
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(28, 0, 28, 28),
+                      child: Row(
+                        children: <Widget>[
+                          // Cancel button
+                          Expanded(
+                            child: OutlinedButton(
+                              onPressed: () => Navigator.of(context).pop(),
+                              style: OutlinedButton.styleFrom(
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 16),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(14),
+                                ),
+                                side: BorderSide(
+                                  color: theme.colorScheme.outlineVariant
+                                      .withValues(alpha: 0.5),
+                                ),
+                              ),
+                              child: Text(
+                                'Cancel',
+                                style: textTheme.labelLarge?.copyWith(
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          // Create button
+                          Expanded(
+                            flex: 2,
+                            child: FilledButton(
+                              onPressed: () {
+                                if (widget.controller.text.trim().isNotEmpty) {
+                                  Navigator.of(context)
+                                      .pop(widget.controller.text.trim());
+                                }
+                              },
+                              style: FilledButton.styleFrom(
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 16),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(14),
+                                ),
+                                backgroundColor: theme.colorScheme.primary,
+                                foregroundColor: theme.colorScheme.onPrimary,
+                                elevation: 0,
+                              ),
+                              child: Text(
+                                'Create',
+                                style: textTheme.labelLarge?.copyWith(
+                                  fontWeight: FontWeight.w600,
+                                  color: theme.colorScheme.onPrimary,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
-              ],
-            ),
               );
             },
           ),
@@ -2907,28 +3340,28 @@ class _SettingsDialogState extends State<_SettingsDialog>
                     constraints,
                   ),
                 ),
-            decoration: BoxDecoration(
-              color: theme.colorScheme.surface,
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.surface,
                   borderRadius: BorderRadius.circular(
                     ResponsiveSizer.borderRadiusFromConstraints(
                       constraints,
                       multiplier: 1.4,
                     ),
                   ),
-              boxShadow: <BoxShadow>[
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.15),
-                  blurRadius: 40,
-                  offset: const Offset(0, 20),
+                  boxShadow: <BoxShadow>[
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.15),
+                      blurRadius: 40,
+                      offset: const Offset(0, 20),
+                    ),
+                  ],
                 ),
-              ],
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: <Widget>[
-                // Header section with icon
-                Container(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: <Widget>[
+                    // Header section with icon
+                    Container(
                       padding: EdgeInsets.fromLTRB(
                         ResponsiveSizer.horizontalPaddingFromConstraints(
                               constraints,
@@ -2946,214 +3379,214 @@ class _SettingsDialogState extends State<_SettingsDialog>
                           constraints,
                         ),
                       ),
-                  child: Column(
-                    children: <Widget>[
-                      // Title
-                      Text(
-                        'Settings',
-                        style: textTheme.headlineSmall?.copyWith(
-                          fontWeight: FontWeight.w700,
-                          letterSpacing: -0.5,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                      const SizedBox(height: 8),
-                      // Subtitle
-                      Text(
-                        'Manage your app preferences',
-                        style: textTheme.bodyMedium?.copyWith(
-                          color: theme.colorScheme.onSurface
-                              .withValues(alpha: 0.7),
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                    ],
-                  ),
-                ),
-                // API Key section
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 28),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: <Widget>[
-                      Text(
-                        'Google AI API Key',
-                        style: textTheme.titleSmall?.copyWith(
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Required for generating questions from PDFs',
-                        style: textTheme.bodySmall?.copyWith(
-                          color: theme.colorScheme.onSurface
-                              .withValues(alpha: 0.7),
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      Focus(
-                        onFocusChange: (bool hasFocus) {
-                          setState(() {
-                            _isFocused = hasFocus;
-                          });
-                        },
-                        child: AnimatedContainer(
-                          duration: const Duration(milliseconds: 200),
-                          curve: Curves.easeOutCubic,
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(16),
-                            border: Border.all(
-                              color: _isFocused
-                                  ? theme.colorScheme.primary
-                                  : theme.colorScheme.outlineVariant
-                                      .withValues(alpha: 0.5),
-                              width: _isFocused ? 2 : 1,
+                      child: Column(
+                        children: <Widget>[
+                          // Title
+                          Text(
+                            'Settings',
+                            style: textTheme.headlineSmall?.copyWith(
+                              fontWeight: FontWeight.w700,
+                              letterSpacing: -0.5,
                             ),
-                            color: _isFocused
-                                ? theme.colorScheme.primaryContainer
-                                    .withValues(alpha: 0.1)
-                                : theme.colorScheme.surfaceContainerHighest,
+                            textAlign: TextAlign.center,
                           ),
-                          child: _isLoading
-                              ? const Padding(
-                                  padding: EdgeInsets.all(20),
-                                  child: Center(
-                                    child: CircularProgressIndicator(),
-                                  ),
-                                )
-                              : TextField(
-                                  controller: _apiKeyController,
-                                  style: textTheme.bodyLarge?.copyWith(
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                  decoration: InputDecoration(
+                          const SizedBox(height: 8),
+                          // Subtitle
+                          Text(
+                            'Manage your app preferences',
+                            style: textTheme.bodyMedium?.copyWith(
+                              color: theme.colorScheme.onSurface
+                                  .withValues(alpha: 0.7),
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ],
+                      ),
+                    ),
+                    // API Key section
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 28),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: <Widget>[
+                          Text(
+                            'Google AI API Key',
+                            style: textTheme.titleSmall?.copyWith(
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            'Required for generating questions from PDFs',
+                            style: textTheme.bodySmall?.copyWith(
+                              color: theme.colorScheme.onSurface
+                                  .withValues(alpha: 0.7),
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          Focus(
+                            onFocusChange: (bool hasFocus) {
+                              setState(() {
+                                _isFocused = hasFocus;
+                              });
+                            },
+                            child: AnimatedContainer(
+                              duration: const Duration(milliseconds: 200),
+                              curve: Curves.easeOutCubic,
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(16),
+                                border: Border.all(
+                                  color: _isFocused
+                                      ? theme.colorScheme.primary
+                                      : theme.colorScheme.outlineVariant
+                                          .withValues(alpha: 0.5),
+                                  width: _isFocused ? 2 : 1,
+                                ),
+                                color: _isFocused
+                                    ? theme.colorScheme.primaryContainer
+                                        .withValues(alpha: 0.1)
+                                    : theme.colorScheme.surfaceContainerHighest,
+                              ),
+                              child: _isLoading
+                                  ? const Padding(
+                                      padding: EdgeInsets.all(20),
+                                      child: Center(
+                                        child: CircularProgressIndicator(),
+                                      ),
+                                    )
+                                  : TextField(
+                                      controller: _apiKeyController,
+                                      style: textTheme.bodyLarge?.copyWith(
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                      decoration: InputDecoration(
                                         hintText:
                                             'Enter your Google AI API key',
                                         hintStyle:
                                             textTheme.bodyLarge?.copyWith(
-                                      color: theme.colorScheme.onSurface
-                                          .withValues(alpha: 0.4),
-                                    ),
-                                    border: InputBorder.none,
+                                          color: theme.colorScheme.onSurface
+                                              .withValues(alpha: 0.4),
+                                        ),
+                                        border: InputBorder.none,
                                         contentPadding:
                                             const EdgeInsets.symmetric(
-                                      horizontal: 20,
-                                      vertical: 18,
+                                          horizontal: 20,
+                                          vertical: 18,
+                                        ),
+                                      ),
+                                      obscureText: true,
                                     ),
-                                  ),
-                                  obscureText: true,
-                                ),
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      TextButton.icon(
-                        onPressed: () async {
-                          final url = Uri.parse(
-                            'https://makersuite.google.com/app/apikey',
-                          );
-                          if (await canLaunchUrl(url)) {
-                            await launchUrl(
-                              url,
-                              mode: LaunchMode.externalApplication,
-                            );
-                          }
-                        },
-                        icon: const Icon(Icons.open_in_new, size: 16),
-                        label: const Text('Get API Key'),
-                        style: TextButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 8,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 28),
-                // Action buttons
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(28, 0, 28, 28),
-                  child: Row(
-                    children: <Widget>[
-                      // Cancel button
-                      Expanded(
-                        child: OutlinedButton(
-                          onPressed: () => Navigator.of(context).pop(),
-                          style: OutlinedButton.styleFrom(
-                                padding:
-                                    const EdgeInsets.symmetric(vertical: 16),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(14),
-                            ),
-                            side: BorderSide(
-                              color: theme.colorScheme.outlineVariant
-                                  .withValues(alpha: 0.5),
                             ),
                           ),
-                          child: Text(
-                            'Cancel',
-                            style: textTheme.labelLarge?.copyWith(
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      // Save button
-                      Expanded(
-                        flex: 2,
-                        child: FilledButton(
-                          onPressed: () async {
-                            await QuestionGeneratorService.setApiKey(
-                              _apiKeyController.text.trim().isEmpty
-                                  ? null
-                                  : _apiKeyController.text.trim(),
-                            );
-                            if (context.mounted) {
-                              Navigator.of(context).pop();
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text(
-                                    'Settings saved successfully!',
-                                    style: TextStyle(
-                                      color: theme.colorScheme.onSurface,
-                                    ),
-                                  ),
-                                  backgroundColor:
-                                      theme.colorScheme.primaryContainer,
-                                  behavior: SnackBarBehavior.floating,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                ),
+                          const SizedBox(height: 12),
+                          TextButton.icon(
+                            onPressed: () async {
+                              final url = Uri.parse(
+                                'https://makersuite.google.com/app/apikey',
                               );
-                            }
-                          },
-                          style: FilledButton.styleFrom(
+                              if (await canLaunchUrl(url)) {
+                                await launchUrl(
+                                  url,
+                                  mode: LaunchMode.externalApplication,
+                                );
+                              }
+                            },
+                            icon: const Icon(Icons.open_in_new, size: 16),
+                            label: const Text('Get API Key'),
+                            style: TextButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 8,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 28),
+                    // Action buttons
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(28, 0, 28, 28),
+                      child: Row(
+                        children: <Widget>[
+                          // Cancel button
+                          Expanded(
+                            child: OutlinedButton(
+                              onPressed: () => Navigator.of(context).pop(),
+                              style: OutlinedButton.styleFrom(
                                 padding:
                                     const EdgeInsets.symmetric(vertical: 16),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(14),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(14),
+                                ),
+                                side: BorderSide(
+                                  color: theme.colorScheme.outlineVariant
+                                      .withValues(alpha: 0.5),
+                                ),
+                              ),
+                              child: Text(
+                                'Cancel',
+                                style: textTheme.labelLarge?.copyWith(
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
                             ),
-                            backgroundColor: theme.colorScheme.primary,
-                            foregroundColor: theme.colorScheme.onPrimary,
-                            elevation: 0,
                           ),
-                          child: Text(
-                            'Save',
-                            style: textTheme.labelLarge?.copyWith(
-                              fontWeight: FontWeight.w600,
-                              color: theme.colorScheme.onPrimary,
+                          const SizedBox(width: 12),
+                          // Save button
+                          Expanded(
+                            flex: 2,
+                            child: FilledButton(
+                              onPressed: () async {
+                                await QuestionGeneratorService.setApiKey(
+                                  _apiKeyController.text.trim().isEmpty
+                                      ? null
+                                      : _apiKeyController.text.trim(),
+                                );
+                                if (context.mounted) {
+                                  Navigator.of(context).pop();
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text(
+                                        'Settings saved successfully!',
+                                        style: TextStyle(
+                                          color: theme.colorScheme.onSurface,
+                                        ),
+                                      ),
+                                      backgroundColor:
+                                          theme.colorScheme.primaryContainer,
+                                      behavior: SnackBarBehavior.floating,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                    ),
+                                  );
+                                }
+                              },
+                              style: FilledButton.styleFrom(
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 16),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(14),
+                                ),
+                                backgroundColor: theme.colorScheme.primary,
+                                foregroundColor: theme.colorScheme.onPrimary,
+                                elevation: 0,
+                              ),
+                              child: Text(
+                                'Save',
+                                style: textTheme.labelLarge?.copyWith(
+                                  fontWeight: FontWeight.w600,
+                                  color: theme.colorScheme.onPrimary,
+                                ),
+                              ),
                             ),
                           ),
-                        ),
+                        ],
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
-              ],
-            ),
               );
             },
           ),

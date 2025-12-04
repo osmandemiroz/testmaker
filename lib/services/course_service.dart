@@ -266,7 +266,10 @@ class CourseService {
     }
 
     final course = courses[index];
-    final updatedFlashcards = <List<Flashcard>>[...course.flashcards, flashcardSet];
+    final updatedFlashcards = <List<Flashcard>>[
+      ...course.flashcards,
+      flashcardSet,
+    ];
 
     courses[index] = course.copyWith(
       flashcards: updatedFlashcards,
@@ -293,7 +296,8 @@ class CourseService {
     }
 
     final course = courses[index];
-    if (flashcardSetIndex < 0 || flashcardSetIndex >= course.flashcards.length) {
+    if (flashcardSetIndex < 0 ||
+        flashcardSetIndex >= course.flashcards.length) {
       throw Exception('Flashcard set index out of bounds');
     }
 
@@ -305,6 +309,193 @@ class CourseService {
 
     courses[index] = course.copyWith(
       flashcards: updatedFlashcards,
+      updatedAt: DateTime.now().millisecondsSinceEpoch,
+    );
+
+    await _saveCourses(courses);
+  }
+
+  /// Reorders PDFs in a course.
+  ///
+  /// Moves the PDF at [oldIndex] to [newIndex] in the course's PDFs list.
+  /// Also updates the pdfNames map to match the new order.
+  Future<void> reorderPdfsInCourse(
+    String courseId,
+    int oldIndex,
+    int newIndex,
+  ) async {
+    await _ensureInitialized();
+
+    final courses = await getAllCourses();
+    final index = courses.indexWhere((Course c) => c.id == courseId);
+
+    if (index == -1) {
+      throw Exception('Course with id $courseId not found');
+    }
+
+    final course = courses[index];
+    if (oldIndex < 0 ||
+        oldIndex >= course.pdfs.length ||
+        newIndex < 0 ||
+        newIndex >= course.pdfs.length) {
+      throw Exception('PDF index out of bounds');
+    }
+
+    // Reorder PDFs (newIndex is already adjusted by the UI)
+    final updatedPdfs = <String>[...course.pdfs];
+    final item = updatedPdfs.removeAt(oldIndex);
+    updatedPdfs.insert(newIndex, item);
+
+    // Reorder pdfNames map to match the new indices
+    // Build mapping by simulating the reorder on the indices themselves
+    Map<int, String>? updatedPdfNames;
+    if (course.pdfNames != null && course.pdfNames!.isNotEmpty) {
+      updatedPdfNames = <int, String>{};
+      // Create a list of old indices and reorder them the same way
+      final oldIndices = List<int>.generate(
+        course.pdfs.length,
+        (int i) => i,
+      );
+      final movedIndex = oldIndices.removeAt(oldIndex);
+      oldIndices.insert(newIndex, movedIndex);
+
+      // Now map new index to old index and copy the name
+      for (var newIdx = 0; newIdx < updatedPdfs.length; newIdx++) {
+        final oldIdx = oldIndices[newIdx];
+        if (course.pdfNames!.containsKey(oldIdx)) {
+          updatedPdfNames[newIdx] = course.pdfNames![oldIdx]!;
+        }
+      }
+    }
+
+    courses[index] = course.copyWith(
+      pdfs: updatedPdfs,
+      pdfNames: updatedPdfNames,
+      updatedAt: DateTime.now().millisecondsSinceEpoch,
+    );
+
+    await _saveCourses(courses);
+  }
+
+  /// Reorders quizzes in a course.
+  ///
+  /// Moves the quiz at [oldIndex] to [newIndex] in the course's quizzes list.
+  /// Also updates the quizNames map to match the new order.
+  Future<void> reorderQuizzesInCourse(
+    String courseId,
+    int oldIndex,
+    int newIndex,
+  ) async {
+    await _ensureInitialized();
+
+    final courses = await getAllCourses();
+    final index = courses.indexWhere((Course c) => c.id == courseId);
+
+    if (index == -1) {
+      throw Exception('Course with id $courseId not found');
+    }
+
+    final course = courses[index];
+    if (oldIndex < 0 ||
+        oldIndex >= course.quizzes.length ||
+        newIndex < 0 ||
+        newIndex >= course.quizzes.length) {
+      throw Exception('Quiz index out of bounds');
+    }
+
+    // Reorder quizzes (newIndex is already adjusted by the UI)
+    final updatedQuizzes = <List<Question>>[...course.quizzes];
+    final item = updatedQuizzes.removeAt(oldIndex);
+    updatedQuizzes.insert(newIndex, item);
+
+    // Reorder quizNames map to match the new indices
+    // Build mapping by simulating the reorder on the indices themselves
+    Map<int, String>? updatedQuizNames;
+    if (course.quizNames != null && course.quizNames!.isNotEmpty) {
+      updatedQuizNames = <int, String>{};
+      // Create a list of old indices and reorder them the same way
+      final oldIndices = List<int>.generate(
+        course.quizzes.length,
+        (int i) => i,
+      );
+      final movedIndex = oldIndices.removeAt(oldIndex);
+      oldIndices.insert(newIndex, movedIndex);
+
+      // Now map new index to old index and copy the name
+      for (var newIdx = 0; newIdx < updatedQuizzes.length; newIdx++) {
+        final oldIdx = oldIndices[newIdx];
+        if (course.quizNames!.containsKey(oldIdx)) {
+          updatedQuizNames[newIdx] = course.quizNames![oldIdx]!;
+        }
+      }
+    }
+
+    courses[index] = course.copyWith(
+      quizzes: updatedQuizzes,
+      quizNames: updatedQuizNames,
+      updatedAt: DateTime.now().millisecondsSinceEpoch,
+    );
+
+    await _saveCourses(courses);
+  }
+
+  /// Reorders flashcard sets in a course.
+  ///
+  /// Moves the flashcard set at [oldIndex] to [newIndex] in the course's flashcards list.
+  /// Also updates the flashcardSetNames map to match the new order.
+  Future<void> reorderFlashcardSetsInCourse(
+    String courseId,
+    int oldIndex,
+    int newIndex,
+  ) async {
+    await _ensureInitialized();
+
+    final courses = await getAllCourses();
+    final index = courses.indexWhere((Course c) => c.id == courseId);
+
+    if (index == -1) {
+      throw Exception('Course with id $courseId not found');
+    }
+
+    final course = courses[index];
+    if (oldIndex < 0 ||
+        oldIndex >= course.flashcards.length ||
+        newIndex < 0 ||
+        newIndex >= course.flashcards.length) {
+      throw Exception('Flashcard set index out of bounds');
+    }
+
+    // Reorder flashcard sets (newIndex is already adjusted by the UI)
+    final updatedFlashcards = <List<Flashcard>>[...course.flashcards];
+    final item = updatedFlashcards.removeAt(oldIndex);
+    updatedFlashcards.insert(newIndex, item);
+
+    // Reorder flashcardSetNames map to match the new indices
+    // Build mapping by simulating the reorder on the indices themselves
+    Map<int, String>? updatedFlashcardSetNames;
+    if (course.flashcardSetNames != null &&
+        course.flashcardSetNames!.isNotEmpty) {
+      updatedFlashcardSetNames = <int, String>{};
+      // Create a list of old indices and reorder them the same way
+      final oldIndices = List<int>.generate(
+        course.flashcards.length,
+        (int i) => i,
+      );
+      final movedIndex = oldIndices.removeAt(oldIndex);
+      oldIndices.insert(newIndex, movedIndex);
+
+      // Now map new index to old index and copy the name
+      for (var newIdx = 0; newIdx < updatedFlashcards.length; newIdx++) {
+        final oldIdx = oldIndices[newIdx];
+        if (course.flashcardSetNames!.containsKey(oldIdx)) {
+          updatedFlashcardSetNames[newIdx] = course.flashcardSetNames![oldIdx]!;
+        }
+      }
+    }
+
+    courses[index] = course.copyWith(
+      flashcards: updatedFlashcards,
+      flashcardSetNames: updatedFlashcardSetNames,
       updatedAt: DateTime.now().millisecondsSinceEpoch,
     );
 
