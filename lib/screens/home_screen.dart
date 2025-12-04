@@ -1,3 +1,5 @@
+// ignore_for_file: use_if_null_to_convert_nulls_to_bools, document_ignores
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:testmaker/controllers/home_controller.dart';
@@ -40,6 +42,7 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   late final HomeController _controller;
+  final Set<String> _expandedPdfs = <String>{};
 
   @override
   void initState() {
@@ -1510,101 +1513,54 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  /// Builds a card for a PDF in a course with swipe-to-delete.
-  Widget _buildPdfCardWithSwipe(
-    ThemeData theme,
-    TextTheme textTheme,
+  /// Shows delete confirmation dialog for a PDF.
+  Future<void> _confirmDeletePdf(
     Course course,
     int pdfIndex,
     String fileName,
-    String pdfPath,
-  ) {
-    // Use PDF path as key instead of index to prevent Dismissible errors
-    // when items are deleted and indices shift
-    return Dismissible(
-      key: Key('pdf_${course.id}_${pdfPath.hashCode}'),
-      direction: DismissDirection.endToStart,
-      background: LayoutBuilder(
-        builder: (BuildContext context, BoxConstraints constraints) {
-          return Container(
-            margin: EdgeInsets.only(
-              bottom: ResponsiveSizer.itemSpacingFromConstraints(constraints),
-            ),
-            decoration: BoxDecoration(
-              color: theme.colorScheme.error,
-              borderRadius: BorderRadius.circular(
-                ResponsiveSizer.borderRadiusFromConstraints(constraints),
-              ),
-            ),
-            alignment: Alignment.centerRight,
-            padding: EdgeInsets.only(
-              right: ResponsiveSizer.spacingFromConstraints(
-                constraints,
-                multiplier: 2.5,
-              ),
-            ),
-            child: Icon(
-              Icons.delete_outlined,
-              color: theme.colorScheme.onError,
-              size: ResponsiveSizer.iconSizeFromConstraints(constraints),
-            ),
-          );
-        },
-      ),
-      confirmDismiss: (DismissDirection direction) async {
-        final confirmed = await showDialog<bool>(
-          context: context,
-          builder: (BuildContext context) {
-            final theme = Theme.of(context);
-            final textTheme = theme.textTheme;
+  ) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (BuildContext context) {
+        final theme = Theme.of(context);
+        final textTheme = theme.textTheme;
 
-            return AlertDialog(
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(20),
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          title: Text(
+            'Delete PDF?',
+            style: textTheme.titleLarge?.copyWith(
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          content: Text(
+            'Are you sure you want to delete "$fileName"? '
+            'This action cannot be undone.',
+            style: textTheme.bodyMedium,
+          ),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              style: FilledButton.styleFrom(
+                backgroundColor: theme.colorScheme.error,
+                foregroundColor: theme.colorScheme.onError,
               ),
-              title: Text(
-                'Delete PDF?',
-                style: textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              content: Text(
-                'Are you sure you want to delete "$fileName"? '
-                'This action cannot be undone.',
-                style: textTheme.bodyMedium,
-              ),
-              actions: <Widget>[
-                TextButton(
-                  onPressed: () => Navigator.of(context).pop(false),
-                  child: const Text('Cancel'),
-                ),
-                FilledButton(
-                  onPressed: () => Navigator.of(context).pop(true),
-                  style: FilledButton.styleFrom(
-                    backgroundColor: theme.colorScheme.error,
-                    foregroundColor: theme.colorScheme.onError,
-                  ),
-                  child: const Text('Delete'),
-                ),
-              ],
-            );
-          },
+              child: const Text('Delete'),
+            ),
+          ],
         );
-
-        return confirmed ?? false;
       },
-      onDismissed: (DismissDirection direction) {
-        _deletePdfFromCourse(course, pdfIndex);
-      },
-      child: _buildPdfCard(
-        theme,
-        textTheme,
-        course,
-        pdfIndex,
-        fileName,
-        pdfPath,
-      ),
     );
+
+    if (confirmed == true) {
+      await _deletePdfFromCourse(course, pdfIndex);
+    }
   }
 
   /// Builds a card for a PDF in a course.
@@ -1615,28 +1571,30 @@ class _HomeScreenState extends State<HomeScreen> {
     int pdfIndex,
     String fileName,
     String pdfPath,
+    BoxConstraints constraints,
   ) {
     final pdfName = course.getPdfName(pdfIndex, pdfPath);
-    return LayoutBuilder(
-      builder: (BuildContext context, BoxConstraints constraints) {
-        return Container(
-          margin: ResponsiveSizer.cardMarginFromConstraints(constraints),
-          child: Material(
-            color: theme.colorScheme.surfaceContainerLow,
-            borderRadius: BorderRadius.circular(
-              ResponsiveSizer.borderRadiusFromConstraints(constraints),
-            ),
-            child: InkWell(
+    final pdfKey = '${course.id}_$pdfIndex';
+    final isExpanded = _expandedPdfs.contains(pdfKey);
+
+    return Container(
+      margin: ResponsiveSizer.cardMarginFromConstraints(constraints),
+      child: Material(
+        color: theme.colorScheme.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(
+          ResponsiveSizer.borderRadiusFromConstraints(constraints),
+        ),
+        child: Column(
+          children: <Widget>[
+            InkWell(
               onTap: () => _viewPdf(pdfPath, pdfName),
-              onLongPress: () => _showRenameDialog(
-                title: 'Rename PDF',
-                currentName: pdfName,
-                onSave: (String newName) async {
-                  await _controller.renamePdf(pdfIndex, newName);
-                },
-              ),
-              borderRadius: BorderRadius.circular(
-                ResponsiveSizer.borderRadiusFromConstraints(constraints),
+              borderRadius: BorderRadius.only(
+                topLeft: Radius.circular(
+                  ResponsiveSizer.borderRadiusFromConstraints(constraints),
+                ),
+                topRight: Radius.circular(
+                  ResponsiveSizer.borderRadiusFromConstraints(constraints),
+                ),
               ),
               child: Padding(
                 padding: EdgeInsets.all(
@@ -1703,15 +1661,320 @@ class _HomeScreenState extends State<HomeScreen> {
                         ],
                       ),
                     ),
-                    Icon(
-                      Icons.arrow_forward_ios,
-                      size: ResponsiveSizer.iconSizeFromConstraints(
-                        constraints,
-                        multiplier: 0.8,
+                    // Edit button
+                    IconButton(
+                      onPressed: () => _showRenameDialog(
+                        title: 'Rename PDF',
+                        currentName: pdfName,
+                        onSave: (String newName) async {
+                          await _controller.renamePdf(pdfIndex, newName);
+                        },
                       ),
-                      color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
+                      icon: Icon(
+                        Icons.edit_outlined,
+                        size: ResponsiveSizer.iconSizeFromConstraints(
+                          constraints,
+                          multiplier: 0.9,
+                        ),
+                      ),
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+                      tooltip: 'Rename',
+                    ),
+                    // Delete button
+                    IconButton(
+                      onPressed: () => _confirmDeletePdf(
+                        course,
+                        pdfIndex,
+                        pdfName,
+                      ),
+                      icon: Icon(
+                        Icons.delete_outlined,
+                        size: ResponsiveSizer.iconSizeFromConstraints(
+                          constraints,
+                          multiplier: 0.9,
+                        ),
+                      ),
+                      color: theme.colorScheme.error,
+                      tooltip: 'Delete',
+                    ),
+                    // Expand/collapse button with animation
+                    IconButton(
+                      onPressed: () {
+                        setState(() {
+                          if (isExpanded) {
+                            _expandedPdfs.remove(pdfKey);
+                          } else {
+                            _expandedPdfs.add(pdfKey);
+                          }
+                        });
+                      },
+                      icon: AnimatedRotation(
+                        duration: const Duration(milliseconds: 300),
+                        curve: Curves.easeInOutCubic,
+                        turns: isExpanded ? 0.5 : 0.0,
+                        child: Icon(
+                          Icons.expand_more,
+                          size: ResponsiveSizer.iconSizeFromConstraints(
+                            constraints,
+                            multiplier: 0.9,
+                          ),
+                        ),
+                      ),
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+                      tooltip: isExpanded ? 'Collapse' : 'Expand',
                     ),
                   ],
+                ),
+              ),
+            ),
+            // Animated expandable section for generate buttons
+            AnimatedSize(
+              duration: const Duration(milliseconds: 300),
+              curve: Curves.easeInOutCubic,
+              child: isExpanded
+                  ? Container(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: <Color>[
+                            theme.colorScheme.surfaceContainerHighest,
+                            theme.colorScheme.surfaceContainerHighest
+                                .withValues(alpha: 0.95),
+                          ],
+                        ),
+                        borderRadius: BorderRadius.only(
+                          bottomLeft: Radius.circular(
+                            ResponsiveSizer.borderRadiusFromConstraints(
+                              constraints,
+                            ),
+                          ),
+                          bottomRight: Radius.circular(
+                            ResponsiveSizer.borderRadiusFromConstraints(
+                              constraints,
+                            ),
+                          ),
+                        ),
+                        boxShadow: <BoxShadow>[
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.05),
+                            blurRadius: 8,
+                            offset: const Offset(0, -2),
+                          ),
+                        ],
+                      ),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.only(
+                          bottomLeft: Radius.circular(
+                            ResponsiveSizer.borderRadiusFromConstraints(
+                              constraints,
+                            ),
+                          ),
+                          bottomRight: Radius.circular(
+                            ResponsiveSizer.borderRadiusFromConstraints(
+                              constraints,
+                            ),
+                          ),
+                        ),
+                        child: Padding(
+                          padding: EdgeInsets.symmetric(
+                            horizontal:
+                                ResponsiveSizer.cardPaddingFromConstraints(
+                              constraints,
+                            ),
+                            vertical: ResponsiveSizer.spacingFromConstraints(
+                              constraints,
+                            ),
+                          ),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: <Widget>[
+                              // Divider
+                              Container(
+                                height: 1,
+                                margin: EdgeInsets.only(
+                                  bottom:
+                                      ResponsiveSizer.spacingFromConstraints(
+                                    constraints,
+                                  ),
+                                ),
+                                decoration: BoxDecoration(
+                                  gradient: LinearGradient(
+                                    colors: <Color>[
+                                      Colors.transparent,
+                                      theme.colorScheme.outlineVariant
+                                          .withValues(alpha: 0.3),
+                                      Colors.transparent,
+                                    ],
+                                  ),
+                                ),
+                              ),
+                              // Generate Questions button
+                              _buildAnimatedActionButton(
+                                theme: theme,
+                                textTheme: textTheme,
+                                constraints: constraints,
+                                icon: Icons.auto_awesome,
+                                label: 'Generate Questions',
+                                isLoading: _controller.isGeneratingQuestions,
+                                onPressed: _controller.isGeneratingQuestions
+                                    ? null
+                                    : () => _generateQuestionsFromPdf(
+                                          course,
+                                          pdfPath,
+                                        ),
+                              ),
+                              SizedBox(
+                                height: ResponsiveSizer.spacingFromConstraints(
+                                  constraints,
+                                  multiplier: 0.75,
+                                ),
+                              ),
+                              // Generate Flashcards button
+                              _buildAnimatedActionButton(
+                                theme: theme,
+                                textTheme: textTheme,
+                                constraints: constraints,
+                                icon: Icons.style_outlined,
+                                label: 'Generate Flashcards',
+                                isLoading: _controller.isGeneratingFlashcards,
+                                onPressed: _controller.isGeneratingFlashcards
+                                    ? null
+                                    : () => _generateFlashcardsFromPdf(
+                                          course,
+                                          pdfPath,
+                                        ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    )
+                  : const SizedBox.shrink(),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Builds an animated action button for the expandable PDF section.
+  Widget _buildAnimatedActionButton({
+    required ThemeData theme,
+    required TextTheme textTheme,
+    required BoxConstraints constraints,
+    required IconData icon,
+    required String label,
+    required bool isLoading,
+    required VoidCallback? onPressed,
+  }) {
+    return TweenAnimationBuilder<double>(
+      tween: Tween<double>(begin: 0, end: 1),
+      duration: const Duration(milliseconds: 400),
+      curve: Curves.easeOutCubic,
+      builder: (BuildContext context, double value, Widget? child) {
+        return Transform.translate(
+          offset: Offset(0, 10 * (1 - value)),
+          child: Opacity(
+            opacity: value,
+            child: Container(
+              height: ResponsiveSizer.buttonHeightFromConstraints(
+                    constraints,
+                  ) *
+                  0.8,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(
+                  ResponsiveSizer.borderRadiusFromConstraints(
+                    constraints,
+                    multiplier: 0.75,
+                  ),
+                ),
+                border: Border.all(
+                  color:
+                      theme.colorScheme.outlineVariant.withValues(alpha: 0.3),
+                  width: 1.5,
+                ),
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: <Color>[
+                    theme.colorScheme.surfaceContainerLow,
+                    theme.colorScheme.surfaceContainerLow
+                        .withValues(alpha: 0.8),
+                  ],
+                ),
+                boxShadow: <BoxShadow>[
+                  BoxShadow(
+                    color: theme.colorScheme.primary.withValues(alpha: 0.1),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  onTap: isLoading ? null : onPressed,
+                  borderRadius: BorderRadius.circular(
+                    ResponsiveSizer.borderRadiusFromConstraints(
+                      constraints,
+                      multiplier: 0.75,
+                    ),
+                  ),
+                  child: Padding(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: ResponsiveSizer.spacingFromConstraints(
+                        constraints,
+                        multiplier: 2,
+                      ),
+                      vertical: ResponsiveSizer.spacingFromConstraints(
+                        constraints,
+                        multiplier: 0.75,
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: <Widget>[
+                        if (isLoading)
+                          SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2.5,
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                theme.colorScheme.primary,
+                              ),
+                            ),
+                          )
+                        else
+                          Icon(
+                            icon,
+                            size: ResponsiveSizer.iconSizeFromConstraints(
+                              constraints,
+                              multiplier: 0.85,
+                            ),
+                            color: theme.colorScheme.primary,
+                          ),
+                        SizedBox(
+                          width: ResponsiveSizer.spacingFromConstraints(
+                            constraints,
+                          ),
+                        ),
+                        Flexible(
+                          child: Text(
+                            label,
+                            style: textTheme.labelMedium?.copyWith(
+                              fontWeight: FontWeight.w600,
+                              color: theme.colorScheme.onSurface,
+                              letterSpacing: 0.2,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
               ),
             ),
@@ -1721,119 +1984,54 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  /// Builds a card for a quiz in a course with swipe-to-delete.
-  Widget _buildQuizCardWithSwipe(
-    ThemeData theme,
-    TextTheme textTheme,
+  /// Shows delete confirmation dialog for a quiz.
+  Future<void> _confirmDeleteQuiz(
     Course course,
     int quizIndex,
-    int questionCount,
-    int quizHash,
-    VoidCallback onTap,
-  ) {
-    // Use quiz content hash as key instead of index to prevent Dismissible errors
-    // when items are deleted and indices shift
-    return Dismissible(
-      key: Key('quiz_${course.id}_$quizHash'),
-      direction: DismissDirection.endToStart,
-      background: LayoutBuilder(
-        builder: (BuildContext context, BoxConstraints constraints) {
-          return Container(
-            margin: EdgeInsets.only(
-              bottom: ResponsiveSizer.itemSpacingFromConstraints(constraints),
-            ),
-            decoration: BoxDecoration(
-              color: theme.colorScheme.error,
-              borderRadius: BorderRadius.circular(
-                ResponsiveSizer.borderRadiusFromConstraints(constraints),
-              ),
-            ),
-            alignment: Alignment.centerRight,
-            padding: EdgeInsets.only(
-              right: ResponsiveSizer.spacingFromConstraints(
-                constraints,
-                multiplier: 2.5,
-              ),
-            ),
-            child: Icon(
-              Icons.delete_outlined,
-              color: theme.colorScheme.onError,
-              size: ResponsiveSizer.iconSizeFromConstraints(constraints),
-            ),
-          );
-        },
-      ),
-      confirmDismiss: (DismissDirection direction) async {
-        final confirmed = await showDialog<bool>(
-          context: context,
-          builder: (BuildContext context) {
-            final theme = Theme.of(context);
-            final textTheme = theme.textTheme;
+    String quizName,
+  ) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (BuildContext context) {
+        final theme = Theme.of(context);
+        final textTheme = theme.textTheme;
 
-            return AlertDialog(
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(20),
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          title: Text(
+            'Delete Quiz?',
+            style: textTheme.titleLarge?.copyWith(
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          content: Text(
+            'Are you sure you want to delete "$quizName"? '
+            'This action cannot be undone.',
+            style: textTheme.bodyMedium,
+          ),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              style: FilledButton.styleFrom(
+                backgroundColor: theme.colorScheme.error,
+                foregroundColor: theme.colorScheme.onError,
               ),
-              title: Text(
-                'Delete Quiz?',
-                style: textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              content: Text(
-                'Are you sure you want to delete "${course.getQuizName(quizIndex)}"? '
-                'This action cannot be undone.',
-                style: textTheme.bodyMedium,
-              ),
-              actions: <Widget>[
-                TextButton(
-                  onPressed: () => Navigator.of(context).pop(false),
-                  child: const Text('Cancel'),
-                ),
-                FilledButton(
-                  onPressed: () => Navigator.of(context).pop(true),
-                  style: FilledButton.styleFrom(
-                    backgroundColor: theme.colorScheme.error,
-                    foregroundColor: theme.colorScheme.onError,
-                  ),
-                  child: const Text('Delete'),
-                ),
-              ],
-            );
-          },
+              child: const Text('Delete'),
+            ),
+          ],
         );
-
-        return confirmed ?? false;
       },
-      onDismissed: (DismissDirection direction) {
-        // Immediately update state synchronously before async operations
-        // This ensures the Dismissible widget is removed from the tree immediately
-        if (mounted &&
-            _controller.selectedCourse != null &&
-            _controller.selectedCourse!.id == course.id) {
-          final currentCourse = _controller.selectedCourse!;
-          if (quizIndex >= 0 && quizIndex < currentCourse.quizzes.length) {
-            // Update state immediately to remove the quiz from the widget tree
-            final updatedQuizzes = <List<Question>>[
-              ...currentCourse.quizzes.sublist(0, quizIndex),
-              ...currentCourse.quizzes.sublist(quizIndex + 1),
-            ];
-            _controller
-                .selectCourse(currentCourse.copyWith(quizzes: updatedQuizzes));
-            // Then perform async deletion
-            _deleteQuizFromCourse(currentCourse, quizIndex);
-          }
-        }
-      },
-      child: _buildQuizCard(
-        theme,
-        textTheme,
-        course,
-        quizIndex,
-        questionCount,
-        onTap,
-      ),
     );
+
+    if (confirmed == true) {
+      await _deleteQuizFromCourse(course, quizIndex);
+    }
   }
 
   /// Builds a card for a quiz in a course.
@@ -1844,224 +2042,184 @@ class _HomeScreenState extends State<HomeScreen> {
     int quizIndex,
     int questionCount,
     VoidCallback onTap,
+    BoxConstraints constraints,
   ) {
     final quizName = course.getQuizName(quizIndex);
-    return LayoutBuilder(
-      builder: (BuildContext context, BoxConstraints constraints) {
-        return Container(
-          margin: ResponsiveSizer.cardMarginFromConstraints(constraints),
-          child: Material(
-            color: theme.colorScheme.surfaceContainerLow,
-            borderRadius: BorderRadius.circular(
-              ResponsiveSizer.borderRadiusFromConstraints(constraints),
+    return Container(
+      margin: ResponsiveSizer.cardMarginFromConstraints(constraints),
+      child: Material(
+        color: theme.colorScheme.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(
+          ResponsiveSizer.borderRadiusFromConstraints(constraints),
+        ),
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(
+            ResponsiveSizer.borderRadiusFromConstraints(constraints),
+          ),
+          child: Padding(
+            padding: EdgeInsets.all(
+              ResponsiveSizer.cardPaddingFromConstraints(constraints),
             ),
-            child: InkWell(
-              onTap: onTap,
-              onLongPress: () => _showRenameDialog(
-                title: 'Rename Quiz',
-                currentName: quizName,
-                onSave: (String newName) async {
-                  await _controller.renameQuiz(quizIndex, newName);
-                },
-              ),
-              borderRadius: BorderRadius.circular(
-                ResponsiveSizer.borderRadiusFromConstraints(constraints),
-              ),
-              child: Padding(
-                padding: EdgeInsets.all(
-                  ResponsiveSizer.cardPaddingFromConstraints(constraints),
+            child: Row(
+              children: <Widget>[
+                Container(
+                  width: ResponsiveSizer.iconContainerSizeFromConstraints(
+                    constraints,
+                    multiplier: 1.2,
+                  ),
+                  height: ResponsiveSizer.iconContainerSizeFromConstraints(
+                    constraints,
+                    multiplier: 1.2,
+                  ),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(
+                      ResponsiveSizer.borderRadiusFromConstraints(
+                        constraints,
+                      ),
+                    ),
+                    color: theme.colorScheme.primaryContainer,
+                  ),
+                  child: Icon(
+                    Icons.quiz_outlined,
+                    color: theme.colorScheme.onPrimaryContainer,
+                    size: ResponsiveSizer.iconSizeFromConstraints(
+                      constraints,
+                    ),
+                  ),
                 ),
-                child: Row(
-                  children: <Widget>[
-                    Container(
-                      width: ResponsiveSizer.iconContainerSizeFromConstraints(
-                        constraints,
-                        multiplier: 1.2,
-                      ),
-                      height: ResponsiveSizer.iconContainerSizeFromConstraints(
-                        constraints,
-                        multiplier: 1.2,
-                      ),
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(
-                          ResponsiveSizer.borderRadiusFromConstraints(
-                            constraints,
-                          ),
+                SizedBox(
+                  width: ResponsiveSizer.spacingFromConstraints(
+                    constraints,
+                    multiplier: 2,
+                  ),
+                ),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: <Widget>[
+                      Text(
+                        quizName,
+                        style: textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w600,
                         ),
-                        color: theme.colorScheme.primaryContainer,
                       ),
-                      child: Icon(
-                        Icons.quiz_outlined,
-                        color: theme.colorScheme.onPrimaryContainer,
-                        size: ResponsiveSizer.iconSizeFromConstraints(
+                      SizedBox(
+                        height: ResponsiveSizer.spacingFromConstraints(
                           constraints,
+                          multiplier: 0.5,
                         ),
                       ),
-                    ),
-                    SizedBox(
-                      width: ResponsiveSizer.spacingFromConstraints(
-                        constraints,
-                        multiplier: 2,
+                      Text(
+                        '$questionCount question${questionCount == 1 ? '' : 's'}',
+                        style: textTheme.bodySmall?.copyWith(
+                          color: theme.colorScheme.onSurface
+                              .withValues(alpha: 0.7),
+                        ),
                       ),
-                    ),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: <Widget>[
-                          Text(
-                            quizName,
-                            style: textTheme.titleMedium?.copyWith(
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                          SizedBox(
-                            height: ResponsiveSizer.spacingFromConstraints(
-                              constraints,
-                              multiplier: 0.5,
-                            ),
-                          ),
-                          Text(
-                            '$questionCount question${questionCount == 1 ? '' : 's'}',
-                            style: textTheme.bodySmall?.copyWith(
-                              color: theme.colorScheme.onSurface
-                                  .withValues(alpha: 0.7),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    Icon(
-                      Icons.arrow_forward_ios,
-                      size: ResponsiveSizer.iconSizeFromConstraints(
-                        constraints,
-                        multiplier: 0.8,
-                      ),
-                      color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
+                // Edit button
+                IconButton(
+                  onPressed: () => _showRenameDialog(
+                    title: 'Rename Quiz',
+                    currentName: quizName,
+                    onSave: (String newName) async {
+                      await _controller.renameQuiz(quizIndex, newName);
+                    },
+                  ),
+                  icon: Icon(
+                    Icons.edit_outlined,
+                    size: ResponsiveSizer.iconSizeFromConstraints(
+                      constraints,
+                      multiplier: 0.9,
+                    ),
+                  ),
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+                  tooltip: 'Rename',
+                ),
+                // Delete button
+                IconButton(
+                  onPressed: () => _confirmDeleteQuiz(
+                    course,
+                    quizIndex,
+                    quizName,
+                  ),
+                  icon: Icon(
+                    Icons.delete_outlined,
+                    size: ResponsiveSizer.iconSizeFromConstraints(
+                      constraints,
+                      multiplier: 0.9,
+                    ),
+                  ),
+                  color: theme.colorScheme.error,
+                  tooltip: 'Delete',
+                ),
+                Icon(
+                  Icons.arrow_forward_ios,
+                  size: ResponsiveSizer.iconSizeFromConstraints(
+                    constraints,
+                    multiplier: 0.8,
+                  ),
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
+                ),
+              ],
             ),
           ),
-        );
-      },
+        ),
+      ),
     );
   }
 
-  /// Builds a card for a flashcard set in a course with swipe-to-delete.
-  Widget _buildFlashcardCardWithSwipe(
-    ThemeData theme,
-    TextTheme textTheme,
+  /// Shows delete confirmation dialog for a flashcard set.
+  Future<void> _confirmDeleteFlashcardSet(
     Course course,
     int flashcardSetIndex,
-    int flashcardCount,
-    int flashcardHash,
-    VoidCallback onTap,
-  ) {
-    // Use flashcard content hash as key instead of index to prevent Dismissible errors
-    // when items are deleted and indices shift
-    return Dismissible(
-      key: Key('flashcard_${course.id}_$flashcardHash'),
-      direction: DismissDirection.endToStart,
-      background: LayoutBuilder(
-        builder: (BuildContext context, BoxConstraints constraints) {
-          return Container(
-            margin: EdgeInsets.only(
-              bottom: ResponsiveSizer.itemSpacingFromConstraints(constraints),
-            ),
-            decoration: BoxDecoration(
-              color: theme.colorScheme.error,
-              borderRadius: BorderRadius.circular(
-                ResponsiveSizer.borderRadiusFromConstraints(constraints),
-              ),
-            ),
-            alignment: Alignment.centerRight,
-            padding: EdgeInsets.only(
-              right: ResponsiveSizer.spacingFromConstraints(
-                constraints,
-                multiplier: 2.5,
-              ),
-            ),
-            child: Icon(
-              Icons.delete_outlined,
-              color: theme.colorScheme.onError,
-              size: ResponsiveSizer.iconSizeFromConstraints(constraints),
-            ),
-          );
-        },
-      ),
-      confirmDismiss: (DismissDirection direction) async {
-        final confirmed = await showDialog<bool>(
-          context: context,
-          builder: (BuildContext context) {
-            final theme = Theme.of(context);
-            final textTheme = theme.textTheme;
+    String flashcardSetName,
+  ) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (BuildContext context) {
+        final theme = Theme.of(context);
+        final textTheme = theme.textTheme;
 
-            return AlertDialog(
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(20),
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          title: Text(
+            'Delete Flashcard Set?',
+            style: textTheme.titleLarge?.copyWith(
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          content: Text(
+            'Are you sure you want to delete "$flashcardSetName"? '
+            'This action cannot be undone.',
+            style: textTheme.bodyMedium,
+          ),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              style: FilledButton.styleFrom(
+                backgroundColor: theme.colorScheme.error,
+                foregroundColor: theme.colorScheme.onError,
               ),
-              title: Text(
-                'Delete Flashcard Set?',
-                style: textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              content: Text(
-                'Are you sure you want to delete "${course.getFlashcardSetName(flashcardSetIndex)}"? '
-                'This action cannot be undone.',
-                style: textTheme.bodyMedium,
-              ),
-              actions: <Widget>[
-                TextButton(
-                  onPressed: () => Navigator.of(context).pop(false),
-                  child: const Text('Cancel'),
-                ),
-                FilledButton(
-                  onPressed: () => Navigator.of(context).pop(true),
-                  style: FilledButton.styleFrom(
-                    backgroundColor: theme.colorScheme.error,
-                    foregroundColor: theme.colorScheme.onError,
-                  ),
-                  child: const Text('Delete'),
-                ),
-              ],
-            );
-          },
+              child: const Text('Delete'),
+            ),
+          ],
         );
-
-        return confirmed ?? false;
       },
-      onDismissed: (DismissDirection direction) {
-        // Immediately update state synchronously before async operations
-        if (mounted &&
-            _controller.selectedCourse != null &&
-            _controller.selectedCourse!.id == course.id) {
-          final currentCourse = _controller.selectedCourse!;
-          if (flashcardSetIndex >= 0 &&
-              flashcardSetIndex < currentCourse.flashcards.length) {
-            // Update state immediately to remove the flashcard set from the widget tree
-            final updatedFlashcards = <List<Flashcard>>[
-              ...currentCourse.flashcards.sublist(0, flashcardSetIndex),
-              ...currentCourse.flashcards.sublist(flashcardSetIndex + 1),
-            ];
-            _controller.selectCourse(
-              currentCourse.copyWith(flashcards: updatedFlashcards),
-            );
-            // Then perform async deletion
-            _deleteFlashcardSetFromCourse(currentCourse, flashcardSetIndex);
-          }
-        }
-      },
-      child: _buildFlashcardCard(
-        theme,
-        textTheme,
-        course,
-        flashcardSetIndex,
-        flashcardCount,
-        onTap,
-      ),
     );
+
+    if (confirmed == true) {
+      await _deleteFlashcardSetFromCourse(course, flashcardSetIndex);
+    }
   }
 
   /// Builds a card for a flashcard set in a course.
@@ -2072,110 +2230,136 @@ class _HomeScreenState extends State<HomeScreen> {
     int flashcardSetIndex,
     int flashcardCount,
     VoidCallback onTap,
+    BoxConstraints constraints,
   ) {
     final flashcardSetName = course.getFlashcardSetName(flashcardSetIndex);
-    return LayoutBuilder(
-      builder: (BuildContext context, BoxConstraints constraints) {
-        return Container(
-          margin: ResponsiveSizer.cardMarginFromConstraints(constraints),
-          child: Material(
-            color: theme.colorScheme.surfaceContainerLow,
-            borderRadius: BorderRadius.circular(
-              ResponsiveSizer.borderRadiusFromConstraints(constraints),
+    return Container(
+      margin: ResponsiveSizer.cardMarginFromConstraints(constraints),
+      child: Material(
+        color: theme.colorScheme.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(
+          ResponsiveSizer.borderRadiusFromConstraints(constraints),
+        ),
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(
+            ResponsiveSizer.borderRadiusFromConstraints(constraints),
+          ),
+          child: Padding(
+            padding: EdgeInsets.all(
+              ResponsiveSizer.cardPaddingFromConstraints(constraints),
             ),
-            child: InkWell(
-              onTap: onTap,
-              onLongPress: () => _showRenameDialog(
-                title: 'Rename Flashcard Set',
-                currentName: flashcardSetName,
-                onSave: (String newName) async {
-                  await _controller.renameFlashcardSet(
-                    flashcardSetIndex,
-                    newName,
-                  );
-                },
-              ),
-              borderRadius: BorderRadius.circular(
-                ResponsiveSizer.borderRadiusFromConstraints(constraints),
-              ),
-              child: Padding(
-                padding: EdgeInsets.all(
-                  ResponsiveSizer.cardPaddingFromConstraints(constraints),
+            child: Row(
+              children: <Widget>[
+                Container(
+                  width: ResponsiveSizer.iconContainerSizeFromConstraints(
+                    constraints,
+                    multiplier: 1.2,
+                  ),
+                  height: ResponsiveSizer.iconContainerSizeFromConstraints(
+                    constraints,
+                    multiplier: 1.2,
+                  ),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(
+                      ResponsiveSizer.borderRadiusFromConstraints(
+                        constraints,
+                      ),
+                    ),
+                    color: theme.colorScheme.secondaryContainer,
+                  ),
+                  child: Icon(
+                    Icons.style_outlined,
+                    color: theme.colorScheme.onSecondaryContainer,
+                    size: ResponsiveSizer.iconSizeFromConstraints(
+                      constraints,
+                    ),
+                  ),
                 ),
-                child: Row(
-                  children: <Widget>[
-                    Container(
-                      width: ResponsiveSizer.iconContainerSizeFromConstraints(
-                        constraints,
-                        multiplier: 1.2,
-                      ),
-                      height: ResponsiveSizer.iconContainerSizeFromConstraints(
-                        constraints,
-                        multiplier: 1.2,
-                      ),
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(
-                          ResponsiveSizer.borderRadiusFromConstraints(
-                            constraints,
-                          ),
+                SizedBox(
+                  width: ResponsiveSizer.spacingFromConstraints(
+                    constraints,
+                    multiplier: 2,
+                  ),
+                ),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: <Widget>[
+                      Text(
+                        flashcardSetName,
+                        style: textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w600,
                         ),
-                        color: theme.colorScheme.secondaryContainer,
                       ),
-                      child: Icon(
-                        Icons.style_outlined,
-                        color: theme.colorScheme.onSecondaryContainer,
-                        size: ResponsiveSizer.iconSizeFromConstraints(
+                      SizedBox(
+                        height: ResponsiveSizer.spacingFromConstraints(
                           constraints,
+                          multiplier: 0.5,
                         ),
                       ),
-                    ),
-                    SizedBox(
-                      width: ResponsiveSizer.spacingFromConstraints(
-                        constraints,
-                        multiplier: 2,
+                      Text(
+                        '$flashcardCount flashcard${flashcardCount == 1 ? '' : 's'}',
+                        style: textTheme.bodySmall?.copyWith(
+                          color: theme.colorScheme.onSurface
+                              .withValues(alpha: 0.7),
+                        ),
                       ),
-                    ),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: <Widget>[
-                          Text(
-                            flashcardSetName,
-                            style: textTheme.titleMedium?.copyWith(
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                          SizedBox(
-                            height: ResponsiveSizer.spacingFromConstraints(
-                              constraints,
-                              multiplier: 0.5,
-                            ),
-                          ),
-                          Text(
-                            '$flashcardCount flashcard${flashcardCount == 1 ? '' : 's'}',
-                            style: textTheme.bodySmall?.copyWith(
-                              color: theme.colorScheme.onSurface
-                                  .withValues(alpha: 0.7),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    Icon(
-                      Icons.arrow_forward_ios,
-                      size: ResponsiveSizer.iconSizeFromConstraints(
-                        constraints,
-                        multiplier: 0.8,
-                      ),
-                      color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
+                // Edit button
+                IconButton(
+                  onPressed: () => _showRenameDialog(
+                    title: 'Rename Flashcard Set',
+                    currentName: flashcardSetName,
+                    onSave: (String newName) async {
+                      await _controller.renameFlashcardSet(
+                        flashcardSetIndex,
+                        newName,
+                      );
+                    },
+                  ),
+                  icon: Icon(
+                    Icons.edit_outlined,
+                    size: ResponsiveSizer.iconSizeFromConstraints(
+                      constraints,
+                      multiplier: 0.9,
+                    ),
+                  ),
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+                  tooltip: 'Rename',
+                ),
+                // Delete button
+                IconButton(
+                  onPressed: () => _confirmDeleteFlashcardSet(
+                    course,
+                    flashcardSetIndex,
+                    flashcardSetName,
+                  ),
+                  icon: Icon(
+                    Icons.delete_outlined,
+                    size: ResponsiveSizer.iconSizeFromConstraints(
+                      constraints,
+                      multiplier: 0.9,
+                    ),
+                  ),
+                  color: theme.colorScheme.error,
+                  tooltip: 'Delete',
+                ),
+                Icon(
+                  Icons.arrow_forward_ios,
+                  size: ResponsiveSizer.iconSizeFromConstraints(
+                    constraints,
+                    multiplier: 0.8,
+                  ),
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
+                ),
+              ],
             ),
           ),
-        );
-      },
+        ),
+      ),
     );
   }
 
@@ -2205,174 +2389,18 @@ class _HomeScreenState extends State<HomeScreen> {
     return LayoutBuilder(
       key: key,
       builder: (BuildContext context, BoxConstraints itemConstraints) {
-        return Column(
-          children: <Widget>[
-            Row(
-              children: <Widget>[
-                // Drag handle icon wrapped in ReorderableDragStartListener
-                ReorderableDragStartListener(
-                  index: pdfIndex,
-                  child: Padding(
-                    padding: EdgeInsets.only(
-                      right: ResponsiveSizer.spacingFromConstraints(
-                        itemConstraints,
-                      ),
-                    ),
-                    child: Icon(
-                      Icons.drag_handle,
-                      color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
-                      size: ResponsiveSizer.iconSizeFromConstraints(
-                        itemConstraints,
-                      ),
-                    ),
-                  ),
-                ),
-                // PDF card (expanded to fill remaining space)
-                Expanded(
-                  child: _buildPdfCardWithSwipe(
-                    theme,
-                    textTheme,
-                    course,
-                    pdfIndex,
-                    fileName,
-                    pdfPath,
-                  ),
-                ),
-              ],
-            ),
-            // Generate questions button
-            Padding(
-              padding: EdgeInsets.only(
-                left: ResponsiveSizer.spacingFromConstraints(
-                      itemConstraints,
-                    ) *
-                    2,
-                bottom: ResponsiveSizer.spacingFromConstraints(
-                  itemConstraints,
-                  multiplier: 0.75,
-                ),
-              ),
-              child: SizedBox(
-                height: ResponsiveSizer.buttonHeightFromConstraints(
-                      itemConstraints,
-                    ) *
-                    0.75,
-                child: OutlinedButton.icon(
-                  onPressed: _controller.isGeneratingQuestions
-                      ? null
-                      : () => _generateQuestionsFromPdf(course, pdfPath),
-                  icon: _controller.isGeneratingQuestions
-                      ? SizedBox(
-                          width: 14,
-                          height: 14,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation<Color>(
-                              theme.colorScheme.primary,
-                            ),
-                          ),
-                        )
-                      : Icon(
-                          Icons.auto_awesome,
-                          size: ResponsiveSizer.iconSizeFromConstraints(
-                            itemConstraints,
-                            multiplier: 0.8,
-                          ),
-                        ),
-                  label: Text(
-                    _controller.isGeneratingQuestions
-                        ? 'Generating...'
-                        : 'Generate Questions',
-                    style: textTheme.labelSmall?.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  style: OutlinedButton.styleFrom(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: ResponsiveSizer.spacingFromConstraints(
-                        itemConstraints,
-                        multiplier: 1.5,
-                      ),
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(
-                        ResponsiveSizer.borderRadiusFromConstraints(
-                          itemConstraints,
-                          multiplier: 0.67,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-            // Generate flashcards button
-            Padding(
-              padding: EdgeInsets.only(
-                left: ResponsiveSizer.spacingFromConstraints(
-                      itemConstraints,
-                    ) *
-                    2,
-                bottom: ResponsiveSizer.spacingFromConstraints(
-                  itemConstraints,
-                  multiplier: 1.5,
-                ),
-              ),
-              child: SizedBox(
-                height: ResponsiveSizer.buttonHeightFromConstraints(
-                      itemConstraints,
-                    ) *
-                    0.75,
-                child: OutlinedButton.icon(
-                  onPressed: _controller.isGeneratingFlashcards
-                      ? null
-                      : () => _generateFlashcardsFromPdf(course, pdfPath),
-                  icon: _controller.isGeneratingFlashcards
-                      ? SizedBox(
-                          width: 14,
-                          height: 14,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation<Color>(
-                              theme.colorScheme.primary,
-                            ),
-                          ),
-                        )
-                      : Icon(
-                          Icons.style_outlined,
-                          size: ResponsiveSizer.iconSizeFromConstraints(
-                            itemConstraints,
-                            multiplier: 0.8,
-                          ),
-                        ),
-                  label: Text(
-                    _controller.isGeneratingFlashcards
-                        ? 'Generating...'
-                        : 'Generate Flashcards',
-                    style: textTheme.labelSmall?.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  style: OutlinedButton.styleFrom(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: ResponsiveSizer.spacingFromConstraints(
-                        itemConstraints,
-                        multiplier: 1.5,
-                      ),
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(
-                        ResponsiveSizer.borderRadiusFromConstraints(
-                          itemConstraints,
-                          multiplier: 0.67,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ],
+        // Make the entire card draggable
+        return ReorderableDragStartListener(
+          index: pdfIndex,
+          child: _buildPdfCard(
+            theme,
+            textTheme,
+            course,
+            pdfIndex,
+            fileName,
+            pdfPath,
+            itemConstraints,
+          ),
         );
       },
     );
@@ -2393,35 +2421,18 @@ class _HomeScreenState extends State<HomeScreen> {
     return LayoutBuilder(
       key: key,
       builder: (BuildContext context, BoxConstraints itemConstraints) {
-        return Row(
-          children: <Widget>[
-            // Drag handle icon wrapped in ReorderableDragStartListener
-            ReorderableDragStartListener(
-              index: quizIndex,
-              child: Padding(
-                padding: EdgeInsets.only(
-                  right: ResponsiveSizer.spacingFromConstraints(itemConstraints),
-                ),
-                child: Icon(
-                  Icons.drag_handle,
-                  color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
-                  size: ResponsiveSizer.iconSizeFromConstraints(itemConstraints),
-                ),
-              ),
-            ),
-            // Quiz card (expanded to fill remaining space)
-            Expanded(
-              child: _buildQuizCardWithSwipe(
-                theme,
-                textTheme,
-                course,
-                quizIndex,
-                questionCount,
-                quizHash,
-                onTap,
-              ),
-            ),
-          ],
+        // Make the entire card draggable
+        return ReorderableDragStartListener(
+          index: quizIndex,
+          child: _buildQuizCard(
+            theme,
+            textTheme,
+            course,
+            quizIndex,
+            questionCount,
+            onTap,
+            itemConstraints,
+          ),
         );
       },
     );
@@ -2442,35 +2453,18 @@ class _HomeScreenState extends State<HomeScreen> {
     return LayoutBuilder(
       key: key,
       builder: (BuildContext context, BoxConstraints itemConstraints) {
-        return Row(
-          children: <Widget>[
-            // Drag handle icon wrapped in ReorderableDragStartListener
-            ReorderableDragStartListener(
-              index: flashcardSetIndex,
-              child: Padding(
-                padding: EdgeInsets.only(
-                  right: ResponsiveSizer.spacingFromConstraints(itemConstraints),
-                ),
-                child: Icon(
-                  Icons.drag_handle,
-                  color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
-                  size: ResponsiveSizer.iconSizeFromConstraints(itemConstraints),
-                ),
-              ),
-            ),
-            // Flashcard card (expanded to fill remaining space)
-            Expanded(
-              child: _buildFlashcardCardWithSwipe(
-                theme,
-                textTheme,
-                course,
-                flashcardSetIndex,
-                flashcardCount,
-                flashcardHash,
-                onTap,
-              ),
-            ),
-          ],
+        // Make the entire card draggable
+        return ReorderableDragStartListener(
+          index: flashcardSetIndex,
+          child: _buildFlashcardCard(
+            theme,
+            textTheme,
+            course,
+            flashcardSetIndex,
+            flashcardCount,
+            onTap,
+            itemConstraints,
+          ),
         );
       },
     );
