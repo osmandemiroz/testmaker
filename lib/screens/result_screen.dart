@@ -81,7 +81,11 @@ class ResultScreen extends StatelessWidget {
                         // Review section for AI-generated quizzes
                         if (incorrectAnswers != null &&
                             incorrectAnswers!.isNotEmpty) ...<Widget>[
-                          const SizedBox(height: 32),
+                          SizedBox(
+                            height: ResponsiveSizer.sectionSpacingFromConstraints(
+                              constraints,
+                            ),
+                          ),
                           _buildReviewSection(theme, textTheme, isCompact),
                         ],
                         SizedBox(
@@ -105,7 +109,11 @@ class ResultScreen extends StatelessWidget {
                             },
                             style: ElevatedButton.styleFrom(
                               shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(16),
+                                borderRadius: BorderRadius.circular(
+                                  ResponsiveSizer.borderRadiusFromConstraints(
+                                    constraints,
+                                  ),
+                                ),
                               ),
                               elevation: 0,
                             ),
@@ -140,7 +148,11 @@ class ResultScreen extends StatelessWidget {
                             },
                             style: OutlinedButton.styleFrom(
                               shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(16),
+                                borderRadius: BorderRadius.circular(
+                                  ResponsiveSizer.borderRadiusFromConstraints(
+                                    constraints,
+                                  ),
+                                ),
                               ),
                             ),
                             child: Text(
@@ -206,18 +218,27 @@ class ResultScreen extends StatelessWidget {
               Row(
                 children: <Widget>[
                   Container(
-                    width: 42,
-                    height: 42,
+                    width: ResponsiveSizer.iconContainerSizeFromConstraints(
+                      constraints,
+                    ),
+                    height: ResponsiveSizer.iconContainerSizeFromConstraints(
+                      constraints,
+                    ),
                     decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(16),
+                      borderRadius: BorderRadius.circular(
+                        ResponsiveSizer.borderRadiusFromConstraints(
+                          constraints,
+                        ),
+                      ),
                       color: theme.colorScheme.primary.withValues(alpha: 0.14),
                     ),
-                    child: Icon(
-                      Icons.check_circle_rounded,
-                      color: theme.colorScheme.primary,
-                    ),
+                  child: Icon(
+                    Icons.check_circle_rounded,
+                    color: theme.colorScheme.primary,
+                    size: ResponsiveSizer.iconSizeFromConstraints(constraints),
                   ),
-                  const Spacer(),
+                ),
+                const Spacer(),
                   Text(
                     '${percent.toStringAsFixed(0)}%',
                     style: textTheme.titleLarge?.copyWith(
@@ -226,15 +247,25 @@ class ResultScreen extends StatelessWidget {
                   ),
                 ],
               ),
-              const SizedBox(height: 18),
-              Text(
+                  SizedBox(
+                    height: ResponsiveSizer.spacingFromConstraints(
+                      constraints,
+                      multiplier: 2.25,
+                    ),
+                  ),
+                  Text(
                 _summaryText,
                 style: textTheme.headlineSmall?.copyWith(
                   fontWeight: FontWeight.w700,
                   height: 1.15,
+                  ),
+              ),
+              SizedBox(
+                height: ResponsiveSizer.spacingFromConstraints(
+                  constraints,
+                  multiplier: 1.5,
                 ),
               ),
-              const SizedBox(height: 12),
               Text(
                 'You answered $correctAnswers out of $totalQuestions '
                 'questions correctly.',
@@ -281,9 +312,11 @@ class ResultScreen extends StatelessWidget {
                   Icon(
                     Icons.reviews_outlined,
                     color: theme.colorScheme.primary,
-                    size: 24,
+                    size: ResponsiveSizer.iconSizeFromConstraints(constraints),
                   ),
-                  const SizedBox(width: 12),
+                  SizedBox(
+                    width: ResponsiveSizer.spacingFromConstraints(constraints),
+                  ),
                   Text(
                     'Review Incorrect Answers',
                     style: textTheme.titleLarge?.copyWith(
@@ -292,7 +325,12 @@ class ResultScreen extends StatelessWidget {
                   ),
                 ],
               ),
-              const SizedBox(height: 20),
+              SizedBox(
+                height: ResponsiveSizer.spacingFromConstraints(
+                  constraints,
+                  multiplier: 2.5,
+                ),
+              ),
               ...incorrectAnswers!.asMap().entries.map<Widget>(
                 (MapEntry<int, Map<String, dynamic>> entry) {
                   final index = entry.key;
@@ -327,10 +365,16 @@ class ResultScreen extends StatelessWidget {
     Question question,
     int selectedIndex,
   ) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(16),
+    return LayoutBuilder(
+      builder: (BuildContext context, BoxConstraints constraints) {
+        return Container(
+          padding: EdgeInsets.all(
+            ResponsiveSizer.cardPaddingFromConstraints(constraints),
+          ),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(
+              ResponsiveSizer.borderRadiusFromConstraints(constraints),
+            ),
         color: theme.colorScheme.surface,
         border: Border.all(
           color: theme.colorScheme.errorContainer.withValues(alpha: 0.3),
@@ -346,7 +390,12 @@ class ResultScreen extends StatelessWidget {
               fontWeight: FontWeight.w600,
             ),
           ),
-          const SizedBox(height: 12),
+          SizedBox(
+            height: ResponsiveSizer.spacingFromConstraints(
+              constraints,
+              multiplier: 1.5,
+            ),
+          ),
           // Selected answer (incorrect)
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -354,9 +403,11 @@ class ResultScreen extends StatelessWidget {
               Icon(
                 Icons.close_rounded,
                 color: theme.colorScheme.error,
-                size: 20,
+                size: ResponsiveSizer.iconSizeFromConstraints(constraints),
               ),
-              const SizedBox(width: 8),
+              SizedBox(
+                width: ResponsiveSizer.spacingFromConstraints(constraints),
+              ),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -381,7 +432,12 @@ class ResultScreen extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 12),
+          SizedBox(
+            height: ResponsiveSizer.spacingFromConstraints(
+              constraints,
+              multiplier: 1.5,
+            ),
+          ),
           // Correct answer
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -389,9 +445,11 @@ class ResultScreen extends StatelessWidget {
               Icon(
                 Icons.check_circle_rounded,
                 color: theme.colorScheme.primary,
-                size: 20,
+                size: ResponsiveSizer.iconSizeFromConstraints(constraints),
               ),
-              const SizedBox(width: 8),
+              SizedBox(
+                width: ResponsiveSizer.spacingFromConstraints(constraints),
+              ),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -420,11 +478,20 @@ class ResultScreen extends StatelessWidget {
           // Explanation
           if (question.explanation != null &&
               question.explanation!.isNotEmpty) ...<Widget>[
-            const SizedBox(height: 16),
+            SizedBox(
+              height: ResponsiveSizer.spacingFromConstraints(
+                constraints,
+                multiplier: 2,
+              ),
+            ),
             Container(
-              padding: const EdgeInsets.all(12),
+              padding: EdgeInsets.all(
+                ResponsiveSizer.cardPaddingFromConstraints(constraints) * 0.75,
+              ),
               decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(
+                  ResponsiveSizer.borderRadiusFromConstraints(constraints),
+                ),
                 color:
                     theme.colorScheme.primaryContainer.withValues(alpha: 0.3),
               ),
@@ -434,9 +501,14 @@ class ResultScreen extends StatelessWidget {
                   Icon(
                     Icons.lightbulb_outline,
                     color: theme.colorScheme.onPrimaryContainer,
-                    size: 20,
+                    size: ResponsiveSizer.iconSizeFromConstraints(constraints),
                   ),
-                  const SizedBox(width: 12),
+                  SizedBox(
+                    width: ResponsiveSizer.spacingFromConstraints(
+                      constraints,
+                      multiplier: 1.5,
+                    ),
+                  ),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -466,6 +538,8 @@ class ResultScreen extends StatelessWidget {
           ],
         ],
       ),
+        );
+      },
     );
   }
 }

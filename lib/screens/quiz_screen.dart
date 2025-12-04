@@ -120,7 +120,12 @@ class _QuizScreenState extends State<QuizScreen> {
                     currentIndex: _controller.currentIndex,
                     total: _controller.totalQuestions,
                   ),
-                  const SizedBox(height: 16),
+                  SizedBox(
+                    height: ResponsiveSizer.spacingFromConstraints(
+                      constraints,
+                      multiplier: 2,
+                    ),
+                  ),
                   Row(
                     children: <Widget>[
                       Text(
@@ -139,7 +144,12 @@ class _QuizScreenState extends State<QuizScreen> {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 16),
+                  SizedBox(
+                    height: ResponsiveSizer.spacingFromConstraints(
+                      constraints,
+                      multiplier: 2,
+                    ),
+                  ),
                   Expanded(
                     child: AnimatedSwitcher(
                       duration: const Duration(milliseconds: 260),
@@ -218,7 +228,12 @@ class _QuizScreenState extends State<QuizScreen> {
               height: 1.25,
             ),
           ),
-          const SizedBox(height: 18),
+          SizedBox(
+            height: ResponsiveSizer.spacingFromConstraints(
+              constraints,
+              multiplier: 2.25,
+            ),
+          ),
           Expanded(
             child: ListView.builder(
               itemCount: question.options.length,

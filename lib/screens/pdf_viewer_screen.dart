@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:syncfusion_flutter_pdfviewer/pdfviewer.dart';
+import 'package:testmaker/utils/responsive_sizer.dart';
 
 /// ********************************************************************
 /// PdfViewerScreen
@@ -110,73 +111,103 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
     }
 
     if (_errorMessage != null) {
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: <Widget>[
-              Icon(
-                Icons.error_outline,
-                size: 64,
-                color: theme.colorScheme.error,
+      return LayoutBuilder(
+        builder: (BuildContext context, BoxConstraints constraints) {
+          return Center(
+            child: Padding(
+              padding: ResponsiveSizer.emptyStatePaddingFromConstraints(
+                constraints,
               ),
-              const SizedBox(height: 16),
-              Text(
-                'Unable to load PDF',
-                style: textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.w600,
-                  color: theme.colorScheme.onSurface,
-                ),
-                textAlign: TextAlign.center,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: <Widget>[
+                  Icon(
+                    Icons.error_outline,
+                    size: ResponsiveSizer.emptyStateIconSizeFromConstraints(
+                      constraints,
+                    ),
+                    color: theme.colorScheme.error,
+                  ),
+                  SizedBox(
+                    height: ResponsiveSizer.spacingFromConstraints(
+                      constraints,
+                      multiplier: 2,
+                    ),
+                  ),
+                  Text(
+                    'Unable to load PDF',
+                    style: textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.w600,
+                      color: theme.colorScheme.onSurface,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  SizedBox(
+                    height: ResponsiveSizer.spacingFromConstraints(constraints),
+                  ),
+                  Text(
+                    _errorMessage!,
+                    style: textTheme.bodyMedium?.copyWith(
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ],
               ),
-              const SizedBox(height: 8),
-              Text(
-                _errorMessage!,
-                style: textTheme.bodyMedium?.copyWith(
-                  color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
-                ),
-                textAlign: TextAlign.center,
-              ),
-            ],
-          ),
-        ),
+            ),
+          );
+        },
       );
     }
 
     final file = File(widget.pdfPath);
     if (!file.existsSync()) {
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: <Widget>[
-              Icon(
-                Icons.error_outline,
-                size: 64,
-                color: theme.colorScheme.error,
+      return LayoutBuilder(
+        builder: (BuildContext context, BoxConstraints constraints) {
+          return Center(
+            child: Padding(
+              padding: ResponsiveSizer.emptyStatePaddingFromConstraints(
+                constraints,
               ),
-              const SizedBox(height: 16),
-              Text(
-                'PDF file not found',
-                style: textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.w600,
-                  color: theme.colorScheme.onSurface,
-                ),
-                textAlign: TextAlign.center,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: <Widget>[
+                  Icon(
+                    Icons.error_outline,
+                    size: ResponsiveSizer.emptyStateIconSizeFromConstraints(
+                      constraints,
+                    ),
+                    color: theme.colorScheme.error,
+                  ),
+                  SizedBox(
+                    height: ResponsiveSizer.spacingFromConstraints(
+                      constraints,
+                      multiplier: 2,
+                    ),
+                  ),
+                  Text(
+                    'PDF file not found',
+                    style: textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.w600,
+                      color: theme.colorScheme.onSurface,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  SizedBox(
+                    height: ResponsiveSizer.spacingFromConstraints(constraints),
+                  ),
+                  Text(
+                    'The file at the specified path does not exist.',
+                    style: textTheme.bodyMedium?.copyWith(
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ],
               ),
-              const SizedBox(height: 8),
-              Text(
-                'The file at the specified path does not exist.',
-                style: textTheme.bodyMedium?.copyWith(
-                  color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
-                ),
-                textAlign: TextAlign.center,
-              ),
-            ],
-          ),
-        ),
+            ),
+          );
+        },
       );
     }
 

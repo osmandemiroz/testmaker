@@ -97,34 +97,56 @@ class QuizOptionCard extends StatelessWidget {
       ),
       child: Material(
         color: Colors.transparent,
-        child: InkWell(
-          borderRadius: BorderRadius.circular(18),
-          onTap: onTap,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(
-              horizontal: 16,
-              vertical: 14,
+          child: InkWell(
+            borderRadius: BorderRadius.circular(
+              ResponsiveSizer.borderRadiusFromConstraints(
+                constraints,
+                multiplier: 1.5,
+              ),
             ),
-            child: Row(
-              children: <Widget>[
-                // Circular index "badge" reminiscent of Apple lists.
-                Container(
-                  width: 30,
-                  height: 30,
-                  alignment: Alignment.center,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: theme.colorScheme.surfaceContainerHighest
-                        .withValues(alpha: 0.9),
-                  ),
-                  child: Text(
-                    String.fromCharCode(65 + index),
-                    style: theme.textTheme.labelMedium?.copyWith(
-                      fontWeight: FontWeight.w600,
+            onTap: onTap,
+            child: Padding(
+              padding: EdgeInsets.symmetric(
+                horizontal: ResponsiveSizer.spacingFromConstraints(
+                  constraints,
+                  multiplier: 2,
+                ),
+                vertical: ResponsiveSizer.spacingFromConstraints(
+                  constraints,
+                  multiplier: 1.75,
+                ),
+              ),
+              child: Row(
+                children: <Widget>[
+                  // Circular index "badge" reminiscent of Apple lists.
+                  Container(
+                    width: ResponsiveSizer.badgeSizeFromConstraints(
+                      constraints,
+                      multiplier: 1.7,
+                    ),
+                    height: ResponsiveSizer.badgeSizeFromConstraints(
+                      constraints,
+                      multiplier: 1.7,
+                    ),
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: theme.colorScheme.surfaceContainerHighest
+                          .withValues(alpha: 0.9),
+                    ),
+                    child: Text(
+                      String.fromCharCode(65 + index),
+                      style: theme.textTheme.labelMedium?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ),
-                ),
-                const SizedBox(width: 14),
+                  SizedBox(
+                    width: ResponsiveSizer.spacingFromConstraints(
+                      constraints,
+                      multiplier: 1.75,
+                    ),
+                  ),
                 Expanded(
                   child: Text(
                     label,

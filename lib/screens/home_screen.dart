@@ -760,18 +760,28 @@ class _HomeScreenState extends State<HomeScreen> {
         children: <Widget>[
           // Header with clickable logo to go to main screen
           Padding(
-            padding: const EdgeInsets.all(20),
+            padding: EdgeInsets.all(
+              ResponsiveSizer.cardPaddingFromConstraints(constraints),
+            ),
             child: InkWell(
               onTap: () {
                 _controller
                   ..selectCourse(null)
                   ..clearError();
               },
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(
+                ResponsiveSizer.borderRadiusFromConstraints(constraints),
+              ),
               child: Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 4,
-                  vertical: 4,
+                padding: EdgeInsets.symmetric(
+                  horizontal: ResponsiveSizer.spacingFromConstraints(
+                    constraints,
+                    multiplier: 0.5,
+                  ),
+                  vertical: ResponsiveSizer.spacingFromConstraints(
+                    constraints,
+                    multiplier: 0.5,
+                  ),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -783,7 +793,12 @@ class _HomeScreenState extends State<HomeScreen> {
                         letterSpacing: -0.5,
                       ),
                     ),
-                    const SizedBox(height: 4),
+                    SizedBox(
+                      height: ResponsiveSizer.spacingFromConstraints(
+                        constraints,
+                        multiplier: 0.5,
+                      ),
+                    ),
                     Text(
                       'Your courses',
                       style: textTheme.bodySmall?.copyWith(
@@ -804,9 +819,13 @@ class _HomeScreenState extends State<HomeScreen> {
                     child: CircularProgressIndicator(),
                   )
                 : _controller.courses.isEmpty
-                    ? _buildEmptyCoursesState(theme, textTheme)
+                    ? _buildEmptyCoursesState(theme, textTheme, constraints)
                     : ListView.builder(
-                        padding: const EdgeInsets.symmetric(vertical: 8),
+                        padding: EdgeInsets.symmetric(
+                          vertical: ResponsiveSizer.spacingFromConstraints(
+                            constraints,
+                          ),
+                        ),
                         itemCount: _controller.courses.length,
                         itemBuilder: (BuildContext context, int index) {
                           final course = _controller.courses[index];
@@ -822,21 +841,36 @@ class _HomeScreenState extends State<HomeScreen> {
                         },
                       ),
           ),
-          const Divider(height: 1),
+          Divider(
+            height: ResponsiveSizer.dividerHeightFromConstraints(constraints),
+          ),
           // Add course button
           Padding(
-            padding: const EdgeInsets.all(16),
+            padding: EdgeInsets.all(
+              ResponsiveSizer.cardPaddingFromConstraints(constraints),
+            ),
             child: FilledButton.icon(
               onPressed: _showCreateCourseDialog,
-              icon: const Icon(Icons.add, size: 20),
+              icon: Icon(
+                Icons.add,
+                size: ResponsiveSizer.iconSizeFromConstraints(constraints),
+              ),
               label: const Text('New Course'),
               style: FilledButton.styleFrom(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 12,
+                padding: EdgeInsets.symmetric(
+                  horizontal: ResponsiveSizer.spacingFromConstraints(
+                    constraints,
+                    multiplier: 2,
+                  ),
+                  vertical: ResponsiveSizer.spacingFromConstraints(
+                    constraints,
+                    multiplier: 1.5,
+                  ),
                 ),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(
+                    ResponsiveSizer.borderRadiusFromConstraints(constraints),
+                  ),
                 ),
               ),
             ),
@@ -856,19 +890,36 @@ class _HomeScreenState extends State<HomeScreen> {
     return Dismissible(
       key: Key('course_${course.id}'),
       direction: DismissDirection.endToStart,
-      background: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-        decoration: BoxDecoration(
-          color: theme.colorScheme.error,
-          borderRadius: BorderRadius.circular(12),
-        ),
-        alignment: Alignment.centerRight,
-        padding: const EdgeInsets.only(right: 20),
-        child: Icon(
-          Icons.delete_outlined,
-          color: theme.colorScheme.onError,
-          size: 24,
-        ),
+      background: LayoutBuilder(
+        builder: (BuildContext context, BoxConstraints constraints) {
+          return Container(
+            margin: EdgeInsets.symmetric(
+              horizontal: ResponsiveSizer.spacingFromConstraints(constraints),
+              vertical: ResponsiveSizer.spacingFromConstraints(
+                constraints,
+                multiplier: 0.5,
+              ),
+            ),
+            decoration: BoxDecoration(
+              color: theme.colorScheme.error,
+              borderRadius: BorderRadius.circular(
+                ResponsiveSizer.borderRadiusFromConstraints(constraints),
+              ),
+            ),
+            alignment: Alignment.centerRight,
+            padding: EdgeInsets.only(
+              right: ResponsiveSizer.spacingFromConstraints(
+                constraints,
+                multiplier: 2.5,
+              ),
+            ),
+            child: Icon(
+              Icons.delete_outlined,
+              color: theme.colorScheme.onError,
+              size: ResponsiveSizer.iconSizeFromConstraints(constraints),
+            ),
+          );
+        },
       ),
       confirmDismiss: (DismissDirection direction) async {
         // Show confirmation dialog before deleting
@@ -933,25 +984,40 @@ class _HomeScreenState extends State<HomeScreen> {
           ..selectCourse(course)
           ..clearError();
       },
-      child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-        decoration: BoxDecoration(
-          color: isSelected
-              ? theme.colorScheme.primaryContainer.withValues(alpha: 0.5)
-              : Colors.transparent,
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Row(
-          children: <Widget>[
-            Icon(
-              Icons.folder_outlined,
-              size: 20,
-              color: isSelected
-                  ? theme.colorScheme.primary
-                  : theme.colorScheme.onSurface.withValues(alpha: 0.7),
+      child: LayoutBuilder(
+        builder: (BuildContext context, BoxConstraints constraints) {
+          return Container(
+            margin: EdgeInsets.symmetric(
+              horizontal: ResponsiveSizer.spacingFromConstraints(constraints),
+              vertical: ResponsiveSizer.spacingFromConstraints(
+                constraints,
+                multiplier: 0.5,
+              ),
             ),
-            const SizedBox(width: 12),
+            padding: ResponsiveSizer.listItemPaddingFromConstraints(constraints),
+            decoration: BoxDecoration(
+              color: isSelected
+                  ? theme.colorScheme.primaryContainer.withValues(alpha: 0.5)
+                  : Colors.transparent,
+              borderRadius: BorderRadius.circular(
+                ResponsiveSizer.borderRadiusFromConstraints(constraints),
+              ),
+            ),
+            child: Row(
+              children: <Widget>[
+                Icon(
+                  Icons.folder_outlined,
+                  size: ResponsiveSizer.iconSizeFromConstraints(constraints),
+                  color: isSelected
+                      ? theme.colorScheme.primary
+                      : theme.colorScheme.onSurface.withValues(alpha: 0.7),
+                ),
+                SizedBox(
+                  width: ResponsiveSizer.spacingFromConstraints(
+                    constraints,
+                    multiplier: 1.5,
+                  ),
+                ),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -982,31 +1048,46 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ],
         ),
+          );
+        },
       ),
     );
   }
 
   /// Builds the empty state when no courses exist.
-  Widget _buildEmptyCoursesState(ThemeData theme, TextTheme textTheme) {
+  Widget _buildEmptyCoursesState(
+    ThemeData theme,
+    TextTheme textTheme,
+    BoxConstraints constraints,
+  ) {
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(32),
+        padding: ResponsiveSizer.emptyStatePaddingFromConstraints(constraints),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
             Icon(
               Icons.folder_outlined,
-              size: 48,
+              size: ResponsiveSizer.emptyStateIconSizeFromConstraints(
+                constraints,
+              ),
               color: theme.colorScheme.onSurface.withValues(alpha: 0.3),
             ),
-            const SizedBox(height: 16),
+            SizedBox(
+              height: ResponsiveSizer.spacingFromConstraints(
+                constraints,
+                multiplier: 2,
+              ),
+            ),
             Text(
               'No courses yet',
               style: textTheme.bodyLarge?.copyWith(
                 color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
               ),
             ),
-            const SizedBox(height: 8),
+            SizedBox(
+              height: ResponsiveSizer.spacingFromConstraints(constraints),
+            ),
             Text(
               'Create your first course to get started',
               style: textTheme.bodySmall?.copyWith(
@@ -1054,25 +1135,31 @@ class _HomeScreenState extends State<HomeScreen> {
 
   /// Builds the welcome content when no course is selected.
   Widget _buildWelcomeContent(ThemeData theme, TextTheme textTheme) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: <Widget>[
-        // Header row with title and settings button
-        Row(
+    return LayoutBuilder(
+      builder: (BuildContext context, BoxConstraints constraints) {
+        return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  Text(
-                    'Welcome to TestMaker',
-                    style: textTheme.headlineMedium?.copyWith(
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: -0.5,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
+            // Header row with title and settings button
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: <Widget>[
+                      Text(
+                        'Welcome to TestMaker',
+                        style: textTheme.headlineMedium?.copyWith(
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: -0.5,
+                        ),
+                      ),
+                      SizedBox(
+                        height: ResponsiveSizer.spacingFromConstraints(
+                          constraints,
+                        ),
+                      ),
                   Text(
                     'Create and take beautiful, focused quizzes.',
                     style: textTheme.bodyMedium?.copyWith(
@@ -1091,23 +1178,37 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               tooltip: 'Settings',
               style: IconButton.styleFrom(
-                padding: const EdgeInsets.all(8),
-                minimumSize: const Size(40, 40),
+                padding: EdgeInsets.all(
+                  ResponsiveSizer.spacingFromConstraints(constraints),
+                ),
+                minimumSize: Size(
+                  ResponsiveSizer.iconContainerSizeFromConstraints(constraints),
+                  ResponsiveSizer.iconContainerSizeFromConstraints(constraints),
+                ),
                 tapTargetSize: MaterialTapTargetSize.shrinkWrap,
               ),
             ),
           ],
         ),
-        const SizedBox(height: 32),
+        SizedBox(
+          height: ResponsiveSizer.sectionSpacingFromConstraints(constraints),
+        ),
         Hero(
           tag: 'quiz-card',
-          child: _buildHeroCard(theme, textTheme),
+          child: _buildHeroCard(theme, textTheme, constraints),
         ),
-        const SizedBox(height: 24),
-        _buildUploadArea(theme, textTheme),
+        SizedBox(
+          height: ResponsiveSizer.sectionSpacingFromConstraints(constraints),
+        ),
+        _buildUploadArea(theme, textTheme, constraints),
         if (_controller.error != null)
           Padding(
-            padding: const EdgeInsets.only(top: 12),
+            padding: EdgeInsets.only(
+              top: ResponsiveSizer.spacingFromConstraints(
+                constraints,
+                multiplier: 1.5,
+              ),
+            ),
             child: Text(
               _controller.error!,
               style: textTheme.bodySmall?.copyWith(
@@ -1115,9 +1216,11 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
           ),
-        const SizedBox(height: 24),
         SizedBox(
-          height: 54,
+          height: ResponsiveSizer.sectionSpacingFromConstraints(constraints),
+        ),
+        SizedBox(
+          height: ResponsiveSizer.buttonHeightFromConstraints(constraints) + 10,
           child: ElevatedButton(
             onPressed: _startQuiz,
             style: ElevatedButton.styleFrom(
@@ -1129,9 +1232,16 @@ class _HomeScreenState extends State<HomeScreen> {
               disabledForegroundColor:
                   theme.colorScheme.onSurface.withValues(alpha: 0.4),
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(
+                  ResponsiveSizer.borderRadiusFromConstraints(constraints),
+                ),
               ),
-              padding: const EdgeInsets.symmetric(horizontal: 24),
+              padding: EdgeInsets.symmetric(
+                horizontal: ResponsiveSizer.spacingFromConstraints(
+                  constraints,
+                  multiplier: 3,
+                ),
+              ),
             ),
             child: AnimatedSwitcher(
               duration: const Duration(milliseconds: 200),
@@ -1146,6 +1256,8 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ),
       ],
+        );
+      },
     );
   }
 
@@ -1501,38 +1613,64 @@ class _HomeScreenState extends State<HomeScreen> {
     String pdfPath,
   ) {
     final pdfName = course.getPdfName(pdfIndex, pdfPath);
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      child: Material(
-        color: theme.colorScheme.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(16),
-        child: InkWell(
-          onTap: () => _viewPdf(pdfPath, pdfName),
-          onLongPress: () => _showRenameDialog(
-            title: 'Rename PDF',
-            currentName: pdfName,
-            onSave: (String newName) async {
-              await _controller.renamePdf(pdfIndex, newName);
-            },
-          ),
-          borderRadius: BorderRadius.circular(16),
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Row(
-              children: <Widget>[
-                Container(
-                  width: 48,
-                  height: 48,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(12),
-                    color: theme.colorScheme.errorContainer,
-                  ),
-                  child: Icon(
-                    Icons.picture_as_pdf,
-                    color: theme.colorScheme.onErrorContainer,
-                  ),
+    return LayoutBuilder(
+      builder: (BuildContext context, BoxConstraints constraints) {
+        return Container(
+          margin: ResponsiveSizer.cardMarginFromConstraints(constraints),
+          child: Material(
+            color: theme.colorScheme.surfaceContainerLow,
+            borderRadius: BorderRadius.circular(
+              ResponsiveSizer.borderRadiusFromConstraints(constraints),
+            ),
+            child: InkWell(
+              onTap: () => _viewPdf(pdfPath, pdfName),
+              onLongPress: () => _showRenameDialog(
+                title: 'Rename PDF',
+                currentName: pdfName,
+                onSave: (String newName) async {
+                  await _controller.renamePdf(pdfIndex, newName);
+                },
+              ),
+              borderRadius: BorderRadius.circular(
+                ResponsiveSizer.borderRadiusFromConstraints(constraints),
+              ),
+              child: Padding(
+                padding: EdgeInsets.all(
+                  ResponsiveSizer.cardPaddingFromConstraints(constraints),
                 ),
-                const SizedBox(width: 16),
+                child: Row(
+                  children: <Widget>[
+                    Container(
+                      width: ResponsiveSizer.iconContainerSizeFromConstraints(
+                        constraints,
+                        multiplier: 1.2,
+                      ),
+                      height: ResponsiveSizer.iconContainerSizeFromConstraints(
+                        constraints,
+                        multiplier: 1.2,
+                      ),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(
+                          ResponsiveSizer.borderRadiusFromConstraints(
+                            constraints,
+                          ),
+                        ),
+                        color: theme.colorScheme.errorContainer,
+                      ),
+                      child: Icon(
+                        Icons.picture_as_pdf,
+                        color: theme.colorScheme.onErrorContainer,
+                        size: ResponsiveSizer.iconSizeFromConstraints(
+                          constraints,
+                        ),
+                      ),
+                    ),
+                    SizedBox(
+                      width: ResponsiveSizer.spacingFromConstraints(
+                        constraints,
+                        multiplier: 2,
+                      ),
+                    ),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -1545,7 +1683,12 @@ class _HomeScreenState extends State<HomeScreen> {
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
-                      const SizedBox(height: 4),
+                      SizedBox(
+                        height: ResponsiveSizer.spacingFromConstraints(
+                          constraints,
+                          multiplier: 0.5,
+                        ),
+                      ),
                       Text(
                         'PDF Document',
                         style: textTheme.bodySmall?.copyWith(
@@ -1558,14 +1701,19 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
                 Icon(
                   Icons.arrow_forward_ios,
-                  size: 16,
+                  size: ResponsiveSizer.iconSizeFromConstraints(
+                    constraints,
+                    multiplier: 0.8,
+                  ),
                   color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
                 ),
               ],
             ),
           ),
         ),
-      ),
+        ),
+        );
+      },
     );
   }
 
@@ -2174,13 +2322,24 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildHeroCard(ThemeData theme, TextTheme textTheme) {
+  Widget _buildHeroCard(
+    ThemeData theme,
+    TextTheme textTheme,
+    BoxConstraints constraints,
+  ) {
     return AnimatedContainer(
       duration: const Duration(milliseconds: 260),
       curve: Curves.easeInOutCubic,
-      padding: const EdgeInsets.all(24),
+      padding: EdgeInsets.all(
+        ResponsiveSizer.cardPaddingFromConstraints(constraints) * 1.5,
+      ),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(28),
+        borderRadius: BorderRadius.circular(
+          ResponsiveSizer.borderRadiusFromConstraints(
+            constraints,
+            multiplier: 2.33,
+          ),
+        ),
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
@@ -2255,12 +2414,25 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildUploadArea(ThemeData theme, TextTheme textTheme) {
+  Widget _buildUploadArea(
+    ThemeData theme,
+    TextTheme textTheme,
+    BoxConstraints constraints,
+  ) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 24),
-      padding: const EdgeInsets.all(16),
+      margin: EdgeInsets.only(
+        bottom: ResponsiveSizer.sectionSpacingFromConstraints(constraints),
+      ),
+      padding: EdgeInsets.all(
+        ResponsiveSizer.cardPaddingFromConstraints(constraints),
+      ),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(
+          ResponsiveSizer.borderRadiusFromConstraints(
+            constraints,
+            multiplier: 1.67,
+          ),
+        ),
         color: theme.colorScheme.surfaceContainerLow,
         border: Border.all(
           color: theme.colorScheme.outlineVariant.withValues(alpha: 0.55),
@@ -2271,8 +2443,14 @@ class _HomeScreenState extends State<HomeScreen> {
           Icon(
             Icons.upload_file_outlined,
             color: theme.colorScheme.primary,
+            size: ResponsiveSizer.iconSizeFromConstraints(constraints),
           ),
-          const SizedBox(width: 12),
+          SizedBox(
+            width: ResponsiveSizer.spacingFromConstraints(
+              constraints,
+              multiplier: 1.5,
+            ),
+          ),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -2284,7 +2462,12 @@ class _HomeScreenState extends State<HomeScreen> {
                     fontWeight: FontWeight.w600,
                   ),
                 ),
-                const SizedBox(height: 2),
+                SizedBox(
+                  height: ResponsiveSizer.spacingFromConstraints(
+                    constraints,
+                    multiplier: 0.25,
+                  ),
+                ),
                 Text(
                   'Pick a .json file with questions, choices and answers.',
                   style: textTheme.bodySmall?.copyWith(
