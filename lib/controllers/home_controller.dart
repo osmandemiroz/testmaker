@@ -539,23 +539,28 @@ class HomeController extends ChangeNotifier {
     final item = updatedQuizzes.removeAt(oldIndex);
     updatedQuizzes.insert(newIndex, item);
 
-    // Reorder quizNames map
-    Map<int, String>? updatedQuizNames;
-    if (_selectedCourse!.quizNames != null &&
-        _selectedCourse!.quizNames!.isNotEmpty) {
-      updatedQuizNames = <int, String>{};
-      final oldIndices = List<int>.generate(
-        _selectedCourse!.quizzes.length,
-        (int i) => i,
-      );
-      final movedIndex = oldIndices.removeAt(oldIndex);
-      oldIndices.insert(newIndex, movedIndex);
-      for (var newIdx = 0; newIdx < updatedQuizzes.length; newIdx++) {
-        final oldIdx = oldIndices[newIdx];
-        if (_selectedCourse!.quizNames!.containsKey(oldIdx)) {
-          updatedQuizNames[newIdx] = _selectedCourse!.quizNames![oldIdx]!;
-        }
-      }
+    // Reorder quizNames map to match the new quiz order
+    // Build a mapping: for each new index, determine which old index it came from
+    // IMPORTANT: We preserve ALL names (both custom and default) so they move with items
+    final updatedQuizNames = <int, String>{};
+
+    // Create a list representing the original indices
+    final originalIndices = List<int>.generate(
+      _selectedCourse!.quizzes.length,
+      (int i) => i,
+    );
+
+    // Simulate the reorder on the indices list
+    final movedIndex = originalIndices.removeAt(oldIndex);
+    originalIndices.insert(newIndex, movedIndex);
+
+    // Now map each new index to the name from its corresponding old index
+    // This preserves both custom names and default names
+    for (var newIdx = 0; newIdx < updatedQuizzes.length; newIdx++) {
+      final oldIdx = originalIndices[newIdx];
+      // Get the name (either custom or default) from the old index
+      final name = _selectedCourse!.getQuizName(oldIdx);
+      updatedQuizNames[newIdx] = name;
     }
 
     _selectedCourse = _selectedCourse!.copyWith(
@@ -599,24 +604,28 @@ class HomeController extends ChangeNotifier {
     final item = updatedFlashcards.removeAt(oldIndex);
     updatedFlashcards.insert(newIndex, item);
 
-    // Reorder flashcardSetNames map
-    Map<int, String>? updatedFlashcardSetNames;
-    if (_selectedCourse!.flashcardSetNames != null &&
-        _selectedCourse!.flashcardSetNames!.isNotEmpty) {
-      updatedFlashcardSetNames = <int, String>{};
-      final oldIndices = List<int>.generate(
-        _selectedCourse!.flashcards.length,
-        (int i) => i,
-      );
-      final movedIndex = oldIndices.removeAt(oldIndex);
-      oldIndices.insert(newIndex, movedIndex);
-      for (var newIdx = 0; newIdx < updatedFlashcards.length; newIdx++) {
-        final oldIdx = oldIndices[newIdx];
-        if (_selectedCourse!.flashcardSetNames!.containsKey(oldIdx)) {
-          updatedFlashcardSetNames[newIdx] =
-              _selectedCourse!.flashcardSetNames![oldIdx]!;
-        }
-      }
+    // Reorder flashcardSetNames map to match the new flashcard set order
+    // Build a mapping: for each new index, determine which old index it came from
+    // IMPORTANT: We preserve ALL names (both custom and default) so they move with items
+    final updatedFlashcardSetNames = <int, String>{};
+
+    // Create a list representing the original indices
+    final originalIndices = List<int>.generate(
+      _selectedCourse!.flashcards.length,
+      (int i) => i,
+    );
+
+    // Simulate the reorder on the indices list
+    final movedIndex = originalIndices.removeAt(oldIndex);
+    originalIndices.insert(newIndex, movedIndex);
+
+    // Now map each new index to the name from its corresponding old index
+    // This preserves both custom names and default names
+    for (var newIdx = 0; newIdx < updatedFlashcards.length; newIdx++) {
+      final oldIdx = originalIndices[newIdx];
+      // Get the name (either custom or default) from the old index
+      final name = _selectedCourse!.getFlashcardSetName(oldIdx);
+      updatedFlashcardSetNames[newIdx] = name;
     }
 
     _selectedCourse = _selectedCourse!.copyWith(

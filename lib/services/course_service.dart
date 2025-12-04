@@ -408,26 +408,28 @@ class CourseService {
     final item = updatedQuizzes.removeAt(oldIndex);
     updatedQuizzes.insert(newIndex, item);
 
-    // Reorder quizNames map to match the new indices
-    // Build mapping by simulating the reorder on the indices themselves
-    Map<int, String>? updatedQuizNames;
-    if (course.quizNames != null && course.quizNames!.isNotEmpty) {
-      updatedQuizNames = <int, String>{};
-      // Create a list of old indices and reorder them the same way
-      final oldIndices = List<int>.generate(
-        course.quizzes.length,
-        (int i) => i,
-      );
-      final movedIndex = oldIndices.removeAt(oldIndex);
-      oldIndices.insert(newIndex, movedIndex);
+    // Reorder quizNames map to match the new quiz order
+    // Build a mapping: for each new index, determine which old index it came from
+    // IMPORTANT: We preserve ALL names (both custom and default) so they move with items
+    final updatedQuizNames = <int, String>{};
 
-      // Now map new index to old index and copy the name
-      for (var newIdx = 0; newIdx < updatedQuizzes.length; newIdx++) {
-        final oldIdx = oldIndices[newIdx];
-        if (course.quizNames!.containsKey(oldIdx)) {
-          updatedQuizNames[newIdx] = course.quizNames![oldIdx]!;
-        }
-      }
+    // Create a list representing the original indices
+    final originalIndices = List<int>.generate(
+      course.quizzes.length,
+      (int i) => i,
+    );
+
+    // Simulate the reorder on the indices list
+    final movedIndex = originalIndices.removeAt(oldIndex);
+    originalIndices.insert(newIndex, movedIndex);
+
+    // Now map each new index to the name from its corresponding old index
+    // This preserves both custom names and default names
+    for (var newIdx = 0; newIdx < updatedQuizzes.length; newIdx++) {
+      final oldIdx = originalIndices[newIdx];
+      // Get the name (either custom or default) from the old index
+      final name = course.getQuizName(oldIdx);
+      updatedQuizNames[newIdx] = name;
     }
 
     courses[index] = course.copyWith(
@@ -436,6 +438,8 @@ class CourseService {
       updatedAt: DateTime.now().millisecondsSinceEpoch,
     );
 
+    // Persist the reordered quizzes and names to local storage
+    // This ensures the order is maintained when the app is reopened
     await _saveCourses(courses);
   }
 
@@ -470,27 +474,28 @@ class CourseService {
     final item = updatedFlashcards.removeAt(oldIndex);
     updatedFlashcards.insert(newIndex, item);
 
-    // Reorder flashcardSetNames map to match the new indices
-    // Build mapping by simulating the reorder on the indices themselves
-    Map<int, String>? updatedFlashcardSetNames;
-    if (course.flashcardSetNames != null &&
-        course.flashcardSetNames!.isNotEmpty) {
-      updatedFlashcardSetNames = <int, String>{};
-      // Create a list of old indices and reorder them the same way
-      final oldIndices = List<int>.generate(
-        course.flashcards.length,
-        (int i) => i,
-      );
-      final movedIndex = oldIndices.removeAt(oldIndex);
-      oldIndices.insert(newIndex, movedIndex);
+    // Reorder flashcardSetNames map to match the new flashcard set order
+    // Build a mapping: for each new index, determine which old index it came from
+    // IMPORTANT: We preserve ALL names (both custom and default) so they move with items
+    final updatedFlashcardSetNames = <int, String>{};
 
-      // Now map new index to old index and copy the name
-      for (var newIdx = 0; newIdx < updatedFlashcards.length; newIdx++) {
-        final oldIdx = oldIndices[newIdx];
-        if (course.flashcardSetNames!.containsKey(oldIdx)) {
-          updatedFlashcardSetNames[newIdx] = course.flashcardSetNames![oldIdx]!;
-        }
-      }
+    // Create a list representing the original indices
+    final originalIndices = List<int>.generate(
+      course.flashcards.length,
+      (int i) => i,
+    );
+
+    // Simulate the reorder on the indices list
+    final movedIndex = originalIndices.removeAt(oldIndex);
+    originalIndices.insert(newIndex, movedIndex);
+
+    // Now map each new index to the name from its corresponding old index
+    // This preserves both custom names and default names
+    for (var newIdx = 0; newIdx < updatedFlashcards.length; newIdx++) {
+      final oldIdx = originalIndices[newIdx];
+      // Get the name (either custom or default) from the old index
+      final name = course.getFlashcardSetName(oldIdx);
+      updatedFlashcardSetNames[newIdx] = name;
     }
 
     courses[index] = course.copyWith(
@@ -499,6 +504,8 @@ class CourseService {
       updatedAt: DateTime.now().millisecondsSinceEpoch,
     );
 
+    // Persist the reordered flashcard sets and names to local storage
+    // This ensures the order is maintained when the app is reopened
     await _saveCourses(courses);
   }
 
