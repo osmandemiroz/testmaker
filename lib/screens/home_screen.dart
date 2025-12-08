@@ -86,47 +86,58 @@ class _HomeScreenState extends State<HomeScreen> {
         final theme = Theme.of(context);
         final textTheme = theme.textTheme;
 
-        return AlertDialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
-          ),
-          title: Text(
-            title,
-            style: textTheme.titleLarge?.copyWith(
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          content: TextField(
-            controller: controller,
-            autofocus: true,
-            decoration: InputDecoration(
-              labelText: 'Name',
-              hintText: 'Enter a name',
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
+        return LayoutBuilder(
+          builder: (BuildContext context, BoxConstraints constraints) {
+            return AlertDialog(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(
+                  ResponsiveSizer.borderRadiusFromConstraints(
+                    constraints,
+                    multiplier: 1.67,
+                  ),
+                ),
               ),
-            ),
-            onSubmitted: (String value) {
-              if (value.trim().isNotEmpty) {
-                Navigator.of(context).pop(value.trim());
-              }
-            },
-          ),
-          actions: <Widget>[
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Cancel'),
-            ),
-            FilledButton(
-              onPressed: () {
-                final name = controller.text.trim();
-                if (name.isNotEmpty) {
-                  Navigator.of(context).pop(name);
-                }
-              },
-              child: const Text('Save'),
-            ),
-          ],
+              title: Text(
+                title,
+                style: textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              content: TextField(
+                controller: controller,
+                autofocus: true,
+                decoration: InputDecoration(
+                  labelText: 'Name',
+                  hintText: 'Enter a name',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(
+                      ResponsiveSizer.borderRadiusFromConstraints(constraints),
+                    ),
+                  ),
+                ),
+                onSubmitted: (String value) {
+                  if (value.trim().isNotEmpty) {
+                    Navigator.of(context).pop(value.trim());
+                  }
+                },
+              ),
+              actions: <Widget>[
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: const Text('Cancel'),
+                ),
+                FilledButton(
+                  onPressed: () {
+                    final name = controller.text.trim();
+                    if (name.isNotEmpty) {
+                      Navigator.of(context).pop(name);
+                    }
+                  },
+                  child: const Text('Save'),
+                ),
+              ],
+            );
+          },
         );
       },
     );
@@ -230,54 +241,83 @@ class _HomeScreenState extends State<HomeScreen> {
         final theme = Theme.of(context);
         final textTheme = theme.textTheme;
 
-        return AlertDialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
-          ),
-          title: Text(
-            'API Key Required',
-            style: textTheme.titleLarge?.copyWith(
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[
-                Text(
-                  'To generate questions from PDFs, you need a Google AI API key.',
-                  style: textTheme.bodyMedium,
-                ),
-                const SizedBox(height: 16),
-                TextField(
-                  controller: controller..text = currentKey,
-                  decoration: InputDecoration(
-                    labelText: 'Google AI API Key',
-                    hintText: 'Enter your API key',
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
+        return LayoutBuilder(
+          builder: (BuildContext context, BoxConstraints constraints) {
+            return AlertDialog(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(
+                  ResponsiveSizer.borderRadiusFromConstraints(
+                    constraints,
+                    multiplier: 1.67,
                   ),
-                  obscureText: true,
                 ),
-                const SizedBox(height: 12),
-                TextButton.icon(
-                  onPressed: () async {
-                    final url = Uri.parse(
-                      'https://makersuite.google.com/app/apikey',
-                    );
-                    if (await canLaunchUrl(url)) {
-                      await launchUrl(
-                        url,
-                        mode: LaunchMode.externalApplication,
-                      );
-                    }
-                  },
-                  icon: const Icon(Icons.open_in_new, size: 16),
-                  label: const Text('Get API Key'),
+              ),
+              title: Text(
+                'API Key Required',
+                style: textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.w600,
                 ),
-                const SizedBox(height: 8),
+              ),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    Text(
+                      'To generate questions from PDFs, you need a Google AI API key.',
+                      style: textTheme.bodyMedium,
+                    ),
+                    SizedBox(
+                      height: ResponsiveSizer.spacingFromConstraints(
+                        constraints,
+                        multiplier: 2,
+                      ),
+                    ),
+                    TextField(
+                      controller: controller..text = currentKey,
+                      decoration: InputDecoration(
+                        labelText: 'Google AI API Key',
+                        hintText: 'Enter your API key',
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(
+                            ResponsiveSizer.borderRadiusFromConstraints(
+                              constraints,
+                            ),
+                          ),
+                        ),
+                      ),
+                      obscureText: true,
+                    ),
+                    SizedBox(
+                      height: ResponsiveSizer.spacingFromConstraints(
+                        constraints,
+                        multiplier: 1.5,
+                      ),
+                    ),
+                    TextButton.icon(
+                      onPressed: () async {
+                        final url = Uri.parse(
+                          'https://makersuite.google.com/app/apikey',
+                        );
+                        if (await canLaunchUrl(url)) {
+                          await launchUrl(
+                            url,
+                            mode: LaunchMode.externalApplication,
+                          );
+                        }
+                      },
+                      icon: Icon(
+                        Icons.open_in_new,
+                        size: ResponsiveSizer.iconSizeFromConstraints(
+                          constraints,
+                          multiplier: 0.67,
+                        ),
+                      ),
+                      label: const Text('Get API Key'),
+                    ),
+                    SizedBox(
+                      height: ResponsiveSizer.spacingFromConstraints(constraints),
+                    ),
                 Text(
                   'Get your free API key from:\nhttps://makersuite.google.com/app/apikey',
                   style: textTheme.bodySmall?.copyWith(
@@ -287,31 +327,33 @@ class _HomeScreenState extends State<HomeScreen> {
               ],
             ),
           ),
-          actions: <Widget>[
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(false),
-              child: const Text('Cancel'),
-            ),
-            FilledButton(
-              onPressed: () async {
-                if (controller.text.trim().isNotEmpty) {
-                  await QuestionGeneratorService.setApiKey(
-                    controller.text.trim(),
-                  );
-                  if (context.mounted) {
-                    Navigator.of(context).pop(true);
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('API key saved successfully!'),
-                        behavior: SnackBarBehavior.floating,
-                      ),
-                    );
-                  }
-                }
-              },
-              child: const Text('Save'),
-            ),
-          ],
+              actions: <Widget>[
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(false),
+                  child: const Text('Cancel'),
+                ),
+                FilledButton(
+                  onPressed: () async {
+                    if (controller.text.trim().isNotEmpty) {
+                      await QuestionGeneratorService.setApiKey(
+                        controller.text.trim(),
+                      );
+                      if (context.mounted) {
+                        Navigator.of(context).pop(true);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('API key saved successfully!'),
+                            behavior: SnackBarBehavior.floating,
+                          ),
+                        );
+                      }
+                    }
+                  },
+                  child: const Text('Save'),
+                ),
+              ],
+            );
+          },
         );
       },
     );
@@ -331,38 +373,56 @@ class _HomeScreenState extends State<HomeScreen> {
         final theme = Theme.of(context);
         final textTheme = theme.textTheme;
 
-        return AlertDialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
-          ),
-          title: Text(
-            'Number of Questions',
-            style: textTheme.titleLarge?.copyWith(
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[
-                Text(
-                  'How many questions would you like to generate from this PDF?',
-                  style: textTheme.bodyMedium,
-                ),
-                const SizedBox(height: 16),
-                TextField(
-                  controller: controller,
-                  decoration: InputDecoration(
-                    labelText: 'Question Count',
-                    hintText: 'Enter a number (e.g., 10)',
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
+        return LayoutBuilder(
+          builder: (BuildContext context, BoxConstraints constraints) {
+            return AlertDialog(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(
+                  ResponsiveSizer.borderRadiusFromConstraints(
+                    constraints,
+                    multiplier: 1.67,
                   ),
-                  keyboardType: TextInputType.number,
                 ),
-                const SizedBox(height: 8),
+              ),
+              title: Text(
+                'Number of Questions',
+                style: textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    Text(
+                      'How many questions would you like to generate from this PDF?',
+                      style: textTheme.bodyMedium,
+                    ),
+                    SizedBox(
+                      height: ResponsiveSizer.spacingFromConstraints(
+                        constraints,
+                        multiplier: 2,
+                      ),
+                    ),
+                    TextField(
+                      controller: controller,
+                      decoration: InputDecoration(
+                        labelText: 'Question Count',
+                        hintText: 'Enter a number (e.g., 10)',
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(
+                            ResponsiveSizer.borderRadiusFromConstraints(
+                              constraints,
+                            ),
+                          ),
+                        ),
+                      ),
+                      keyboardType: TextInputType.number,
+                    ),
+                    SizedBox(
+                      height: ResponsiveSizer.spacingFromConstraints(constraints),
+                    ),
                 Text(
                   'Recommended: 5-20 questions',
                   style: textTheme.bodySmall?.copyWith(
@@ -372,31 +432,33 @@ class _HomeScreenState extends State<HomeScreen> {
               ],
             ),
           ),
-          actions: <Widget>[
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Cancel'),
-            ),
-            FilledButton(
-              onPressed: () {
-                final text = controller.text.trim();
-                final count = int.tryParse(text);
-                if (count != null && count > 0 && count <= 50) {
-                  Navigator.of(context).pop(count);
-                } else {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text(
-                        'Please enter a number between 1 and 50',
-                      ),
-                      behavior: SnackBarBehavior.floating,
-                    ),
-                  );
-                }
-              },
-              child: const Text('Generate'),
-            ),
-          ],
+              actions: <Widget>[
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: const Text('Cancel'),
+                ),
+                FilledButton(
+                  onPressed: () {
+                    final text = controller.text.trim();
+                    final count = int.tryParse(text);
+                    if (count != null && count > 0 && count <= 50) {
+                      Navigator.of(context).pop(count);
+                    } else {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text(
+                            'Please enter a number between 1 and 50',
+                          ),
+                          behavior: SnackBarBehavior.floating,
+                        ),
+                      );
+                    }
+                  },
+                  child: const Text('Generate'),
+                ),
+              ],
+            );
+          },
         );
       },
     );
@@ -518,38 +580,56 @@ class _HomeScreenState extends State<HomeScreen> {
         final theme = Theme.of(context);
         final textTheme = theme.textTheme;
 
-        return AlertDialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
-          ),
-          title: Text(
-            'Number of Flashcards',
-            style: textTheme.titleLarge?.copyWith(
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[
-                Text(
-                  'How many flashcards would you like to generate from this PDF?',
-                  style: textTheme.bodyMedium,
-                ),
-                const SizedBox(height: 16),
-                TextField(
-                  controller: controller,
-                  decoration: InputDecoration(
-                    labelText: 'Flashcard Count',
-                    hintText: 'Enter a number (e.g., 10)',
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
+        return LayoutBuilder(
+          builder: (BuildContext context, BoxConstraints constraints) {
+            return AlertDialog(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(
+                  ResponsiveSizer.borderRadiusFromConstraints(
+                    constraints,
+                    multiplier: 1.67,
                   ),
-                  keyboardType: TextInputType.number,
                 ),
-                const SizedBox(height: 8),
+              ),
+              title: Text(
+                'Number of Flashcards',
+                style: textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    Text(
+                      'How many flashcards would you like to generate from this PDF?',
+                      style: textTheme.bodyMedium,
+                    ),
+                    SizedBox(
+                      height: ResponsiveSizer.spacingFromConstraints(
+                        constraints,
+                        multiplier: 2,
+                      ),
+                    ),
+                    TextField(
+                      controller: controller,
+                      decoration: InputDecoration(
+                        labelText: 'Flashcard Count',
+                        hintText: 'Enter a number (e.g., 10)',
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(
+                            ResponsiveSizer.borderRadiusFromConstraints(
+                              constraints,
+                            ),
+                          ),
+                        ),
+                      ),
+                      keyboardType: TextInputType.number,
+                    ),
+                    SizedBox(
+                      height: ResponsiveSizer.spacingFromConstraints(constraints),
+                    ),
                 Text(
                   'Recommended: 10-30 flashcards',
                   style: textTheme.bodySmall?.copyWith(
@@ -559,31 +639,33 @@ class _HomeScreenState extends State<HomeScreen> {
               ],
             ),
           ),
-          actions: <Widget>[
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Cancel'),
-            ),
-            FilledButton(
-              onPressed: () {
-                final text = controller.text.trim();
-                final count = int.tryParse(text);
-                if (count != null && count > 0 && count <= 100) {
-                  Navigator.of(context).pop(count);
-                } else {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text(
-                        'Please enter a number between 1 and 100',
-                      ),
-                      behavior: SnackBarBehavior.floating,
-                    ),
-                  );
-                }
-              },
-              child: const Text('Generate'),
-            ),
-          ],
+              actions: <Widget>[
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: const Text('Cancel'),
+                ),
+                FilledButton(
+                  onPressed: () {
+                    final text = controller.text.trim();
+                    final count = int.tryParse(text);
+                    if (count != null && count > 0 && count <= 100) {
+                      Navigator.of(context).pop(count);
+                    } else {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text(
+                            'Please enter a number between 1 and 100',
+                          ),
+                          behavior: SnackBarBehavior.floating,
+                        ),
+                      );
+                    }
+                  },
+                  child: const Text('Generate'),
+                ),
+              ],
+            );
+          },
         );
       },
     );
@@ -814,7 +896,9 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
           ),
-          const Divider(height: 1),
+          Divider(
+            height: ResponsiveSizer.dividerHeightFromConstraints(constraints),
+          ),
           // Course list
           Expanded(
             child: _controller.isLoadingCourses
@@ -932,35 +1016,44 @@ class _HomeScreenState extends State<HomeScreen> {
             final theme = Theme.of(context);
             final textTheme = theme.textTheme;
 
-            return AlertDialog(
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(20),
-              ),
-              title: Text(
-                'Delete Course?',
-                style: textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              content: Text(
-                'Are you sure you want to delete "${course.name}"? '
-                'This action cannot be undone.',
-                style: textTheme.bodyMedium,
-              ),
-              actions: <Widget>[
-                TextButton(
-                  onPressed: () => Navigator.of(context).pop(false),
-                  child: const Text('Cancel'),
-                ),
-                FilledButton(
-                  onPressed: () => Navigator.of(context).pop(true),
-                  style: FilledButton.styleFrom(
-                    backgroundColor: theme.colorScheme.error,
-                    foregroundColor: theme.colorScheme.onError,
+            return LayoutBuilder(
+              builder: (BuildContext context, BoxConstraints constraints) {
+                return AlertDialog(
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(
+                      ResponsiveSizer.borderRadiusFromConstraints(
+                        constraints,
+                        multiplier: 1.67,
+                      ),
+                    ),
                   ),
-                  child: const Text('Delete'),
-                ),
-              ],
+                  title: Text(
+                    'Delete Course?',
+                    style: textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  content: Text(
+                    'Are you sure you want to delete "${course.name}"? '
+                    'This action cannot be undone.',
+                    style: textTheme.bodyMedium,
+                  ),
+                  actions: <Widget>[
+                    TextButton(
+                      onPressed: () => Navigator.of(context).pop(false),
+                      child: const Text('Cancel'),
+                    ),
+                    FilledButton(
+                      onPressed: () => Navigator.of(context).pop(true),
+                      style: FilledButton.styleFrom(
+                        backgroundColor: theme.colorScheme.error,
+                        foregroundColor: theme.colorScheme.onError,
+                      ),
+                      child: const Text('Delete'),
+                    ),
+                  ],
+                );
+              },
             );
           },
         );
@@ -1233,7 +1326,8 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             SizedBox(
               height:
-                  ResponsiveSizer.buttonHeightFromConstraints(constraints) + 10,
+                  ResponsiveSizer.buttonHeightFromConstraints(constraints) +
+                      ResponsiveSizer.spacingFromConstraints(constraints),
               child: ElevatedButton(
                 onPressed: _startQuiz,
                 style: ElevatedButton.styleFrom(
@@ -1501,7 +1595,12 @@ class _HomeScreenState extends State<HomeScreen> {
         ],
         if (_controller.error != null)
           Padding(
-            padding: const EdgeInsets.only(top: 12),
+            padding: EdgeInsets.only(
+              top: ResponsiveSizer.spacingFromConstraints(
+                constraints,
+                multiplier: 1.5,
+              ),
+            ),
             child: Text(
               _controller.error!,
               style: textTheme.bodySmall?.copyWith(
@@ -1525,16 +1624,23 @@ class _HomeScreenState extends State<HomeScreen> {
         final theme = Theme.of(context);
         final textTheme = theme.textTheme;
 
-        return AlertDialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
-          ),
-          title: Text(
-            'Delete PDF?',
-            style: textTheme.titleLarge?.copyWith(
-              fontWeight: FontWeight.w600,
-            ),
-          ),
+        return LayoutBuilder(
+          builder: (BuildContext context, BoxConstraints constraints) {
+            return AlertDialog(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(
+                  ResponsiveSizer.borderRadiusFromConstraints(
+                    constraints,
+                    multiplier: 1.67,
+                  ),
+                ),
+              ),
+              title: Text(
+                'Delete PDF?',
+                style: textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
           content: Text(
             'Are you sure you want to delete "$fileName"? '
             'This action cannot be undone.',
@@ -1554,6 +1660,8 @@ class _HomeScreenState extends State<HomeScreen> {
               child: const Text('Delete'),
             ),
           ],
+            );
+          },
         );
       },
     );
@@ -2496,7 +2604,9 @@ class _HomeScreenState extends State<HomeScreen> {
                   }
                 : null,
           ),
-          const SizedBox(height: 12),
+          SizedBox(
+            height: ResponsiveSizer.spacing(context, multiplier: 1.5),
+          ),
           _buildAnimatedFabMenuItem(
             theme: theme,
             textTheme: textTheme,
@@ -2511,7 +2621,9 @@ class _HomeScreenState extends State<HomeScreen> {
                   }
                 : null,
           ),
-          const SizedBox(height: 12),
+          SizedBox(
+            height: ResponsiveSizer.spacing(context, multiplier: 1.5),
+          ),
           _buildAnimatedFabMenuItem(
             theme: theme,
             textTheme: textTheme,
@@ -2526,7 +2638,9 @@ class _HomeScreenState extends State<HomeScreen> {
                   }
                 : null,
           ),
-          const SizedBox(height: 16),
+          SizedBox(
+            height: ResponsiveSizer.spacing(context, multiplier: 2),
+          ),
         ],
         // Main FAB button with smooth icon transformation
         FloatingActionButton(
@@ -2550,7 +2664,7 @@ class _HomeScreenState extends State<HomeScreen> {
             child: Icon(
               _controller.isFabExpanded ? Icons.close : Icons.add,
               key: ValueKey<bool>(_controller.isFabExpanded),
-              size: 28,
+              size: ResponsiveSizer.iconSize(context, multiplier: 1.4),
             ),
           ),
         ),
@@ -2603,14 +2717,19 @@ class _HomeScreenState extends State<HomeScreen> {
     required bool isLoading,
     required VoidCallback? onTap,
   }) {
-    return Material(
-      color: theme.colorScheme.surfaceContainerHighest,
-      borderRadius: BorderRadius.circular(28),
-      elevation: 4,
-      shadowColor: Colors.black.withValues(alpha: 0.2),
-      child: LayoutBuilder(
-        builder: (BuildContext context, BoxConstraints constraints) {
-          return InkWell(
+    return LayoutBuilder(
+      builder: (BuildContext context, BoxConstraints constraints) {
+        return Material(
+          color: theme.colorScheme.surfaceContainerHighest,
+          borderRadius: BorderRadius.circular(
+            ResponsiveSizer.borderRadiusFromConstraints(
+              constraints,
+              multiplier: 2.33,
+            ),
+          ),
+          elevation: 4,
+          shadowColor: Colors.black.withValues(alpha: 0.2),
+          child: InkWell(
             onTap: isLoading ? null : onTap,
             borderRadius: BorderRadius.circular(
               ResponsiveSizer.borderRadiusFromConstraints(
@@ -2671,9 +2790,9 @@ class _HomeScreenState extends State<HomeScreen> {
                 ],
               ),
             ),
-          );
-        },
-      ),
+          ),
+        );
+      },
     );
   }
 
@@ -2820,7 +2939,12 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ],
           ),
-          const SizedBox(height: 18),
+          SizedBox(
+            height: ResponsiveSizer.spacingFromConstraints(
+              constraints,
+              multiplier: 2.25,
+            ),
+          ),
           Text(
             'Modern quiz\nexperience',
             style: textTheme.headlineSmall?.copyWith(
@@ -2828,7 +2952,12 @@ class _HomeScreenState extends State<HomeScreen> {
               height: 1.1,
             ),
           ),
-          const SizedBox(height: 10),
+          SizedBox(
+            height: ResponsiveSizer.spacingFromConstraints(
+              constraints,
+              multiplier: 1.25,
+            ),
+          ),
           Text(
             'Questions are loaded from a simple JSON file so you can '
             'swap in new tests without touching the code.',
@@ -3097,7 +3226,11 @@ class _CreateCourseDialogState extends State<_CreateCourseDialog>
                             ),
                             textAlign: TextAlign.center,
                           ),
-                          const SizedBox(height: 8),
+                          SizedBox(
+                            height: ResponsiveSizer.spacingFromConstraints(
+                              constraints,
+                            ),
+                          ),
                           // Subtitle
                           Text(
                             'Give your course a name to get started',
@@ -3163,10 +3296,29 @@ class _CreateCourseDialogState extends State<_CreateCourseDialog>
                         ),
                       ),
                     ),
-                    const SizedBox(height: 28),
+                    SizedBox(
+                      height: ResponsiveSizer.spacingFromConstraints(
+                        constraints,
+                        multiplier: 3.5,
+                      ),
+                    ),
                     // Action buttons
                     Padding(
-                      padding: const EdgeInsets.fromLTRB(28, 0, 28, 28),
+                      padding: EdgeInsets.fromLTRB(
+                        ResponsiveSizer.spacingFromConstraints(
+                          constraints,
+                          multiplier: 3.5,
+                        ),
+                        0,
+                        ResponsiveSizer.spacingFromConstraints(
+                          constraints,
+                          multiplier: 3.5,
+                        ),
+                        ResponsiveSizer.spacingFromConstraints(
+                          constraints,
+                          multiplier: 3.5,
+                        ),
+                      ),
                       child: Row(
                         children: <Widget>[
                           // Cancel button
@@ -3384,7 +3536,11 @@ class _SettingsDialogState extends State<_SettingsDialog>
                             ),
                             textAlign: TextAlign.center,
                           ),
-                          const SizedBox(height: 8),
+                          SizedBox(
+                            height: ResponsiveSizer.spacingFromConstraints(
+                              constraints,
+                            ),
+                          ),
                           // Subtitle
                           Text(
                             'Manage your app preferences',
@@ -3409,7 +3565,11 @@ class _SettingsDialogState extends State<_SettingsDialog>
                               fontWeight: FontWeight.w600,
                             ),
                           ),
-                          const SizedBox(height: 8),
+                          SizedBox(
+                            height: ResponsiveSizer.spacingFromConstraints(
+                              constraints,
+                            ),
+                          ),
                           Text(
                             'Required for generating questions from PDFs',
                             style: textTheme.bodySmall?.copyWith(
@@ -3417,7 +3577,12 @@ class _SettingsDialogState extends State<_SettingsDialog>
                                   .withValues(alpha: 0.7),
                             ),
                           ),
-                          const SizedBox(height: 12),
+                          SizedBox(
+                            height: ResponsiveSizer.spacingFromConstraints(
+                              constraints,
+                              multiplier: 1.5,
+                            ),
+                          ),
                           Focus(
                             onFocusChange: (bool hasFocus) {
                               setState(() {
@@ -3472,7 +3637,12 @@ class _SettingsDialogState extends State<_SettingsDialog>
                                     ),
                             ),
                           ),
-                          const SizedBox(height: 12),
+                          SizedBox(
+                            height: ResponsiveSizer.spacingFromConstraints(
+                              constraints,
+                              multiplier: 1.5,
+                            ),
+                          ),
                           TextButton.icon(
                             onPressed: () async {
                               final url = Uri.parse(
@@ -3485,7 +3655,13 @@ class _SettingsDialogState extends State<_SettingsDialog>
                                 );
                               }
                             },
-                            icon: const Icon(Icons.open_in_new, size: 16),
+                            icon: Icon(
+                              Icons.open_in_new,
+                              size: ResponsiveSizer.iconSizeFromConstraints(
+                                constraints,
+                                multiplier: 0.67,
+                              ),
+                            ),
                             label: const Text('Get API Key'),
                             style: TextButton.styleFrom(
                               padding: const EdgeInsets.symmetric(
@@ -3497,10 +3673,29 @@ class _SettingsDialogState extends State<_SettingsDialog>
                         ],
                       ),
                     ),
-                    const SizedBox(height: 28),
+                    SizedBox(
+                      height: ResponsiveSizer.spacingFromConstraints(
+                        constraints,
+                        multiplier: 3.5,
+                      ),
+                    ),
                     // Action buttons
                     Padding(
-                      padding: const EdgeInsets.fromLTRB(28, 0, 28, 28),
+                      padding: EdgeInsets.fromLTRB(
+                        ResponsiveSizer.spacingFromConstraints(
+                          constraints,
+                          multiplier: 3.5,
+                        ),
+                        0,
+                        ResponsiveSizer.spacingFromConstraints(
+                          constraints,
+                          multiplier: 3.5,
+                        ),
+                        ResponsiveSizer.spacingFromConstraints(
+                          constraints,
+                          multiplier: 3.5,
+                        ),
+                      ),
                       child: Row(
                         children: <Widget>[
                           // Cancel button

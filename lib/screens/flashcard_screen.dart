@@ -249,8 +249,12 @@ class _FlashcardScreenState extends State<FlashcardScreen>
                             bottom: 0,
                             child: Center(
                               child: Container(
-                                width: 40,
-                                height: 40,
+                                width: ResponsiveSizer.iconContainerSizeFromConstraints(
+                                  constraints,
+                                ),
+                                height: ResponsiveSizer.iconContainerSizeFromConstraints(
+                                  constraints,
+                                ),
                                 decoration: BoxDecoration(
                                   color: theme
                                       .colorScheme.surfaceContainerHighest
@@ -268,7 +272,9 @@ class _FlashcardScreenState extends State<FlashcardScreen>
                                 child: Icon(
                                   Icons.chevron_left,
                                   color: theme.colorScheme.primary,
-                                  size: 24,
+                                  size: ResponsiveSizer.iconSizeFromConstraints(
+                                    constraints,
+                                  ),
                                 ),
                               ),
                             ),
@@ -281,8 +287,12 @@ class _FlashcardScreenState extends State<FlashcardScreen>
                             bottom: 0,
                             child: Center(
                               child: Container(
-                                width: 40,
-                                height: 40,
+                                width: ResponsiveSizer.iconContainerSizeFromConstraints(
+                                  constraints,
+                                ),
+                                height: ResponsiveSizer.iconContainerSizeFromConstraints(
+                                  constraints,
+                                ),
                                 decoration: BoxDecoration(
                                   color: theme
                                       .colorScheme.surfaceContainerHighest
@@ -300,7 +310,9 @@ class _FlashcardScreenState extends State<FlashcardScreen>
                                 child: Icon(
                                   Icons.chevron_right,
                                   color: theme.colorScheme.primary,
-                                  size: 24,
+                                  size: ResponsiveSizer.iconSizeFromConstraints(
+                                    constraints,
+                                  ),
                                 ),
                               ),
                             ),

@@ -35,7 +35,7 @@ class QuizProgressBar extends StatelessWidget {
     return ClipRRect(
       borderRadius: BorderRadius.circular(999),
       child: Container(
-        height: ResponsiveSizer.isMobileFromConstraints(constraints) ? 5 : 6,
+        height: ResponsiveSizer.progressBarHeightFromConstraints(constraints),
         decoration: BoxDecoration(
           color:
               theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
