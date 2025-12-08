@@ -41,7 +41,9 @@ class QuizOptionCard extends StatelessWidget {
   final bool isRevealed;
 
   /// Callback when the option is tapped.
-  final VoidCallback onTap;
+  ///
+  /// If null, the option is disabled and cannot be tapped.
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -105,6 +107,13 @@ class QuizOptionCard extends StatelessWidget {
               ),
             ),
             onTap: onTap,
+            // Disable splash effect when option is disabled
+            splashColor: onTap != null
+                ? theme.colorScheme.primary.withValues(alpha: 0.1)
+                : Colors.transparent,
+            highlightColor: onTap != null
+                ? theme.colorScheme.primary.withValues(alpha: 0.05)
+                : Colors.transparent,
             child: Padding(
               padding: EdgeInsets.symmetric(
                 horizontal: ResponsiveSizer.spacingFromConstraints(

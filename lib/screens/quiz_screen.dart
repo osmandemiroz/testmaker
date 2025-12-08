@@ -29,6 +29,7 @@ class QuizScreen extends StatefulWidget {
 
 class _QuizScreenState extends State<QuizScreen> {
   late final QuizController _controller;
+  bool _isNavigatingForward = true; // Track navigation direction for animations
 
   @override
   void initState() {
@@ -51,11 +52,33 @@ class _QuizScreenState extends State<QuizScreen> {
     }
   }
 
-  Future<void> _onOptionSelected(int index) async {
-    final isComplete = await _controller.selectOption(index);
+  void _onOptionSelected(int index) {
+    // Record the answer and reveal correctness, but don't move on automatically
+    _controller.selectOption(index);
+  }
+
+  /// Handles swipe gesture to move to the next question.
+  ///
+  /// Only allows swiping forward if an answer has been selected and revealed.
+  Future<void> _onSwipeToNext() async {
+    if (!_controller.revealAnswer) {
+      // Can't swipe forward if no answer has been selected yet
+      return;
+    }
+
+    _isNavigatingForward = true;
+    final isComplete = _controller.moveToNextQuestion();
     if (isComplete && mounted) {
       await _goToResults();
     }
+  }
+
+  /// Handles swipe gesture to move to the previous question.
+  ///
+  /// Can be called at any time to navigate back to previous questions.
+  void _onSwipeToPrevious() {
+    _isNavigatingForward = false;
+    _controller.moveToPreviousQuestion();
   }
 
   Future<void> _goToResults() async {
@@ -151,32 +174,94 @@ class _QuizScreenState extends State<QuizScreen> {
                     ),
                   ),
                   Expanded(
-                    child: AnimatedSwitcher(
-                      duration: const Duration(milliseconds: 260),
-                      transitionBuilder:
-                          (Widget child, Animation<double> animation) {
-                        final offsetAnimation = Tween<Offset>(
-                          begin: const Offset(0.05, 0),
-                          end: Offset.zero,
-                        ).animate(
-                          CurvedAnimation(
+                    child: GestureDetector(
+                      // Detect horizontal swipe gestures to navigate between questions
+                      onHorizontalDragEnd: (DragEndDetails details) {
+                        if (details.primaryVelocity != null) {
+                          // Swipe left to move to next question
+                          if (details.primaryVelocity! < -500) {
+                            _onSwipeToNext();
+                          }
+                          // Swipe right to move to previous question
+                          else if (details.primaryVelocity! > 500) {
+                            _onSwipeToPrevious();
+                          }
+                        }
+                      },
+                      child: AnimatedSwitcher(
+                        duration: const Duration(milliseconds: 450),
+                        switchInCurve: Curves.easeOutCubic,
+                        switchOutCurve: Curves.easeInCubic,
+                        layoutBuilder: (
+                          Widget? currentChild,
+                          List<Widget> previousChildren,
+                        ) {
+                          // Stack both widgets to allow simultaneous animation
+                          return Stack(
+                            alignment: Alignment.center,
+                            children: <Widget>[
+                              ...previousChildren,
+                              if (currentChild != null) currentChild,
+                            ],
+                          );
+                        },
+                        transitionBuilder:
+                            (Widget child, Animation<double> animation) {
+                          // Create smooth, Apple-like transition with slide, fade, and scale
+                          // This handles the entering widget animation
+                          final curvedAnimation = CurvedAnimation(
                             parent: animation,
                             curve: Curves.easeOutCubic,
-                          ),
-                        );
-                        return FadeTransition(
-                          opacity: animation,
-                          child: SlideTransition(
+                          );
+
+                          // Slide animation - direction depends on navigation direction
+                          // More pronounced for better visual feedback
+                          final slideOffset = _isNavigatingForward
+                              ? const Offset(
+                                  0.25,
+                                  0,
+                                ) // Slide in from right when going forward
+                              : const Offset(
+                                  -0.25,
+                                  0,
+                                ); // Slide in from left when going backward
+
+                          final offsetAnimation = Tween<Offset>(
+                            begin: slideOffset,
+                            end: Offset.zero,
+                          ).animate(curvedAnimation);
+
+                          // Scale animation for depth effect (subtle Apple-style)
+                          final scaleAnimation = Tween<double>(
+                            begin: 0.92,
+                            end: 1,
+                          ).animate(curvedAnimation);
+
+                          // Opacity for smooth fade-in
+                          final opacityAnimation = Tween<double>(
+                            begin: 0,
+                            end: 1,
+                          ).animate(curvedAnimation);
+
+                          // Combine all animations for a smooth, polished transition
+                          // Following Apple's Human Interface Guidelines for smooth motion
+                          return SlideTransition(
                             position: offsetAnimation,
-                            child: child,
-                          ),
-                        );
-                      },
-                      child: _buildQuestionCard(
-                        key: ValueKey<int>(_controller.currentIndex),
-                        theme: theme,
-                        textTheme: textTheme,
-                        constraints: constraints,
+                            child: FadeTransition(
+                              opacity: opacityAnimation,
+                              child: ScaleTransition(
+                                scale: scaleAnimation,
+                                child: child,
+                              ),
+                            ),
+                          );
+                        },
+                        child: _buildQuestionCard(
+                          key: ValueKey<int>(_controller.currentIndex),
+                          theme: theme,
+                          textTheme: textTheme,
+                          constraints: constraints,
+                        ),
                       ),
                     ),
                   ),
@@ -248,11 +333,85 @@ class _QuizScreenState extends State<QuizScreen> {
                   isSelected: isSelected,
                   isCorrect: isCorrect,
                   isRevealed: _controller.revealAnswer,
-                  onTap: () => _onOptionSelected(index),
+                  // Disable tap if answer has already been revealed
+                  onTap: _controller.revealAnswer
+                      ? null
+                      : () => _onOptionSelected(index),
                 );
               },
             ),
           ),
+          // Show swipe hints when answer is revealed
+          if (_controller.revealAnswer)
+            AnimatedOpacity(
+              opacity: _controller.revealAnswer ? 1.0 : 0.0,
+              duration: const Duration(milliseconds: 300),
+              child: Padding(
+                padding: EdgeInsets.only(
+                  top: ResponsiveSizer.spacingFromConstraints(
+                    constraints,
+                    multiplier: 1.5,
+                  ),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: <Widget>[
+                    // Show swipe right hint if not on first question
+                    if (!_controller.isFirstQuestion) ...<Widget>[
+                      Icon(
+                        Icons.swipe_right,
+                        size: 16,
+                        color:
+                            theme.colorScheme.onSurface.withValues(alpha: 0.5),
+                      ),
+                      SizedBox(
+                        width: ResponsiveSizer.spacingFromConstraints(
+                          constraints,
+                          multiplier: 0.75,
+                        ),
+                      ),
+                      Text(
+                        'Previous',
+                        style: textTheme.labelSmall?.copyWith(
+                          color: theme.colorScheme.onSurface
+                              .withValues(alpha: 0.5),
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      SizedBox(
+                        width: ResponsiveSizer.spacingFromConstraints(
+                          constraints,
+                          multiplier: 1.5,
+                        ),
+                      ),
+                    ],
+                    // Show swipe left hint if not on last question
+                    if (!_controller.isLastQuestion) ...<Widget>[
+                      Icon(
+                        Icons.swipe_left,
+                        size: 16,
+                        color:
+                            theme.colorScheme.onSurface.withValues(alpha: 0.5),
+                      ),
+                      SizedBox(
+                        width: ResponsiveSizer.spacingFromConstraints(
+                          constraints,
+                          multiplier: 0.75,
+                        ),
+                      ),
+                      Text(
+                        'Next',
+                        style: textTheme.labelSmall?.copyWith(
+                          color: theme.colorScheme.onSurface
+                              .withValues(alpha: 0.5),
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ),
         ],
       ),
     );
