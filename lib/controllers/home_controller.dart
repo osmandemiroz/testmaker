@@ -189,7 +189,8 @@ class HomeController extends ChangeNotifier {
         print('[HomeController.addQuizFromText] Failed: $e');
       }
       _isCustomLoading = false;
-      _error = 'Unable to process the quiz content. Please check the format and try again.';
+      _error =
+          'Unable to process the quiz content. Please check the format and try again.';
       notifyListeners();
       return false;
     }
@@ -232,7 +233,8 @@ class HomeController extends ChangeNotifier {
         print('[HomeController.addFlashcardsFromText] Failed: $e');
       }
       _isFlashcardLoading = false;
-      _error = 'Unable to process the flashcard content. Please check the format and try again.';
+      _error =
+          'Unable to process the flashcard content. Please check the format and try again.';
       notifyListeners();
       return false;
     }

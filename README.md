@@ -37,8 +37,8 @@ TestMaker is a sleek, modern Flutter application that revolutionizes how you cre
 
 | Feature | Description |
 |---------|-------------|
-| 📝 **JSON-Driven Quizzes** | Load questions from simple JSON files with customizable options |
-| 🎴 **JSON-Driven Flashcards** | Load flashcards from simple JSON files with front/back sides |
+| 📝 **Text-Based Content** | Paste quiz or flashcard content directly (no JSON files needed) |
+| 🎴 **Content Templates** | Ready-made prompts for AI agents to generate quiz and flashcard content |
 | 🗂️ **Course Management** | Organize quizzes, flashcards, and materials into course sections with sidebar navigation |
 | 📑 **PDF Study Materials** | Upload PDF files and view them with an integrated PDF viewer |
 | 🤖 **AI Quiz Generation** | Automatically generate quiz questions from PDF content using Google Gemini AI |
@@ -68,11 +68,12 @@ TestMaker follows **Apple's Human Interface Guidelines** to deliver an exception
 
 The codebase emphasizes:
 - 🏗️ **MVC Architecture** - Clean separation with controllers managing business logic, models for data, and views for UI
-- 🔧 Separation of concerns (models, controllers, services, screens, widgets)
+- 🔧 **Modular Component Structure** - Highly organized, reusable components split into dialogs, items, views, widgets, and templates
 - ✅ Null safety throughout
 - 🛡️ Comprehensive error handling
 - 📝 Extensive code comments for maintainability
 - 🔄 Reactive state management using ChangeNotifier pattern
+- 📦 **Code Refactoring** - Reduced `home_screen.dart` from ~5,300 lines to ~1,086 lines (80% reduction) through systematic component extraction
 
 ---
 
@@ -84,12 +85,12 @@ The codebase emphasizes:
 - **[Requirements](#-requirements)**
 - **[Quick Start](#-quick-start)**
 - **[Usage Guide](#-usage-guide)**
-  - **[Using Your Own JSON Quiz](#-using-your-own-json-quiz)**
-  - **[Flashcard JSON Format](#-flashcard-json-format)**
+  - **[Adding Quiz and Flashcard Content](#-adding-quiz-and-flashcard-content)**
   - **[Course Management](#-course-management)**
   - **[AI-Powered Content Generation](#-ai-powered-content-generation)**
 - **[Data Storage](#-data-storage)**
 - **[Project Structure](#-project-structure)**
+- **[Recent Refactoring](#-recent-refactoring-2024)**
 - **[Development](#-development)**
 - **[Contributing](#-contributing)**
 - **[License](#-license)**
@@ -152,15 +153,33 @@ flutter run
 
 ## 📖 Usage Guide
 
-### 📝 Using Your Own JSON Quiz
+### 📝 Adding Quiz and Flashcard Content
 
-1. Launch the app
-2. Look for the **"Use your own JSON"** section on the home screen
-3. Tap to select a `.json` file following the format below
-4. The app will parse and start the quiz automatically
+#### Method 1: Paste Text Content (Recommended)
 
-#### 📄 Quiz JSON Format
+1. Launch the app and select a course
+2. Tap the **FAB (Floating Action Button)** in the bottom-right corner
+3. Choose **"Upload Quiz"** or **"Upload Flashcards"**
+4. Paste your content in the text field
+5. The app will automatically parse and add the content
 
+The app supports both JSON format and simple text format. You can paste:
+- **JSON arrays** of questions or flashcards
+- **Simple text** that the app will parse intelligently
+
+#### Method 2: Use Content Templates
+
+1. Scroll to the **"Content Templates"** section on the home screen
+2. Tap **"Quiz"** or **"Flashcard"** button
+3. Select the type and number of items you want
+4. Tap **"Generate"** to create a prompt
+5. The prompt is automatically copied to your clipboard
+6. Use the prompt with your AI agent (e.g., ChatGPT, Claude, etc.)
+7. Paste the generated content back into the app
+
+#### 📄 Supported Formats
+
+**Quiz Format (JSON):**
 ```json
 [
   {
@@ -172,40 +191,19 @@ flutter run
 ]
 ```
 
-**Field Descriptions:**
-
-| Field | Type | Description |
-|-------|------|-------------|
-| `id` | `number` | Numeric identifier for the question |
-| `text` | `string` | The question text |
-| `options` | `string[]` | Array of answer strings in display order |
-| `answerIndex` | `number` | Zero-based index into `options` for the correct answer |
-
-> 💡 **Tip**: Copy `assets/quizzes/sample_quiz.json` as a template for your own quizzes!
-
-#### 📄 Flashcard JSON Format
-
+**Flashcard Format (JSON):**
 ```json
 [
   {
     "id": 1,
     "front": "What is the capital of France?",
     "back": "Paris",
-    "explanation": "Paris is the capital and largest city of France, located in the north-central part of the country."
+    "explanation": "Paris is the capital and largest city of France."
   }
 ]
 ```
 
-**Field Descriptions:**
-
-| Field | Type | Description |
-|-------|------|-------------|
-| `id` | `number` | Numeric identifier for the flashcard |
-| `front` | `string` | The question or prompt on the front of the card |
-| `back` | `string` | The answer on the back of the card |
-| `explanation` | `string` (optional) | Additional context or explanation for the answer |
-
-> 💡 **Tip**: Create your own flashcard JSON files following this format!
+> 💡 **Tip**: The app can parse both JSON and simple text formats, making it easy to add content from any source!
 
 ---
 
@@ -221,8 +219,8 @@ flutter run
 
 | Action | Steps |
 |--------|-------|
-| **Upload Quiz** | Select a course → Tap FAB (bottom-right) → **"Upload Quiz"** → Choose JSON file |
-| **Upload Flashcards** | Select a course → Tap FAB (bottom-right) → **"Upload Flashcards"** → Choose JSON file |
+| **Add Quiz** | Select a course → Tap FAB (bottom-right) → **"Upload Quiz"** → Paste quiz content |
+| **Add Flashcards** | Select a course → Tap FAB (bottom-right) → **"Upload Flashcards"** → Paste flashcard content |
 | **Upload PDF** | Select a course → Tap FAB (bottom-right) → **"Upload PDF"** → Choose PDF file |
 | **View PDF** | Tap on any PDF card in a course |
 | **Start Quiz** | Tap on any quiz card (questions are randomized) |
@@ -312,11 +310,46 @@ lib/
 │   ├── question_generator_service.dart  # AI-powered question generation (Gemini)
 │   └── flashcard_generator_service.dart  # AI-powered flashcard generation (Gemini)
 ├── screens/
-│   ├── home_screen.dart           # Main screen with sidebar and course management
+│   ├── home_screen.dart           # Main screen with sidebar and course management (refactored)
 │   ├── quiz_screen.dart           # Core quiz flow with randomized questions
 │   ├── flashcard_screen.dart      # Interactive flashcard viewer with swipe navigation
 │   ├── result_screen.dart         # Score summary screen
-│   └── pdf_viewer_screen.dart     # PDF viewer with page navigation
+│   ├── pdf_viewer_screen.dart     # PDF viewer with page navigation
+│   └── home/                      # Modular home screen components
+│       ├── dialogs/               # Reusable dialog components
+│       │   ├── create_course_dialog.dart
+│       │   ├── delete_confirmation_dialogs.dart
+│       │   ├── flashcard_prompt_dialog.dart
+│       │   ├── prompt_preview_dialog.dart
+│       │   ├── quiz_prompt_dialog.dart
+│       │   ├── rename_dialog.dart
+│       │   ├── settings_dialog.dart
+│       │   └── text_input_dialog.dart
+│       ├── items/                 # Reusable item components
+│       │   ├── course_item.dart
+│       │   ├── flashcard_card.dart
+│       │   ├── module_card.dart
+│       │   ├── module_items.dart
+│       │   ├── pdf_card.dart
+│       │   ├── quiz_card.dart
+│       │   └── reorderable_items.dart
+│       ├── templates/             # Content template generators
+│       │   ├── content_templates_section.dart
+│       │   └── prompt_generator.dart
+│       ├── views/                 # View components
+│       │   ├── compact_layout.dart
+│       │   ├── course_content_view.dart
+│       │   ├── empty_course_state.dart
+│       │   ├── empty_courses_state.dart
+│       │   ├── empty_modules_state.dart
+│       │   ├── module_contents.dart
+│       │   ├── modules_view.dart
+│       │   └── sidebar.dart
+│       └── widgets/               # Reusable widget components
+│           ├── animated_action_button.dart
+│           ├── animated_template_button.dart
+│           ├── fab_menu.dart
+│           └── swipe_indicator_arrow.dart
 ├── widgets/
 │   ├── quiz_option_card.dart      # Animated option tiles
 │   └── quiz_progress_bar.dart     # Animated quiz progress indicator
@@ -329,6 +362,80 @@ assets/
 └── logo/
     └── app_logo.png               # App icon source
 ```
+
+---
+
+## 🔄 Recent Refactoring (2024)
+
+### Code Organization Improvements
+
+The `home_screen.dart` file has been significantly refactored to improve maintainability and code organization:
+
+#### 📊 Refactoring Statistics
+- **Original Size**: ~5,312 lines
+- **Current Size**: ~1,086 lines
+- **Reduction**: ~4,226 lines (80% reduction)
+- **Components Extracted**: 30+ reusable components
+
+#### 🗂️ New Modular Structure
+
+The home screen has been split into a well-organized modular structure:
+
+**Dialogs** (`lib/screens/home/dialogs/`)
+- `create_course_dialog.dart` - Course creation dialog
+- `delete_confirmation_dialogs.dart` - Delete confirmation dialogs for PDFs, quizzes, and flashcards
+- `flashcard_prompt_dialog.dart` - Flashcard prompt generation dialog
+- `quiz_prompt_dialog.dart` - Quiz prompt generation dialog
+- `prompt_preview_dialog.dart` - Preview dialog for generated prompts
+- `rename_dialog.dart` - Reusable rename dialog
+- `settings_dialog.dart` - App settings dialog
+- `text_input_dialog.dart` - Text input dialog for pasting content
+
+**Items** (`lib/screens/home/items/`)
+- `course_item.dart` - Course list item with swipe-to-delete
+- `flashcard_card.dart` - Flashcard set card component
+- `module_card.dart` - Module/course card with expandable content
+- `module_items.dart` - Module content items (PDFs, quizzes, flashcards)
+- `pdf_card.dart` - PDF card with expandable actions
+- `quiz_card.dart` - Quiz card component
+- `reorderable_items.dart` - Reorderable items for drag-and-drop functionality
+
+**Views** (`lib/screens/home/views/`)
+- `compact_layout.dart` - Compact layout for mobile devices (drawer-based)
+- `course_content_view.dart` - Course content display view
+- `empty_course_state.dart` - Empty state for courses with no content
+- `empty_courses_state.dart` - Empty state when no courses exist
+- `empty_modules_state.dart` - Empty state for modules view
+- `module_contents.dart` - Module contents display
+- `modules_view.dart` - Main modules view
+- `sidebar.dart` - Sidebar navigation component
+
+**Widgets** (`lib/screens/home/widgets/`)
+- `animated_action_button.dart` - Animated action button for expandable sections
+- `animated_template_button.dart` - Animated template button with staggered animations
+- `fab_menu.dart` - Floating action button menu with expandable options
+- `swipe_indicator_arrow.dart` - Swipe indicator animation for drawer discovery
+
+**Templates** (`lib/screens/home/templates/`)
+- `content_templates_section.dart` - Content templates section UI
+- `prompt_generator.dart` - AI prompt generation utilities
+
+#### ✨ Benefits of Refactoring
+
+1. **Improved Maintainability** - Each component has a single responsibility
+2. **Better Reusability** - Components can be easily reused across the app
+3. **Easier Testing** - Smaller, focused components are easier to test
+4. **Enhanced Readability** - Clear structure makes code navigation intuitive
+5. **Reduced Complexity** - Main screen file is now much more manageable
+6. **Better Collaboration** - Multiple developers can work on different components simultaneously
+
+#### 🎯 Key Improvements
+
+- **Text-Based Content Input**: Removed JSON file uploads in favor of simple text paste, making the app more user-friendly
+- **Content Templates**: Added ready-made prompts for AI agents to generate quiz and flashcard content
+- **Smooth Animations**: Enhanced UI with animations for expandable areas, template sections, and swipe indicators
+- **Responsive Design**: Improved responsive layouts with dedicated compact layout component
+- **Modular Dialogs**: All dialogs are now reusable components with consistent styling
 
 ---
 
