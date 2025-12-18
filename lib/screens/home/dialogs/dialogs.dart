@@ -1,7 +1,10 @@
+export 'api_key_dialog.dart';
 export 'create_course_dialog.dart';
 export 'delete_confirmation_dialogs.dart';
+export 'flashcard_count_dialog.dart';
 export 'flashcard_prompt_dialog.dart';
 export 'prompt_preview_dialog.dart';
+export 'question_count_dialog.dart';
 export 'quiz_prompt_dialog.dart';
 export 'rename_dialog.dart';
 export 'settings_dialog.dart';
