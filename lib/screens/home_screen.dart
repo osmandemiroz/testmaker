@@ -61,7 +61,7 @@ class _HomeScreenState extends State<HomeScreen> {
     _controller
       ..addListener(_onControllerChanged)
       ..initialize();
-    
+
     // Start swipe indicator animation to help users discover the menu
     _startSwipeIndicatorAnimation();
   }
@@ -95,7 +95,7 @@ class _HomeScreenState extends State<HomeScreen> {
       // Additional delay to ensure everything is fully rendered
       Future.delayed(const Duration(milliseconds: 800), () {
         if (!mounted) return;
-        
+
         // Show indicator after 4-5 seconds (randomized for natural feel)
         final randomDelay = 4000 + (DateTime.now().millisecond % 1000);
         _swipeIndicatorTimer = Timer(
@@ -116,11 +116,11 @@ class _HomeScreenState extends State<HomeScreen> {
   /// the swipe gesture, then disappears.
   void _showSwipeIndicatorCycle() {
     if (!mounted) return;
-    
+
     setState(() {
       _showSwipeIndicator = true;
     });
-    
+
     // Hide after showing for a few cycles (about 3-4 seconds total)
     Timer(const Duration(milliseconds: 3500), () {
       if (mounted) {
@@ -4384,8 +4384,7 @@ Return ONLY valid array format, no additional text or markdown formatting.''';
             children: <Widget>[
               _buildMainContent(theme),
               // Swipe indicator overlay for mobile
-              if (_showSwipeIndicator)
-                _buildSwipeIndicator(theme, constraints),
+              if (_showSwipeIndicator) _buildSwipeIndicator(theme, constraints),
             ],
           ),
         );
@@ -5427,8 +5426,8 @@ class _SwipeIndicatorArrowState extends State<_SwipeIndicatorArrow>
 
     // Slide animation: moves from left (-20) to right (20)
     _slideAnimation = Tween<double>(
-      begin: -20.0,
-      end: 20.0,
+      begin: -20,
+      end: 20,
     ).animate(
       CurvedAnimation(
         parent: _controller,
@@ -5439,16 +5438,16 @@ class _SwipeIndicatorArrowState extends State<_SwipeIndicatorArrow>
     // Fade animation: fades in and out for visibility
     _fadeAnimation = TweenSequence<double>([
       TweenSequenceItem<double>(
-        tween: Tween<double>(begin: 0.0, end: 1.0)
+        tween: Tween<double>(begin: 0, end: 1)
             .chain(CurveTween(curve: Curves.easeIn)),
         weight: 0.2,
       ),
       TweenSequenceItem<double>(
-        tween: Tween<double>(begin: 1.0, end: 1.0),
+        tween: Tween<double>(begin: 1, end: 1),
         weight: 0.6,
       ),
       TweenSequenceItem<double>(
-        tween: Tween<double>(begin: 1.0, end: 0.0)
+        tween: Tween<double>(begin: 1, end: 0)
             .chain(CurveTween(curve: Curves.easeOut)),
         weight: 0.2,
       ),
