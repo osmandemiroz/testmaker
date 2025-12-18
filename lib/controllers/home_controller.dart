@@ -155,8 +155,11 @@ class HomeController extends ChangeNotifier {
     }
   }
 
-  /// Uploads a quiz JSON file to the selected course.
-  Future<bool> uploadQuizToCourse() async {
+  /// Adds quiz questions from pasted text to the selected course.
+  ///
+  /// The text can be in JSON format (from AI agents) or simple text format.
+  /// The app automatically converts it to the required format internally.
+  Future<bool> addQuizFromText(String text) async {
     if (_selectedCourse == null) {
       return false;
     }
@@ -166,47 +169,37 @@ class HomeController extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final result = await FilePicker.platform.pickFiles(
-        type: FileType.custom,
-        allowedExtensions: <String>['json'],
-      );
-
-      if (result == null || result.files.isEmpty) {
-        _isCustomLoading = false;
-        notifyListeners();
-        return false;
-      }
-
-      final file = result.files.first;
-      final filePath = file.path;
-
-      if (filePath == null) {
-        _isCustomLoading = false;
-        _error = 'Selected file path could not be read.';
-        notifyListeners();
-        return false;
-      }
-
-      final questions = await _quizService.loadQuestionsFromFile(filePath);
+      final questions = _quizService.parseQuestionsFromText(text);
       await _courseService.addQuizToCourse(_selectedCourse!.id, questions);
       await _loadCourses();
 
       _isCustomLoading = false;
       notifyListeners();
       return true;
-    } on Exception catch (e) {
+    } on FormatException catch (e) {
       if (kDebugMode) {
-        print('[HomeController.uploadQuizToCourse] Failed: $e');
+        print('[HomeController.addQuizFromText] Failed to parse: $e');
       }
       _isCustomLoading = false;
-      _error = 'Unable to read that quiz file. Please try again.';
+      _error = e.message;
+      notifyListeners();
+      return false;
+    } on Exception catch (e) {
+      if (kDebugMode) {
+        print('[HomeController.addQuizFromText] Failed: $e');
+      }
+      _isCustomLoading = false;
+      _error = 'Unable to process the quiz content. Please check the format and try again.';
       notifyListeners();
       return false;
     }
   }
 
-  /// Uploads a flashcard JSON file to the selected course.
-  Future<bool> uploadFlashcardsToCourse() async {
+  /// Adds flashcards from pasted text to the selected course.
+  ///
+  /// The text can be in JSON format (from AI agents) or simple text format.
+  /// The app automatically converts it to the required format internally.
+  Future<bool> addFlashcardsFromText(String text) async {
     if (_selectedCourse == null) {
       return false;
     }
@@ -216,29 +209,7 @@ class HomeController extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final result = await FilePicker.platform.pickFiles(
-        type: FileType.custom,
-        allowedExtensions: <String>['json'],
-      );
-
-      if (result == null || result.files.isEmpty) {
-        _isFlashcardLoading = false;
-        notifyListeners();
-        return false;
-      }
-
-      final file = result.files.first;
-      final filePath = file.path;
-
-      if (filePath == null) {
-        _isFlashcardLoading = false;
-        _error = 'Selected file path could not be read.';
-        notifyListeners();
-        return false;
-      }
-
-      final flashcards =
-          await _flashcardService.loadFlashcardsFromFile(filePath);
+      final flashcards = _flashcardService.parseFlashcardsFromText(text);
       await _courseService.addFlashcardSetToCourse(
         _selectedCourse!.id,
         flashcards,
@@ -248,12 +219,20 @@ class HomeController extends ChangeNotifier {
       _isFlashcardLoading = false;
       notifyListeners();
       return true;
-    } on Exception catch (e) {
+    } on FormatException catch (e) {
       if (kDebugMode) {
-        print('[HomeController.uploadFlashcardsToCourse] Failed: $e');
+        print('[HomeController.addFlashcardsFromText] Failed to parse: $e');
       }
       _isFlashcardLoading = false;
-      _error = 'Unable to read that flashcard file. Please try again.';
+      _error = e.message;
+      notifyListeners();
+      return false;
+    } on Exception catch (e) {
+      if (kDebugMode) {
+        print('[HomeController.addFlashcardsFromText] Failed: $e');
+      }
+      _isFlashcardLoading = false;
+      _error = 'Unable to process the flashcard content. Please check the format and try again.';
       notifyListeners();
       return false;
     }

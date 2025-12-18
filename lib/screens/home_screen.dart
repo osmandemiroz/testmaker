@@ -1,7 +1,10 @@
-// ignore_for_file: use_if_null_to_convert_nulls_to_bools, document_ignores
+// ignore_for_file: use_if_null_to_convert_nulls_to_bools, document_ignores, leading_newlines_in_multiline_strings
+
+import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:testmaker/controllers/home_controller.dart';
 import 'package:testmaker/models/course.dart';
 import 'package:testmaker/models/flashcard.dart';
@@ -43,6 +46,13 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   late final HomeController _controller;
   final Set<String> _expandedPdfs = <String>{};
+  // Track which modules (courses) are expanded to show their contents
+  final Set<String> _expandedModules = <String>{};
+  // GlobalKey to control drawer programmatically on mobile
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+  // Track swipe indicator animation
+  bool _showSwipeIndicator = false;
+  Timer? _swipeIndicatorTimer;
 
   @override
   void initState() {
@@ -51,10 +61,14 @@ class _HomeScreenState extends State<HomeScreen> {
     _controller
       ..addListener(_onControllerChanged)
       ..initialize();
+    
+    // Start swipe indicator animation to help users discover the menu
+    _startSwipeIndicatorAnimation();
   }
 
   @override
   void dispose() {
+    _swipeIndicatorTimer?.cancel();
     _controller
       ..removeListener(_onControllerChanged)
       ..dispose();
@@ -63,8 +77,58 @@ class _HomeScreenState extends State<HomeScreen> {
 
   void _onControllerChanged() {
     if (mounted) {
-      setState(() {});
+      setState(() {
+        // Modules come closed by default - users can expand them manually
+        // No automatic expansion of modules
+      });
     }
+  }
+
+  /// Starts the swipe indicator animation sequence.
+  ///
+  /// Shows an animated arrow that moves from left to right to indicate
+  /// users can swipe from the left edge to open the menu.
+  /// The indicator appears after 4-5 seconds and cycles a few times.
+  void _startSwipeIndicatorAnimation() {
+    // Wait for the first frame to ensure everything is rendered
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      // Additional delay to ensure everything is fully rendered
+      Future.delayed(const Duration(milliseconds: 800), () {
+        if (!mounted) return;
+        
+        // Show indicator after 4-5 seconds (randomized for natural feel)
+        final randomDelay = 4000 + (DateTime.now().millisecond % 1000);
+        _swipeIndicatorTimer = Timer(
+          Duration(milliseconds: randomDelay),
+          () {
+            if (mounted) {
+              _showSwipeIndicatorCycle();
+            }
+          },
+        );
+      });
+    });
+  }
+
+  /// Shows the swipe indicator animation cycle.
+  ///
+  /// The indicator appears and animates 2-3 times to help users discover
+  /// the swipe gesture, then disappears.
+  void _showSwipeIndicatorCycle() {
+    if (!mounted) return;
+    
+    setState(() {
+      _showSwipeIndicator = true;
+    });
+    
+    // Hide after showing for a few cycles (about 3-4 seconds total)
+    Timer(const Duration(milliseconds: 3500), () {
+      if (mounted) {
+        setState(() {
+          _showSwipeIndicator = false;
+        });
+      }
+    });
   }
 
   /// Creates a new course with the given name.
@@ -145,6 +209,84 @@ class _HomeScreenState extends State<HomeScreen> {
     if (result != null && result.isNotEmpty) {
       await onSave(result);
     }
+  }
+
+  /// Shows a dialog for pasting text content (quiz or flashcard).
+  Future<String?> _showTextInputDialog({
+    required String title,
+    required String hint,
+    required String label,
+  }) async {
+    final controller = TextEditingController();
+    final result = await showDialog<String>(
+      context: context,
+      barrierColor: Colors.black.withValues(alpha: 0.4),
+      builder: (BuildContext context) {
+        final theme = Theme.of(context);
+        final textTheme = theme.textTheme;
+
+        return LayoutBuilder(
+          builder: (BuildContext context, BoxConstraints constraints) {
+            return AlertDialog(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(
+                  ResponsiveSizer.borderRadiusFromConstraints(
+                    constraints,
+                    multiplier: 1.67,
+                  ),
+                ),
+              ),
+              title: Text(
+                title,
+                style: textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              content: SizedBox(
+                width: ResponsiveSizer.maxContentWidthFromConstraints(
+                  constraints,
+                ),
+                child: TextField(
+                  controller: controller,
+                  autofocus: true,
+                  maxLines: 15,
+                  minLines: 10,
+                  decoration: InputDecoration(
+                    labelText: label,
+                    hintText: hint,
+                    alignLabelWithHint: true,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(
+                        ResponsiveSizer.borderRadiusFromConstraints(
+                          constraints,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              actions: <Widget>[
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: const Text('Cancel'),
+                ),
+                FilledButton(
+                  onPressed: () {
+                    final text = controller.text.trim();
+                    if (text.isNotEmpty) {
+                      Navigator.of(context).pop(text);
+                    }
+                  },
+                  child: const Text('Add'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+
+    return result;
   }
 
   /// Shows a beautifully designed dialog to create a new course.
@@ -316,17 +458,19 @@ class _HomeScreenState extends State<HomeScreen> {
                       label: const Text('Get API Key'),
                     ),
                     SizedBox(
-                      height: ResponsiveSizer.spacingFromConstraints(constraints),
+                      height:
+                          ResponsiveSizer.spacingFromConstraints(constraints),
                     ),
-                Text(
-                  'Get your free API key from:\nhttps://makersuite.google.com/app/apikey',
-                  style: textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
-                  ),
+                    Text(
+                      'Get your free API key from:\nhttps://makersuite.google.com/app/apikey',
+                      style: textTheme.bodySmall?.copyWith(
+                        color:
+                            theme.colorScheme.onSurface.withValues(alpha: 0.7),
+                      ),
+                    ),
+                  ],
                 ),
-              ],
-            ),
-          ),
+              ),
               actions: <Widget>[
                 TextButton(
                   onPressed: () => Navigator.of(context).pop(false),
@@ -421,17 +565,19 @@ class _HomeScreenState extends State<HomeScreen> {
                       keyboardType: TextInputType.number,
                     ),
                     SizedBox(
-                      height: ResponsiveSizer.spacingFromConstraints(constraints),
+                      height:
+                          ResponsiveSizer.spacingFromConstraints(constraints),
                     ),
-                Text(
-                  'Recommended: 5-20 questions',
-                  style: textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
-                  ),
+                    Text(
+                      'Recommended: 5-20 questions',
+                      style: textTheme.bodySmall?.copyWith(
+                        color:
+                            theme.colorScheme.onSurface.withValues(alpha: 0.7),
+                      ),
+                    ),
+                  ],
                 ),
-              ],
-            ),
-          ),
+              ),
               actions: <Widget>[
                 TextButton(
                   onPressed: () => Navigator.of(context).pop(),
@@ -495,11 +641,29 @@ class _HomeScreenState extends State<HomeScreen> {
     await _controller.deleteQuizFromCourse(quizIndex);
   }
 
-  /// Uploads a quiz JSON file to the selected course.
-  Future<void> _uploadQuizToCourse(Course? course) async {
+  /// Shows a dialog to paste quiz content and add it to the selected course.
+  Future<void> _addQuizToCourse(Course? course) async {
     if (course == null) return;
     _controller.selectCourse(course);
-    await _controller.uploadQuizToCourse();
+
+    final result = await _showTextInputDialog(
+      title: 'Add Quiz',
+      hint:
+          'Paste your quiz content here...\n\nThe app will automatically convert it to the correct format.\n\nYou can paste:\n• Content from AI agents\n• Simple text format',
+      label: 'Quiz Content',
+    );
+
+    if (result != null && result.isNotEmpty) {
+      await _controller.addQuizFromText(result);
+      if (mounted && _controller.error == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Quiz added successfully!'),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    }
   }
 
   /// Starts a quiz from the selected course and quiz index.
@@ -524,11 +688,29 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  /// Uploads a flashcard JSON file to the selected course.
-  Future<void> _uploadFlashcardsToCourse(Course? course) async {
+  /// Shows a dialog to paste flashcard content and add it to the selected course.
+  Future<void> _addFlashcardsToCourse(Course? course) async {
     if (course == null) return;
     _controller.selectCourse(course);
-    await _controller.uploadFlashcardsToCourse();
+
+    final result = await _showTextInputDialog(
+      title: 'Add Flashcards',
+      hint:
+          'Paste your flashcard content here...\n\nThe app will automatically convert it to the correct format.\n\nYou can paste:\n• Content from AI agents\n• Simple text format',
+      label: 'Flashcard Content',
+    );
+
+    if (result != null && result.isNotEmpty) {
+      await _controller.addFlashcardsFromText(result);
+      if (mounted && _controller.error == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Flashcards added successfully!'),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    }
   }
 
   /// Generates flashcards from a PDF file using the LLM.
@@ -628,17 +810,19 @@ class _HomeScreenState extends State<HomeScreen> {
                       keyboardType: TextInputType.number,
                     ),
                     SizedBox(
-                      height: ResponsiveSizer.spacingFromConstraints(constraints),
+                      height:
+                          ResponsiveSizer.spacingFromConstraints(constraints),
                     ),
-                Text(
-                  'Recommended: 10-30 flashcards',
-                  style: textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
-                  ),
+                    Text(
+                      'Recommended: 10-30 flashcards',
+                      style: textTheme.bodySmall?.copyWith(
+                        color:
+                            theme.colorScheme.onSurface.withValues(alpha: 0.7),
+                      ),
+                    ),
+                  ],
                 ),
-              ],
-            ),
-          ),
+              ),
               actions: <Widget>[
                 TextButton(
                   onPressed: () => Navigator.of(context).pop(),
@@ -716,7 +900,7 @@ class _HomeScreenState extends State<HomeScreen> {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text('No questions found in the quiz file.'),
+              content: Text('No questions found in the quiz content.'),
             ),
           );
         }
@@ -736,8 +920,9 @@ class _HomeScreenState extends State<HomeScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content:
-                Text('Unable to load the quiz. Please check the JSON file.'),
+            content: Text(
+              'Unable to load the quiz. Please check the content format.',
+            ),
           ),
         );
       }
@@ -792,6 +977,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final textTheme = theme.textTheme;
 
     return Scaffold(
+      key: _scaffoldKey,
       backgroundColor: theme.colorScheme.surface,
       body: SafeArea(
         child: LayoutBuilder(
@@ -806,12 +992,19 @@ class _HomeScreenState extends State<HomeScreen> {
             }
 
             // On larger screens, use a persistent sidebar.
-            return Row(
+            return Stack(
               children: <Widget>[
-                _buildSidebar(theme, constraints),
-                Expanded(
-                  child: _buildMainContent(theme),
+                Row(
+                  children: <Widget>[
+                    _buildSidebar(theme, constraints),
+                    Expanded(
+                      child: _buildMainContent(theme),
+                    ),
+                  ],
                 ),
+                // Swipe indicator overlay
+                if (_showSwipeIndicator)
+                  _buildSwipeIndicator(theme, constraints),
               ],
             );
           },
@@ -821,6 +1014,25 @@ class _HomeScreenState extends State<HomeScreen> {
           ? _buildFloatingActionButton(theme, textTheme)
           : null,
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
+    );
+  }
+
+  /// Builds a swipe indicator that animates from left to right.
+  ///
+  /// This indicator appears on the left edge of the screen and animates
+  /// horizontally to indicate users can swipe from left to right to open the menu.
+  Widget _buildSwipeIndicator(ThemeData theme, BoxConstraints constraints) {
+    return Positioned(
+      left: 0,
+      top: 0,
+      bottom: 0,
+      child: IgnorePointer(
+        child: Container(
+          width: 60,
+          alignment: Alignment.centerLeft,
+          child: _SwipeIndicatorArrow(theme: theme),
+        ),
+      ),
     );
   }
 
@@ -894,8 +1106,8 @@ class _HomeScreenState extends State<HomeScreen> {
                         Text(
                           'Your courses',
                           style: textTheme.bodySmall?.copyWith(
-                            color:
-                                theme.colorScheme.onSurface.withValues(alpha: 0.7),
+                            color: theme.colorScheme.onSurface
+                                .withValues(alpha: 0.7),
                           ),
                         ),
                       ],
@@ -1100,7 +1312,8 @@ class _HomeScreenState extends State<HomeScreen> {
             builder: (BuildContext context, BoxConstraints constraints) {
               return Container(
                 margin: EdgeInsets.symmetric(
-                  horizontal: ResponsiveSizer.spacingFromConstraints(constraints),
+                  horizontal:
+                      ResponsiveSizer.spacingFromConstraints(constraints),
                   vertical: ResponsiveSizer.spacingFromConstraints(
                     constraints,
                     multiplier: 0.5,
@@ -1110,7 +1323,8 @@ class _HomeScreenState extends State<HomeScreen> {
                     ResponsiveSizer.listItemPaddingFromConstraints(constraints),
                 decoration: BoxDecoration(
                   color: isSelected
-                      ? theme.colorScheme.primaryContainer.withValues(alpha: 0.5)
+                      ? theme.colorScheme.primaryContainer
+                          .withValues(alpha: 0.5)
                       : Colors.transparent,
                   borderRadius: BorderRadius.circular(
                     ResponsiveSizer.borderRadiusFromConstraints(constraints),
@@ -1120,7 +1334,8 @@ class _HomeScreenState extends State<HomeScreen> {
                   children: <Widget>[
                     Icon(
                       Icons.folder_outlined,
-                      size: ResponsiveSizer.iconSizeFromConstraints(constraints),
+                      size:
+                          ResponsiveSizer.iconSizeFromConstraints(constraints),
                       color: isSelected
                           ? theme.colorScheme.primary
                           : theme.colorScheme.onSurface.withValues(alpha: 0.7),
@@ -1139,8 +1354,9 @@ class _HomeScreenState extends State<HomeScreen> {
                           Text(
                             course.name,
                             style: textTheme.bodyMedium?.copyWith(
-                              fontWeight:
-                                  isSelected ? FontWeight.w600 : FontWeight.w500,
+                              fontWeight: isSelected
+                                  ? FontWeight.w600
+                                  : FontWeight.w500,
                               color: isSelected
                                   ? theme.colorScheme.onPrimaryContainer
                                   : null,
@@ -1235,7 +1451,8 @@ class _HomeScreenState extends State<HomeScreen> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: <Widget>[
                   if (_controller.selectedCourse == null) ...<Widget>[
-                    _buildWelcomeContent(theme, textTheme),
+                    // Show modules view instead of welcome content
+                    _buildModulesView(theme, textTheme, constraints),
                   ] else ...<Widget>[
                     _buildCourseContent(theme, textTheme, constraints),
                   ],
@@ -1249,6 +1466,10 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   /// Builds the welcome content when no course is selected.
+  ///
+  /// NOTE: This method is currently unused as the home screen now shows
+  /// modules by default. Kept for potential future use or reference.
+  // ignore: unused_element
   Widget _buildWelcomeContent(ThemeData theme, TextTheme textTheme) {
     return LayoutBuilder(
       builder: (BuildContext context, BoxConstraints constraints) {
@@ -1343,9 +1564,8 @@ class _HomeScreenState extends State<HomeScreen> {
                   ResponsiveSizer.sectionSpacingFromConstraints(constraints),
             ),
             SizedBox(
-              height:
-                  ResponsiveSizer.buttonHeightFromConstraints(constraints) +
-                      ResponsiveSizer.spacingFromConstraints(constraints),
+              height: ResponsiveSizer.buttonHeightFromConstraints(constraints) +
+                  ResponsiveSizer.spacingFromConstraints(constraints),
               child: ElevatedButton(
                 onPressed: _startQuiz,
                 style: ElevatedButton.styleFrom(
@@ -1383,6 +1603,1247 @@ class _HomeScreenState extends State<HomeScreen> {
           ],
         );
       },
+    );
+  }
+
+  /// Builds the modules view showing all courses with their contents visible.
+  ///
+  /// This replaces the welcome screen and displays all modules (courses)
+  /// with their quizzes, flashcards, and PDFs visible by default.
+  Widget _buildModulesView(
+    ThemeData theme,
+    TextTheme textTheme,
+    BoxConstraints constraints,
+  ) {
+    // If no courses exist, show empty state
+    if (_controller.courses.isEmpty) {
+      return _buildEmptyModulesState(theme, textTheme, constraints);
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        // Header with title and settings button
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  Text(
+                    'Modules',
+                    style: textTheme.headlineMedium?.copyWith(
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: -0.5,
+                    ),
+                  ),
+                  SizedBox(
+                    height: ResponsiveSizer.spacingFromConstraints(
+                      constraints,
+                    ),
+                  ),
+                  Text(
+                    'All your courses and their contents',
+                    style: textTheme.bodyMedium?.copyWith(
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            // Settings button in upper right corner
+            IconButton(
+              onPressed: _showSettingsDialog,
+              icon: Icon(
+                Icons.settings_outlined,
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+              ),
+              tooltip: 'Settings',
+              style: IconButton.styleFrom(
+                padding: EdgeInsets.all(
+                  ResponsiveSizer.spacingFromConstraints(constraints),
+                ),
+                minimumSize: Size(
+                  ResponsiveSizer.iconContainerSizeFromConstraints(
+                    constraints,
+                  ),
+                  ResponsiveSizer.iconContainerSizeFromConstraints(
+                    constraints,
+                  ),
+                ),
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              ),
+            ),
+          ],
+        ),
+        SizedBox(
+          height: ResponsiveSizer.sectionSpacingFromConstraints(constraints),
+        ),
+        // List of all modules (courses) with their contents
+        ..._controller.courses.map<Widget>(
+          (Course course) => _buildModuleCard(
+            theme,
+            textTheme,
+            course,
+            constraints,
+          ),
+        ),
+        SizedBox(
+          height: ResponsiveSizer.sectionSpacingFromConstraints(constraints),
+        ),
+        // Content Templates section for creating quizzes and flashcards
+        _buildJsonTemplatesSection(theme, textTheme, constraints),
+      ],
+    );
+  }
+
+  /// Builds a single module card showing the course and its contents.
+  Widget _buildModuleCard(
+    ThemeData theme,
+    TextTheme textTheme,
+    Course course,
+    BoxConstraints constraints,
+  ) {
+    final isExpanded = _expandedModules.contains(course.id);
+
+    return Card(
+      margin: EdgeInsets.only(
+        bottom: ResponsiveSizer.spacingFromConstraints(
+          constraints,
+          multiplier: 1.5,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          // Module header - clickable to expand/collapse
+          InkWell(
+            onTap: () {
+              setState(() {
+                if (isExpanded) {
+                  _expandedModules.remove(course.id);
+                } else {
+                  _expandedModules.add(course.id);
+                }
+              });
+            },
+            borderRadius: BorderRadius.only(
+              topLeft: Radius.circular(
+                ResponsiveSizer.borderRadiusFromConstraints(constraints),
+              ),
+              topRight: Radius.circular(
+                ResponsiveSizer.borderRadiusFromConstraints(constraints),
+              ),
+            ),
+            child: Padding(
+              padding: EdgeInsets.all(
+                ResponsiveSizer.cardPaddingFromConstraints(constraints),
+              ),
+              child: Row(
+                children: <Widget>[
+                  Icon(
+                    Icons.folder,
+                    color: theme.colorScheme.primary,
+                    size: ResponsiveSizer.iconSizeFromConstraints(
+                      constraints,
+                      multiplier: 1.4,
+                    ),
+                  ),
+                  SizedBox(
+                    width: ResponsiveSizer.spacingFromConstraints(
+                      constraints,
+                      multiplier: 1.5,
+                    ),
+                  ),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: <Widget>[
+                        Text(
+                          course.name,
+                          style: textTheme.titleLarge?.copyWith(
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        if (course.quizCount > 0 ||
+                            course.flashcardSetCount > 0 ||
+                            course.pdfCount > 0)
+                          Text(
+                            [
+                              if (course.quizCount > 0)
+                                '${course.quizCount} quiz${course.quizCount == 1 ? '' : 'zes'}',
+                              if (course.flashcardSetCount > 0)
+                                '${course.flashcardSetCount} flashcard set${course.flashcardSetCount == 1 ? '' : 's'}',
+                              if (course.pdfCount > 0)
+                                '${course.pdfCount} PDF${course.pdfCount == 1 ? '' : 's'}',
+                            ].join(' • '),
+                            style: textTheme.bodySmall?.copyWith(
+                              color: theme.colorScheme.onSurface
+                                  .withValues(alpha: 0.7),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                  AnimatedRotation(
+                    turns: isExpanded ? 0.5 : 0.0,
+                    duration: const Duration(milliseconds: 300),
+                    curve: Curves.easeInOutCubic,
+                    child: Icon(
+                      Icons.keyboard_arrow_down,
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          // Module contents - visible when expanded with smooth animation
+          AnimatedSize(
+            duration: const Duration(milliseconds: 300),
+            curve: Curves.easeInOutCubic,
+            alignment: Alignment.topCenter,
+            child: isExpanded
+                ? Padding(
+                    padding: EdgeInsets.fromLTRB(
+                      ResponsiveSizer.cardPaddingFromConstraints(constraints),
+                      0,
+                      ResponsiveSizer.cardPaddingFromConstraints(constraints),
+                      ResponsiveSizer.cardPaddingFromConstraints(constraints),
+                    ),
+                    child: _buildModuleContents(
+                      theme,
+                      textTheme,
+                      course,
+                      constraints,
+                    ),
+                  )
+                : const SizedBox.shrink(),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Builds the contents of a module (quizzes, flashcards, PDFs).
+  Widget _buildModuleContents(
+    ThemeData theme,
+    TextTheme textTheme,
+    Course course,
+    BoxConstraints constraints,
+  ) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        // PDFs section
+        if (course.pdfs.isNotEmpty) ...<Widget>[
+          Text(
+            'Study Materials',
+            style: textTheme.titleSmall?.copyWith(
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          SizedBox(
+            height: ResponsiveSizer.spacingFromConstraints(
+              constraints,
+              multiplier: 1.5,
+            ),
+          ),
+          ...course.pdfs.asMap().entries.map<Widget>(
+            (MapEntry<int, String> entry) {
+              final index = entry.key;
+              final pdfPath = entry.value;
+              final fileName = pdfPath.split('/').last;
+              final pdfName = course.getPdfName(index, pdfPath);
+
+              return _buildModulePdfItem(
+                theme,
+                textTheme,
+                course,
+                pdfIndex: index,
+                fileName: fileName,
+                pdfPath: pdfPath,
+                pdfName: pdfName,
+                constraints: constraints,
+              );
+            },
+          ),
+          SizedBox(
+            height: ResponsiveSizer.sectionSpacingFromConstraints(constraints),
+          ),
+        ],
+        // Quizzes section
+        if (course.quizzes.isNotEmpty) ...<Widget>[
+          Text(
+            'Quizzes',
+            style: textTheme.titleSmall?.copyWith(
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          SizedBox(
+            height: ResponsiveSizer.spacingFromConstraints(
+              constraints,
+              multiplier: 1.5,
+            ),
+          ),
+          ...course.quizzes.asMap().entries.map<Widget>(
+            (MapEntry<int, List<Question>> entry) {
+              final index = entry.key;
+              final questions = entry.value;
+              final quizName = course.getQuizName(index);
+
+              return _buildModuleQuizItem(
+                theme,
+                textTheme,
+                course,
+                quizIndex: index,
+                quizName: quizName,
+                questionCount: questions.length,
+                constraints: constraints,
+              );
+            },
+          ),
+          SizedBox(
+            height: ResponsiveSizer.sectionSpacingFromConstraints(constraints),
+          ),
+        ],
+        // Flashcards section
+        if (course.flashcards.isNotEmpty) ...<Widget>[
+          Text(
+            'Flashcards',
+            style: textTheme.titleSmall?.copyWith(
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          SizedBox(
+            height: ResponsiveSizer.spacingFromConstraints(
+              constraints,
+              multiplier: 1.5,
+            ),
+          ),
+          ...course.flashcards.asMap().entries.map<Widget>(
+            (MapEntry<int, List<Flashcard>> entry) {
+              final index = entry.key;
+              final flashcards = entry.value;
+              final flashcardSetName = course.getFlashcardSetName(index);
+
+              return _buildModuleFlashcardItem(
+                theme,
+                textTheme,
+                course,
+                flashcardSetIndex: index,
+                flashcardSetName: flashcardSetName,
+                flashcardCount: flashcards.length,
+                constraints: constraints,
+              );
+            },
+          ),
+        ],
+        // Empty state if module has no content
+        if (course.quizzes.isEmpty &&
+            course.flashcards.isEmpty &&
+            course.pdfs.isEmpty)
+          Padding(
+            padding: EdgeInsets.symmetric(
+              vertical: ResponsiveSizer.spacingFromConstraints(
+                constraints,
+                multiplier: 2,
+              ),
+            ),
+            child: Center(
+              child: Text(
+                'No content yet. Add quizzes, flashcards, or PDFs to this module.',
+                style: textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+
+  /// Builds an empty state when no modules exist.
+  Widget _buildEmptyModulesState(
+    ThemeData theme,
+    TextTheme textTheme,
+    BoxConstraints constraints,
+  ) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        // Empty state message
+        Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: <Widget>[
+            Icon(
+              Icons.folder_outlined,
+              size: ResponsiveSizer.iconSizeFromConstraints(
+                constraints,
+                multiplier: 4,
+              ),
+              color: theme.colorScheme.onSurface.withValues(alpha: 0.3),
+            ),
+            SizedBox(
+              height: ResponsiveSizer.spacingFromConstraints(
+                constraints,
+                multiplier: 2,
+              ),
+            ),
+            Text(
+              'No modules yet',
+              style: textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.w600,
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+              ),
+            ),
+            SizedBox(
+              height: ResponsiveSizer.spacingFromConstraints(constraints),
+            ),
+            Text(
+              'Swipe from the left or tap the menu to create your first module',
+              style: textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
+              ),
+              textAlign: TextAlign.center,
+            ),
+            SizedBox(
+              height: ResponsiveSizer.spacingFromConstraints(
+                constraints,
+                multiplier: 2,
+              ),
+            ),
+            // Button to create first module
+            FilledButton.icon(
+              onPressed: _showCreateCourseDialog,
+              icon: const Icon(Icons.add),
+              label: const Text('Create Module'),
+              style: FilledButton.styleFrom(
+                padding: EdgeInsets.symmetric(
+                  horizontal: ResponsiveSizer.spacingFromConstraints(
+                    constraints,
+                    multiplier: 2,
+                  ),
+                  vertical: ResponsiveSizer.spacingFromConstraints(
+                    constraints,
+                    multiplier: 1.5,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+        SizedBox(
+          height: ResponsiveSizer.sectionSpacingFromConstraints(constraints),
+        ),
+        // Content Templates section - also show when no modules exist
+        _buildJsonTemplatesSection(theme, textTheme, constraints),
+      ],
+    );
+  }
+
+  /// Builds the content templates section with ready-made prompts for quizzes and flashcards.
+  ///
+  /// This section provides users with prompts they can use with AI agents
+  /// to generate quiz and flashcard content, which they can then paste
+  /// directly into the application.
+  Widget _buildJsonTemplatesSection(
+    ThemeData theme,
+    TextTheme textTheme,
+    BoxConstraints constraints,
+  ) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        // Section header
+        Text(
+          'Content Templates',
+          style: textTheme.titleLarge?.copyWith(
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        SizedBox(
+          height: ResponsiveSizer.spacingFromConstraints(
+            constraints,
+            multiplier: 1.5,
+          ),
+        ),
+        Text(
+          'Generate prompts for AI agents to create quiz and flashcard content. '
+          'Select the type and count, then copy the prompt to use with your AI agent. '
+          'Paste the generated content directly into the app - no files needed!',
+          style: textTheme.bodyMedium?.copyWith(
+            color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+          ),
+        ),
+        SizedBox(
+          height: ResponsiveSizer.sectionSpacingFromConstraints(constraints),
+        ),
+        // Quiz template button with staggered animation
+        _buildTemplateButton(
+          theme: theme,
+          textTheme: textTheme,
+          constraints: constraints,
+          title: 'Quiz Template',
+          icon: Icons.quiz,
+          onTap: () => _showQuizPromptDialog(theme, textTheme, constraints),
+          animationDelay: 0,
+        ),
+        SizedBox(
+          height: ResponsiveSizer.spacingFromConstraints(
+            constraints,
+            multiplier: 1.5,
+          ),
+        ),
+        // Flashcard template button with staggered animation
+        _buildTemplateButton(
+          theme: theme,
+          textTheme: textTheme,
+          constraints: constraints,
+          title: 'Flashcard Template',
+          icon: Icons.style,
+          onTap: () =>
+              _showFlashcardPromptDialog(theme, textTheme, constraints),
+          animationDelay: 100,
+        ),
+      ],
+    );
+  }
+
+  /// Builds a template button that opens a prompt generation dialog.
+  ///
+  /// Includes smooth animations for a polished user experience:
+  /// - Staggered entrance animation (fade in + slide up)
+  /// - Smooth transitions on interaction
+  Widget _buildTemplateButton({
+    required ThemeData theme,
+    required TextTheme textTheme,
+    required BoxConstraints constraints,
+    required String title,
+    required IconData icon,
+    required VoidCallback onTap,
+    required int animationDelay,
+  }) {
+    return _AnimatedTemplateButton(
+      delay: Duration(milliseconds: animationDelay),
+      child: Card(
+        elevation: 0,
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: onTap,
+            borderRadius: BorderRadius.circular(
+              ResponsiveSizer.borderRadiusFromConstraints(constraints),
+            ),
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 150),
+              curve: Curves.easeInOut,
+              padding: EdgeInsets.all(
+                ResponsiveSizer.cardPaddingFromConstraints(constraints),
+              ),
+              child: Row(
+                children: <Widget>[
+                  // Icon
+                  Icon(
+                    icon,
+                    color: theme.colorScheme.primary,
+                    size: ResponsiveSizer.iconSizeFromConstraints(
+                      constraints,
+                      multiplier: 1.4,
+                    ),
+                  ),
+                  SizedBox(
+                    width: ResponsiveSizer.spacingFromConstraints(
+                      constraints,
+                      multiplier: 1.5,
+                    ),
+                  ),
+                  Expanded(
+                    child: Text(
+                      title,
+                      style: textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                  // Arrow icon
+                  Icon(
+                    Icons.arrow_forward_ios,
+                    size: ResponsiveSizer.iconSizeFromConstraints(constraints),
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// Shows a dialog to generate a quiz prompt for AI agents.
+  Future<void> _showQuizPromptDialog(
+    ThemeData theme,
+    TextTheme textTheme,
+    BoxConstraints constraints,
+  ) async {
+    // Quiz types
+    final quizTypes = <String>[
+      'Multiple Choice',
+      'True/False',
+      'Fill in the Blank',
+      'Short Answer',
+    ];
+    String? selectedType;
+    int? count;
+
+    final result = await showDialog<Map<String, dynamic>>(
+      context: context,
+      barrierColor: Colors.black.withValues(alpha: 0.4),
+      builder: (BuildContext context) {
+        return StatefulBuilder(
+          builder: (BuildContext context, StateSetter setState) {
+            final theme = Theme.of(context);
+            final textTheme = theme.textTheme;
+
+            return LayoutBuilder(
+              builder: (BuildContext context, BoxConstraints constraints) {
+                return AlertDialog(
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(
+                      ResponsiveSizer.borderRadiusFromConstraints(
+                        constraints,
+                        multiplier: 1.67,
+                      ),
+                    ),
+                  ),
+                  title: Text(
+                    'Generate Quiz Prompt',
+                    style: textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  content: SizedBox(
+                    width: ResponsiveSizer.maxContentWidthFromConstraints(
+                      constraints,
+                    ),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: <Widget>[
+                        // Quiz type selection
+                        Text(
+                          'Quiz Type:',
+                          style: textTheme.titleSmall?.copyWith(
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        SizedBox(
+                          height: ResponsiveSizer.spacingFromConstraints(
+                            constraints,
+                          ),
+                        ),
+                        ...quizTypes.map<Widget>(
+                          (String type) => RadioListTile<String>(
+                            title: Text(type),
+                            value: type,
+                            groupValue: selectedType,
+                            onChanged: (String? value) {
+                              setState(() {
+                                selectedType = value;
+                              });
+                            },
+                            contentPadding: EdgeInsets.zero,
+                          ),
+                        ),
+                        SizedBox(
+                          height: ResponsiveSizer.spacingFromConstraints(
+                            constraints,
+                            multiplier: 1.5,
+                          ),
+                        ),
+                        // Count input
+                        Text(
+                          'Number of Questions:',
+                          style: textTheme.titleSmall?.copyWith(
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        SizedBox(
+                          height: ResponsiveSizer.spacingFromConstraints(
+                            constraints,
+                          ),
+                        ),
+                        TextField(
+                          keyboardType: TextInputType.number,
+                          decoration: InputDecoration(
+                            hintText: 'Enter number (1-50)',
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(
+                                ResponsiveSizer.borderRadiusFromConstraints(
+                                  constraints,
+                                ),
+                              ),
+                            ),
+                          ),
+                          onChanged: (String value) {
+                            setState(() {
+                              count = int.tryParse(value);
+                            });
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                  actions: <Widget>[
+                    TextButton(
+                      onPressed: () => Navigator.of(context).pop(),
+                      child: const Text('Cancel'),
+                    ),
+                    FilledButton(
+                      onPressed: selectedType != null &&
+                              count != null &&
+                              count! > 0 &&
+                              count! <= 50
+                          ? () {
+                              Navigator.of(context).pop(<String, dynamic>{
+                                'type': selectedType,
+                                'count': count,
+                              });
+                            }
+                          : null,
+                      child: const Text('Generate'),
+                    ),
+                  ],
+                );
+              },
+            );
+          },
+        );
+      },
+    );
+
+    if (result != null) {
+      final prompt = _generateQuizPrompt(
+        result['type'] as String,
+        result['count'] as int,
+      );
+      await Clipboard.setData(ClipboardData(text: prompt));
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Prompt copied to clipboard!'),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+        // Show the prompt to the user
+        await _showPromptPreview(theme, textTheme, constraints, prompt, 'Quiz');
+      }
+    }
+  }
+
+  /// Shows a dialog to generate a flashcard prompt for AI agents.
+  Future<void> _showFlashcardPromptDialog(
+    ThemeData theme,
+    TextTheme textTheme,
+    BoxConstraints constraints,
+  ) async {
+    // Flashcard types
+    final flashcardTypes = <String>[
+      'Q&A',
+      'Definition',
+      'Concept Explanation',
+      'Term & Definition',
+    ];
+    String? selectedType;
+    int? count;
+
+    final result = await showDialog<Map<String, dynamic>>(
+      context: context,
+      barrierColor: Colors.black.withValues(alpha: 0.4),
+      builder: (BuildContext context) {
+        return StatefulBuilder(
+          builder: (BuildContext context, StateSetter setState) {
+            final theme = Theme.of(context);
+            final textTheme = theme.textTheme;
+
+            return LayoutBuilder(
+              builder: (BuildContext context, BoxConstraints constraints) {
+                return AlertDialog(
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(
+                      ResponsiveSizer.borderRadiusFromConstraints(
+                        constraints,
+                        multiplier: 1.67,
+                      ),
+                    ),
+                  ),
+                  title: Text(
+                    'Generate Flashcard Prompt',
+                    style: textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  content: SizedBox(
+                    width: ResponsiveSizer.maxContentWidthFromConstraints(
+                      constraints,
+                    ),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: <Widget>[
+                        // Flashcard type selection
+                        Text(
+                          'Flashcard Type:',
+                          style: textTheme.titleSmall?.copyWith(
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        SizedBox(
+                          height: ResponsiveSizer.spacingFromConstraints(
+                            constraints,
+                          ),
+                        ),
+                        ...flashcardTypes.map<Widget>(
+                          (String type) => RadioListTile<String>(
+                            title: Text(type),
+                            value: type,
+                            groupValue: selectedType,
+                            onChanged: (String? value) {
+                              setState(() {
+                                selectedType = value;
+                              });
+                            },
+                            contentPadding: EdgeInsets.zero,
+                          ),
+                        ),
+                        SizedBox(
+                          height: ResponsiveSizer.spacingFromConstraints(
+                            constraints,
+                            multiplier: 1.5,
+                          ),
+                        ),
+                        // Count input
+                        Text(
+                          'Number of Flashcards:',
+                          style: textTheme.titleSmall?.copyWith(
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        SizedBox(
+                          height: ResponsiveSizer.spacingFromConstraints(
+                            constraints,
+                          ),
+                        ),
+                        TextField(
+                          keyboardType: TextInputType.number,
+                          decoration: InputDecoration(
+                            hintText: 'Enter number (1-50)',
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(
+                                ResponsiveSizer.borderRadiusFromConstraints(
+                                  constraints,
+                                ),
+                              ),
+                            ),
+                          ),
+                          onChanged: (String value) {
+                            setState(() {
+                              count = int.tryParse(value);
+                            });
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                  actions: <Widget>[
+                    TextButton(
+                      onPressed: () => Navigator.of(context).pop(),
+                      child: const Text('Cancel'),
+                    ),
+                    FilledButton(
+                      onPressed: selectedType != null &&
+                              count != null &&
+                              count! > 0 &&
+                              count! <= 50
+                          ? () {
+                              Navigator.of(context).pop(<String, dynamic>{
+                                'type': selectedType,
+                                'count': count,
+                              });
+                            }
+                          : null,
+                      child: const Text('Generate'),
+                    ),
+                  ],
+                );
+              },
+            );
+          },
+        );
+      },
+    );
+
+    if (result != null) {
+      final prompt = _generateFlashcardPrompt(
+        result['type'] as String,
+        result['count'] as int,
+      );
+      await Clipboard.setData(ClipboardData(text: prompt));
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Prompt copied to clipboard!'),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+        // Show the prompt to the user
+        await _showPromptPreview(
+          theme,
+          textTheme,
+          constraints,
+          prompt,
+          'Flashcard',
+        );
+      }
+    }
+  }
+
+  /// Shows a preview of the generated prompt.
+  Future<void> _showPromptPreview(
+    ThemeData theme,
+    TextTheme textTheme,
+    BoxConstraints constraints,
+    String prompt,
+    String title,
+  ) async {
+    await showDialog<void>(
+      context: context,
+      barrierColor: Colors.black.withValues(alpha: 0.4),
+      builder: (BuildContext context) {
+        return LayoutBuilder(
+          builder: (BuildContext context, BoxConstraints constraints) {
+            return AlertDialog(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(
+                  ResponsiveSizer.borderRadiusFromConstraints(
+                    constraints,
+                    multiplier: 1.67,
+                  ),
+                ),
+              ),
+              title: Text(
+                '$title Prompt Generated',
+                style: textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              content: SizedBox(
+                width: ResponsiveSizer.maxContentWidthFromConstraints(
+                  constraints,
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    Text(
+                      'The prompt has been copied to your clipboard. '
+                      'Paste it into your AI agent to generate the content, '
+                      'then paste the result back into the app.',
+                      style: textTheme.bodyMedium,
+                    ),
+                    SizedBox(
+                      height: ResponsiveSizer.spacingFromConstraints(
+                        constraints,
+                        multiplier: 1.5,
+                      ),
+                    ),
+                    Container(
+                      width: double.infinity,
+                      constraints: BoxConstraints(
+                        maxHeight: ResponsiveSizer.spacingFromConstraints(
+                          constraints,
+                          multiplier: 20,
+                        ),
+                      ),
+                      padding: EdgeInsets.all(
+                        ResponsiveSizer.spacingFromConstraints(
+                          constraints,
+                          multiplier: 1.5,
+                        ),
+                      ),
+                      decoration: BoxDecoration(
+                        color: theme.colorScheme.surfaceContainerLowest,
+                        borderRadius: BorderRadius.circular(
+                          ResponsiveSizer.borderRadiusFromConstraints(
+                            constraints,
+                          ),
+                        ),
+                        border: Border.all(
+                          color:
+                              theme.colorScheme.outline.withValues(alpha: 0.3),
+                        ),
+                      ),
+                      child: SingleChildScrollView(
+                        child: SelectableText(
+                          prompt,
+                          style: textTheme.bodySmall?.copyWith(
+                            fontFamily: 'monospace',
+                            color: theme.colorScheme.onSurface,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              actions: <Widget>[
+                FilledButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: const Text('Done'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
+  /// Generates a quiz prompt for AI agents based on type and count.
+  String _generateQuizPrompt(String type, int count) {
+    final typeInstructions = <String, String>{
+      'Multiple Choice':
+          'Each question should have 4 answer options with one correct answer.',
+      'True/False':
+          'Each question should have exactly 2 options: "True" and "False".',
+      'Fill in the Blank':
+          'Each question should have 4 answer options where one is the correct fill-in answer.',
+      'Short Answer':
+          'Each question should have 4 answer options with one correct short answer.',
+    };
+
+    return '''Generate $count ${type.toLowerCase()} quiz questions for a mobile quiz application.
+
+Requirements:
+- Generate exactly $count questions
+- ${typeInstructions[type] ?? 'Each question should have 4 answer options with one correct answer.'}
+- Each question must include an explanation field
+
+Format (array of question objects):
+[
+  {
+    "id": 1,
+    "text": "The question text here",
+    "options": ["Option 1", "Option 2", "Option 3", "Option 4"],
+    "answerIndex": 0,
+    "explanation": "Explanation of why the correct answer is correct"
+  },
+  ...
+]
+
+Field Requirements:
+- "id": Sequential number starting from 1
+- "text": Clear, concise question text
+- "options": Array of exactly 4 strings (or 2 for True/False)
+- "answerIndex": Zero-based index (0-3, or 0-1 for True/False) pointing to the correct option
+- "explanation": Brief explanation of the correct answer
+
+Return ONLY valid JSON array, no additional text or markdown formatting.''';
+  }
+
+  /// Generates a flashcard prompt for AI agents based on type and count.
+  String _generateFlashcardPrompt(String type, int count) {
+    final typeInstructions = <String, String>{
+      'Q&A':
+          'Create question and answer pairs where the front is a question and the back is the answer.',
+      'Definition':
+          'Create definition cards where the front is a term and the back is its definition.',
+      'Concept Explanation':
+          'Create concept cards where the front is a concept name and the back explains the concept.',
+      'Term & Definition':
+          'Create term-definition pairs where the front is a term and the back is its definition.',
+    };
+
+    return '''Generate $count ${type.toLowerCase()} flashcards for a mobile flashcard application.
+
+Requirements:
+- Generate exactly $count flashcards
+- ${typeInstructions[type] ?? 'Create question and answer pairs.'}
+- Each flashcard should include an explanation field for additional context
+
+Format (array of flashcard objects):
+[
+  {
+    "id": 1,
+    "front": "The question, term, or concept on the front of the card",
+    "back": "The answer, definition, or explanation on the back of the card",
+    "explanation": "Additional context or explanation that helps understand the concept better"
+  },
+  ...
+]
+
+Field Requirements:
+- "id": Sequential number starting from 1
+- "front": Clear, concise question, term, or concept
+- "back": Clear, concise answer, definition, or explanation
+- "explanation": Optional additional context that helps understand the concept
+
+Return ONLY valid array format, no additional text or markdown formatting.''';
+  }
+
+  /// Builds a PDF item in the module contents view.
+  Widget _buildModulePdfItem(
+    ThemeData theme,
+    TextTheme textTheme,
+    Course course, {
+    required int pdfIndex,
+    required String fileName,
+    required String pdfPath,
+    required String pdfName,
+    required BoxConstraints constraints,
+  }) {
+    return Card(
+      margin: EdgeInsets.only(
+        bottom: ResponsiveSizer.spacingFromConstraints(
+          constraints,
+        ),
+      ),
+      color: theme.colorScheme.surfaceContainerLow,
+      child: ListTile(
+        leading: Icon(
+          Icons.picture_as_pdf,
+          color: theme.colorScheme.primary,
+          size: ResponsiveSizer.iconSizeFromConstraints(constraints),
+        ),
+        title: Text(
+          pdfName,
+          style: textTheme.bodyLarge,
+        ),
+        subtitle: Text(
+          fileName,
+          style: textTheme.bodySmall?.copyWith(
+            color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+          ),
+        ),
+        trailing: IconButton(
+          icon: Icon(
+            Icons.open_in_new,
+            size: ResponsiveSizer.iconSizeFromConstraints(constraints),
+          ),
+          onPressed: () => _viewPdf(pdfPath, pdfName),
+          tooltip: 'View PDF',
+        ),
+      ),
+    );
+  }
+
+  /// Builds a quiz item in the module contents view.
+  Widget _buildModuleQuizItem(
+    ThemeData theme,
+    TextTheme textTheme,
+    Course course, {
+    required int quizIndex,
+    required String quizName,
+    required int questionCount,
+    required BoxConstraints constraints,
+  }) {
+    return Card(
+      margin: EdgeInsets.only(
+        bottom: ResponsiveSizer.spacingFromConstraints(
+          constraints,
+        ),
+      ),
+      color: theme.colorScheme.surfaceContainerLow,
+      child: ListTile(
+        leading: Icon(
+          Icons.quiz,
+          color: theme.colorScheme.primary,
+          size: ResponsiveSizer.iconSizeFromConstraints(constraints),
+        ),
+        title: Text(
+          quizName,
+          style: textTheme.bodyLarge,
+        ),
+        subtitle: Text(
+          '$questionCount question${questionCount == 1 ? '' : 's'}',
+          style: textTheme.bodySmall?.copyWith(
+            color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+          ),
+        ),
+        trailing: FilledButton(
+          onPressed: () => _startQuizFromCourse(course, quizIndex),
+          style: FilledButton.styleFrom(
+            padding: EdgeInsets.symmetric(
+              horizontal: ResponsiveSizer.spacingFromConstraints(
+                constraints,
+                multiplier: 1.5,
+              ),
+              vertical: ResponsiveSizer.spacingFromConstraints(
+                constraints,
+                multiplier: 0.75,
+              ),
+            ),
+          ),
+          child: const Text('Start'),
+        ),
+      ),
+    );
+  }
+
+  /// Builds a flashcard item in the module contents view.
+  Widget _buildModuleFlashcardItem(
+    ThemeData theme,
+    TextTheme textTheme,
+    Course course, {
+    required int flashcardSetIndex,
+    required String flashcardSetName,
+    required int flashcardCount,
+    required BoxConstraints constraints,
+  }) {
+    return Card(
+      margin: EdgeInsets.only(
+        bottom: ResponsiveSizer.spacingFromConstraints(
+          constraints,
+        ),
+      ),
+      color: theme.colorScheme.surfaceContainerLow,
+      child: ListTile(
+        leading: Icon(
+          Icons.style,
+          color: theme.colorScheme.primary,
+          size: ResponsiveSizer.iconSizeFromConstraints(constraints),
+        ),
+        title: Text(
+          flashcardSetName,
+          style: textTheme.bodyLarge,
+        ),
+        subtitle: Text(
+          '$flashcardCount card${flashcardCount == 1 ? '' : 's'}',
+          style: textTheme.bodySmall?.copyWith(
+            color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+          ),
+        ),
+        trailing: FilledButton(
+          onPressed: () =>
+              _startFlashcardsFromCourse(course, flashcardSetIndex),
+          style: FilledButton.styleFrom(
+            padding: EdgeInsets.symmetric(
+              horizontal: ResponsiveSizer.spacingFromConstraints(
+                constraints,
+                multiplier: 1.5,
+              ),
+              vertical: ResponsiveSizer.spacingFromConstraints(
+                constraints,
+                multiplier: 0.75,
+              ),
+            ),
+          ),
+          child: const Text('Study'),
+        ),
+      ),
     );
   }
 
@@ -1462,154 +2923,193 @@ class _HomeScreenState extends State<HomeScreen> {
             course.pdfs.isEmpty) ...<Widget>[
           _buildEmptyCourseState(theme, textTheme, course, constraints),
         ] else ...<Widget>[
-          // PDFs section
-          if (course.pdfs.isNotEmpty) ...<Widget>[
-            Text(
-              'Study Materials',
-              style: textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            SizedBox(
-              height: ResponsiveSizer.spacingFromConstraints(
-                constraints,
-                multiplier: 1.5,
-              ),
-            ),
-            ReorderableListView.builder(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              itemCount: course.pdfs.length,
-              onReorder: (int oldIndex, int newIndex) async {
-                if (oldIndex < newIndex) {
-                  newIndex -= 1;
-                }
-                await _controller.reorderPdfsInCourse(oldIndex, newIndex);
-              },
-              itemBuilder: (BuildContext context, int index) {
-                final pdfPath = course.pdfs[index];
-                final fileName = pdfPath.split('/').last;
+          // PDFs section with animation
+          AnimatedSize(
+            duration: const Duration(milliseconds: 300),
+            curve: Curves.easeInOutCubic,
+            alignment: Alignment.topCenter,
+            child: course.pdfs.isNotEmpty
+                ? Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: <Widget>[
+                      Text(
+                        'Study Materials',
+                        style: textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      SizedBox(
+                        height: ResponsiveSizer.spacingFromConstraints(
+                          constraints,
+                          multiplier: 1.5,
+                        ),
+                      ),
+                      ReorderableListView.builder(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        itemCount: course.pdfs.length,
+                        onReorder: (int oldIndex, int newIndex) async {
+                          if (oldIndex < newIndex) {
+                            newIndex -= 1;
+                          }
+                          await _controller.reorderPdfsInCourse(
+                            oldIndex,
+                            newIndex,
+                          );
+                        },
+                        itemBuilder: (BuildContext context, int index) {
+                          final pdfPath = course.pdfs[index];
+                          final fileName = pdfPath.split('/').last;
 
-                return _buildReorderablePdfItem(
-                  key: Key('pdf_${course.id}_$index'),
-                  theme: theme,
-                  textTheme: textTheme,
-                  course: course,
-                  pdfIndex: index,
-                  fileName: fileName,
-                  pdfPath: pdfPath,
-                  constraints: constraints,
-                );
-              },
-            ),
-            SizedBox(
-              height:
-                  ResponsiveSizer.sectionSpacingFromConstraints(constraints),
-            ),
-          ],
-          // Quizzes section
-          if (course.quizzes.isNotEmpty) ...<Widget>[
-            Text(
-              'Quizzes',
-              style: textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            SizedBox(
-              height: ResponsiveSizer.spacingFromConstraints(
-                constraints,
-                multiplier: 1.5,
-              ),
-            ),
-            ReorderableListView.builder(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              itemCount: course.quizzes.length,
-              onReorder: (int oldIndex, int newIndex) async {
-                if (oldIndex < newIndex) {
-                  newIndex -= 1;
-                }
-                await _controller.reorderQuizzesInCourse(oldIndex, newIndex);
-              },
-              itemBuilder: (BuildContext context, int index) {
-                final questions = course.quizzes[index];
-                // Create a stable identifier for the quiz based on its content
-                final quizHash = Object.hashAll([
-                  course.id,
-                  index,
-                  ...questions.map((Question q) => q.id),
-                  ...questions.map((Question q) => q.text),
-                ]);
+                          return _buildReorderablePdfItem(
+                            key: Key('pdf_${course.id}_$index'),
+                            theme: theme,
+                            textTheme: textTheme,
+                            course: course,
+                            pdfIndex: index,
+                            fileName: fileName,
+                            pdfPath: pdfPath,
+                            constraints: constraints,
+                          );
+                        },
+                      ),
+                      SizedBox(
+                        height: ResponsiveSizer.sectionSpacingFromConstraints(
+                          constraints,
+                        ),
+                      ),
+                    ],
+                  )
+                : const SizedBox.shrink(),
+          ),
+          // Quizzes section with animation
+          AnimatedSize(
+            duration: const Duration(milliseconds: 300),
+            curve: Curves.easeInOutCubic,
+            alignment: Alignment.topCenter,
+            child: course.quizzes.isNotEmpty
+                ? Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: <Widget>[
+                      Text(
+                        'Quizzes',
+                        style: textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      SizedBox(
+                        height: ResponsiveSizer.spacingFromConstraints(
+                          constraints,
+                          multiplier: 1.5,
+                        ),
+                      ),
+                      ReorderableListView.builder(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        itemCount: course.quizzes.length,
+                        onReorder: (int oldIndex, int newIndex) async {
+                          if (oldIndex < newIndex) {
+                            newIndex -= 1;
+                          }
+                          await _controller.reorderQuizzesInCourse(
+                            oldIndex,
+                            newIndex,
+                          );
+                        },
+                        itemBuilder: (BuildContext context, int index) {
+                          final questions = course.quizzes[index];
+                          // Create a stable identifier for the quiz based on its content
+                          final quizHash = Object.hashAll([
+                            course.id,
+                            index,
+                            ...questions.map((Question q) => q.id),
+                            ...questions.map((Question q) => q.text),
+                          ]);
 
-                return _buildReorderableQuizItem(
-                  key: Key('quiz_${course.id}_$index'),
-                  theme: theme,
-                  textTheme: textTheme,
-                  course: course,
-                  quizIndex: index,
-                  questionCount: questions.length,
-                  quizHash: quizHash,
-                  onTap: () => _startQuizFromCourse(course, index),
-                  constraints: constraints,
-                );
-              },
-            ),
-          ],
-          // Flashcards section
-          if (course.flashcards.isNotEmpty) ...<Widget>[
-            SizedBox(
-              height:
-                  ResponsiveSizer.sectionSpacingFromConstraints(constraints),
-            ),
-            Text(
-              'Flashcards',
-              style: textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            SizedBox(
-              height: ResponsiveSizer.spacingFromConstraints(
-                constraints,
-                multiplier: 1.5,
-              ),
-            ),
-            ReorderableListView.builder(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              itemCount: course.flashcards.length,
-              onReorder: (int oldIndex, int newIndex) async {
-                if (oldIndex < newIndex) {
-                  newIndex -= 1;
-                }
-                await _controller.reorderFlashcardSetsInCourse(
-                  oldIndex,
-                  newIndex,
-                );
-              },
-              itemBuilder: (BuildContext context, int index) {
-                final flashcards = course.flashcards[index];
-                // Create a stable identifier for the flashcard set
-                final flashcardHash = Object.hashAll([
-                  course.id,
-                  index,
-                  ...flashcards.map((Flashcard f) => f.id),
-                  ...flashcards.map((Flashcard f) => f.front),
-                ]);
+                          return _buildReorderableQuizItem(
+                            key: Key('quiz_${course.id}_$index'),
+                            theme: theme,
+                            textTheme: textTheme,
+                            course: course,
+                            quizIndex: index,
+                            questionCount: questions.length,
+                            quizHash: quizHash,
+                            onTap: () => _startQuizFromCourse(course, index),
+                            constraints: constraints,
+                          );
+                        },
+                      ),
+                    ],
+                  )
+                : const SizedBox.shrink(),
+          ),
+          // Flashcards section with animation
+          AnimatedSize(
+            duration: const Duration(milliseconds: 300),
+            curve: Curves.easeInOutCubic,
+            alignment: Alignment.topCenter,
+            child: course.flashcards.isNotEmpty
+                ? Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: <Widget>[
+                      SizedBox(
+                        height: ResponsiveSizer.sectionSpacingFromConstraints(
+                          constraints,
+                        ),
+                      ),
+                      Text(
+                        'Flashcards',
+                        style: textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      SizedBox(
+                        height: ResponsiveSizer.spacingFromConstraints(
+                          constraints,
+                          multiplier: 1.5,
+                        ),
+                      ),
+                      ReorderableListView.builder(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        itemCount: course.flashcards.length,
+                        onReorder: (int oldIndex, int newIndex) async {
+                          if (oldIndex < newIndex) {
+                            newIndex -= 1;
+                          }
+                          await _controller.reorderFlashcardSetsInCourse(
+                            oldIndex,
+                            newIndex,
+                          );
+                        },
+                        itemBuilder: (BuildContext context, int index) {
+                          final flashcards = course.flashcards[index];
+                          // Create a stable identifier for the flashcard set
+                          final flashcardHash = Object.hashAll([
+                            course.id,
+                            index,
+                            ...flashcards.map((Flashcard f) => f.id),
+                            ...flashcards.map((Flashcard f) => f.front),
+                          ]);
 
-                return _buildReorderableFlashcardItem(
-                  key: Key('flashcard_${course.id}_$index'),
-                  theme: theme,
-                  textTheme: textTheme,
-                  course: course,
-                  flashcardSetIndex: index,
-                  flashcardCount: flashcards.length,
-                  flashcardHash: flashcardHash,
-                  onTap: () => _startFlashcardsFromCourse(course, index),
-                  constraints: constraints,
-                );
-              },
-            ),
-          ],
+                          return _buildReorderableFlashcardItem(
+                            key: Key('flashcard_${course.id}_$index'),
+                            theme: theme,
+                            textTheme: textTheme,
+                            course: course,
+                            flashcardSetIndex: index,
+                            flashcardCount: flashcards.length,
+                            flashcardHash: flashcardHash,
+                            onTap: () =>
+                                _startFlashcardsFromCourse(course, index),
+                            constraints: constraints,
+                          );
+                        },
+                      ),
+                    ],
+                  )
+                : const SizedBox.shrink(),
+          ),
         ],
         if (_controller.error != null)
           Padding(
@@ -1659,25 +3159,25 @@ class _HomeScreenState extends State<HomeScreen> {
                   fontWeight: FontWeight.w600,
                 ),
               ),
-          content: Text(
-            'Are you sure you want to delete "$fileName"? '
-            'This action cannot be undone.',
-            style: textTheme.bodyMedium,
-          ),
-          actions: <Widget>[
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(false),
-              child: const Text('Cancel'),
-            ),
-            FilledButton(
-              onPressed: () => Navigator.of(context).pop(true),
-              style: FilledButton.styleFrom(
-                backgroundColor: theme.colorScheme.error,
-                foregroundColor: theme.colorScheme.onError,
+              content: Text(
+                'Are you sure you want to delete "$fileName"? '
+                'This action cannot be undone.',
+                style: textTheme.bodyMedium,
               ),
-              child: const Text('Delete'),
-            ),
-          ],
+              actions: <Widget>[
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(false),
+                  child: const Text('Cancel'),
+                ),
+                FilledButton(
+                  onPressed: () => Navigator.of(context).pop(true),
+                  style: FilledButton.styleFrom(
+                    backgroundColor: theme.colorScheme.error,
+                    foregroundColor: theme.colorScheme.onError,
+                  ),
+                  child: const Text('Delete'),
+                ),
+              ],
             );
           },
         );
@@ -2618,7 +4118,7 @@ class _HomeScreenState extends State<HomeScreen> {
             onTap: _controller.selectedCourse != null
                 ? () {
                     _controller.closeFab();
-                    _uploadFlashcardsToCourse(_controller.selectedCourse);
+                    _addFlashcardsToCourse(_controller.selectedCourse);
                   }
                 : null,
           ),
@@ -2635,7 +4135,7 @@ class _HomeScreenState extends State<HomeScreen> {
             onTap: _controller.selectedCourse != null
                 ? () {
                     _controller.closeFab();
-                    _uploadQuizToCourse(_controller.selectedCourse);
+                    _addQuizToCourse(_controller.selectedCourse);
                   }
                 : null,
           ),
@@ -2859,7 +4359,7 @@ class _HomeScreenState extends State<HomeScreen> {
             height: ResponsiveSizer.spacingFromConstraints(constraints),
           ),
           Text(
-            'Upload a JSON file to add your first quiz to ${course.name}',
+            'Paste quiz or flashcard content to add your first content to ${course.name}',
             style: textTheme.bodySmall?.copyWith(
               color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
             ),
@@ -2880,7 +4380,14 @@ class _HomeScreenState extends State<HomeScreen> {
             width: ResponsiveSizer.sidebarWidthFromConstraints(constraints),
             child: _buildSidebar(theme, constraints),
           ),
-          body: _buildMainContent(theme),
+          body: Stack(
+            children: <Widget>[
+              _buildMainContent(theme),
+              // Swipe indicator overlay for mobile
+              if (_showSwipeIndicator)
+                _buildSwipeIndicator(theme, constraints),
+            ],
+          ),
         );
       },
     );
@@ -2948,7 +4455,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   color: theme.colorScheme.surface.withValues(alpha: 0.9),
                 ),
                 child: Text(
-                  'JSON-powered',
+                  'Text-based',
                   style: textTheme.labelSmall?.copyWith(
                     fontWeight: FontWeight.w600,
                     color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
@@ -2977,8 +4484,8 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ),
           Text(
-            'Questions are loaded from a simple JSON file so you can '
-            'swap in new tests without touching the code.',
+            'Simply paste your quiz or flashcard content and the app '
+            'will automatically convert it to the correct format.',
             style: textTheme.bodyMedium?.copyWith(
               color: theme.colorScheme.onSurface.withValues(alpha: 0.72),
             ),
@@ -3015,7 +4522,7 @@ class _HomeScreenState extends State<HomeScreen> {
       child: Row(
         children: <Widget>[
           Icon(
-            Icons.upload_file_outlined,
+            Icons.content_paste_outlined,
             color: theme.colorScheme.primary,
             size: ResponsiveSizer.iconSizeFromConstraints(constraints),
           ),
@@ -3031,7 +4538,7 @@ class _HomeScreenState extends State<HomeScreen> {
               mainAxisSize: MainAxisSize.min,
               children: <Widget>[
                 Text(
-                  'Use your own JSON',
+                  'Paste your content',
                   style: textTheme.bodyMedium?.copyWith(
                     fontWeight: FontWeight.w600,
                   ),
@@ -3043,7 +4550,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 ),
                 Text(
-                  'Pick a .json file with questions, choices and answers.',
+                  'Paste quiz or flashcard content from AI agents or create your own.',
                   style: textTheme.bodySmall?.copyWith(
                     color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
                   ),
@@ -3053,6 +4560,92 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ],
       ),
+    );
+  }
+}
+
+/// ********************************************************************
+/// _AnimatedTemplateButton
+/// ********************************************************************
+///
+/// A widget that provides smooth entrance animations for template buttons.
+/// Includes fade-in and slide-up animations with configurable delay for
+/// staggered effects.
+class _AnimatedTemplateButton extends StatefulWidget {
+  const _AnimatedTemplateButton({
+    required this.delay,
+    required this.child,
+  });
+
+  final Duration delay;
+  final Widget child;
+
+  @override
+  State<_AnimatedTemplateButton> createState() =>
+      _AnimatedTemplateButtonState();
+}
+
+class _AnimatedTemplateButtonState extends State<_AnimatedTemplateButton>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _fadeAnimation;
+  late Animation<double> _slideAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      duration: const Duration(milliseconds: 400),
+      vsync: this,
+    );
+
+    _fadeAnimation = Tween<double>(
+      begin: 0,
+      end: 1,
+    ).animate(
+      CurvedAnimation(
+        parent: _controller,
+        curve: Curves.easeOutCubic,
+      ),
+    );
+
+    _slideAnimation = Tween<double>(
+      begin: 20,
+      end: 0,
+    ).animate(
+      CurvedAnimation(
+        parent: _controller,
+        curve: Curves.easeOutCubic,
+      ),
+    );
+
+    // Start animation after delay
+    Future.delayed(widget.delay, () {
+      if (mounted) {
+        _controller.forward();
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (BuildContext context, Widget? child) {
+        return Opacity(
+          opacity: _fadeAnimation.value,
+          child: Transform.translate(
+            offset: Offset(0, _slideAnimation.value),
+            child: widget.child,
+          ),
+        );
+      },
     );
   }
 }
@@ -3799,6 +5392,107 @@ class _SettingsDialogState extends State<_SettingsDialog>
           ),
         ),
       ),
+    );
+  }
+}
+
+/// ********************************************************************
+/// _SwipeIndicatorArrow
+/// ********************************************************************
+///
+/// An animated arrow indicator that moves from left to right to indicate
+/// users can swipe from the left edge to open the menu.
+class _SwipeIndicatorArrow extends StatefulWidget {
+  const _SwipeIndicatorArrow({required this.theme});
+
+  final ThemeData theme;
+
+  @override
+  State<_SwipeIndicatorArrow> createState() => _SwipeIndicatorArrowState();
+}
+
+class _SwipeIndicatorArrowState extends State<_SwipeIndicatorArrow>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _slideAnimation;
+  late Animation<double> _fadeAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      duration: const Duration(milliseconds: 1200),
+      vsync: this,
+    )..repeat();
+
+    // Slide animation: moves from left (-20) to right (20)
+    _slideAnimation = Tween<double>(
+      begin: -20.0,
+      end: 20.0,
+    ).animate(
+      CurvedAnimation(
+        parent: _controller,
+        curve: Curves.easeInOut,
+      ),
+    );
+
+    // Fade animation: fades in and out for visibility
+    _fadeAnimation = TweenSequence<double>([
+      TweenSequenceItem<double>(
+        tween: Tween<double>(begin: 0.0, end: 1.0)
+            .chain(CurveTween(curve: Curves.easeIn)),
+        weight: 0.2,
+      ),
+      TweenSequenceItem<double>(
+        tween: Tween<double>(begin: 1.0, end: 1.0),
+        weight: 0.6,
+      ),
+      TweenSequenceItem<double>(
+        tween: Tween<double>(begin: 1.0, end: 0.0)
+            .chain(CurveTween(curve: Curves.easeOut)),
+        weight: 0.2,
+      ),
+    ]).animate(_controller);
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (BuildContext context, Widget? child) {
+        return Opacity(
+          opacity: _fadeAnimation.value,
+          child: Transform.translate(
+            offset: Offset(_slideAnimation.value, 0),
+            child: Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: widget.theme.colorScheme.primaryContainer
+                    .withValues(alpha: 0.8),
+                borderRadius: BorderRadius.circular(20),
+                boxShadow: <BoxShadow>[
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.2),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: Icon(
+                Icons.arrow_forward_ios,
+                size: 16,
+                color: widget.theme.colorScheme.onPrimaryContainer,
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 }

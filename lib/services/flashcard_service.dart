@@ -1,3 +1,5 @@
+// ignore_for_file: curly_braces_in_flow_control_structures, document_ignores
+
 import 'dart:convert';
 import 'dart:io';
 
@@ -66,6 +68,115 @@ class FlashcardService {
           ),
         )
         .toList(growable: false);
+
+    return flashcards;
+  }
+
+  /// Parses flashcards from pasted text.
+  ///
+  /// First tries to parse as JSON (for AI-generated content).
+  /// If that fails, attempts to parse as simple text format.
+  /// Returns a list of [Flashcard] objects.
+  ///
+  /// Throws [FormatException] if the text cannot be parsed.
+  List<Flashcard> parseFlashcardsFromText(String text) {
+    // Trim whitespace
+    final trimmedText = text.trim();
+    if (trimmedText.isEmpty) {
+      throw const FormatException('No content provided');
+    }
+
+    // First, try to parse as JSON (most common case with AI-generated content)
+    try {
+      return _decodeFlashcards(trimmedText);
+    } on FormatException {
+      // If JSON parsing fails, try simple text format
+      return _parseFlashcardsFromSimpleText(trimmedText);
+    }
+  }
+
+  /// Parses flashcards from a simple text format.
+  ///
+  /// Expected format (one flashcard per block, separated by blank lines):
+  /// Front: Question or term
+  /// Back: Answer or definition
+  /// Explanation: Optional explanation
+  ///
+  /// Or simpler format:
+  /// Q: Question
+  /// A: Answer
+  ///
+  /// Or tab-separated:
+  /// Term\tDefinition
+  List<Flashcard> _parseFlashcardsFromSimpleText(String text) {
+    final flashcards = <Flashcard>[];
+    final blocks = text.split(RegExp(r'\n\s*\n')); // Split by blank lines
+
+    var flashcardId = 1;
+    for (final block in blocks) {
+      final lines = block
+          .split('\n')
+          .map((line) => line.trim())
+          .where((line) => line.isNotEmpty)
+          .toList();
+      if (lines.isEmpty) continue;
+
+      try {
+        String? front;
+        String? back;
+        String? explanation;
+
+        // Try different formats
+        for (final line in lines) {
+          if (line.startsWith('Front:') || line.startsWith('Q:')) {
+            front = line.substring(line.indexOf(':') + 1).trim();
+          } else if (line.startsWith('Back:') || line.startsWith('A:')) {
+            back = line.substring(line.indexOf(':') + 1).trim();
+          } else if (line.startsWith('Explanation:')) {
+            explanation = line.substring(line.indexOf(':') + 1).trim();
+          } else if (front == null && back == null && line.contains('\t')) {
+            // Tab-separated format
+            final parts = line.split('\t');
+            if (parts.length >= 2) {
+              front = parts[0].trim();
+              back = parts[1].trim();
+            }
+          } else if (front == null) {
+            front = line;
+          } else if (back == null) {
+            back = line;
+          } else
+            explanation ??= line;
+        }
+
+        // If we found front and back, create the flashcard
+        if (front != null &&
+            front.isNotEmpty &&
+            back != null &&
+            back.isNotEmpty) {
+          flashcards.add(
+            Flashcard(
+              id: flashcardId++,
+              front: front,
+              back: back,
+              explanation: explanation != null && explanation.isNotEmpty
+                  ? explanation
+                  : null,
+            ),
+          );
+        }
+      } on Exception {
+        // Skip malformed flashcards
+        continue;
+      }
+    }
+
+    if (flashcards.isEmpty) {
+      throw const FormatException(
+        'Could not parse flashcards from text. '
+        'Please ensure the text is in JSON format or a supported text format.',
+      );
+    }
 
     return flashcards;
   }
