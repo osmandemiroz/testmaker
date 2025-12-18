@@ -47,7 +47,11 @@ class CompactLayout extends StatelessWidget {
           ),
           body: Stack(
             children: <Widget>[
-              buildMainContent(theme),
+              // Container with background color extends edge-to-edge
+              ColoredBox(
+                color: theme.colorScheme.surface,
+                child: buildMainContent(theme),
+              ),
               // Swipe indicator overlay for mobile
               if (showSwipeIndicator)
                 Positioned(

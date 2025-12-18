@@ -132,61 +132,64 @@ class _HomeScreenState extends State<HomeScreen> {
     return Scaffold(
       key: _scaffoldKey,
       backgroundColor: theme.colorScheme.surface,
-      body: SafeArea(
-        child: LayoutBuilder(
-          builder: (BuildContext context, BoxConstraints constraints) {
-            // Use ResponsiveSizer to determine if we should use compact layout
-            final isCompact =
-                ResponsiveSizer.isCompactFromConstraints(constraints);
+      body: LayoutBuilder(
+        builder: (BuildContext context, BoxConstraints constraints) {
+          // Use ResponsiveSizer to determine if we should use compact layout
+          final isCompact =
+              ResponsiveSizer.isCompactFromConstraints(constraints);
 
-            // On compact screens, use a drawer instead of a sidebar.
-            if (isCompact) {
-              return _buildCompactLayout(theme);
-            }
+          // On compact screens, use a drawer instead of a sidebar.
+          if (isCompact) {
+            return _buildCompactLayout(theme);
+          }
 
-            // On larger screens, use a persistent sidebar.
-            return Stack(
-              children: <Widget>[
-                Row(
-                  children: <Widget>[
-                    Sidebar(
-                      controller: _controller,
-                      onCreateCourse: () async {
-                        if (!mounted) return;
-                        final result =
-                            await DialogHandlers.showCreateCourseDialog(
-                          context,
+          // On larger screens, use a persistent sidebar.
+          // Sidebar extends to the very top and bottom of the screen
+          return Stack(
+            children: <Widget>[
+              Row(
+                children: <Widget>[
+                  Sidebar(
+                    controller: _controller,
+                    onCreateCourse: () async {
+                      if (!mounted) return;
+                      final result =
+                          await DialogHandlers.showCreateCourseDialog(
+                        context,
+                      );
+                      if (result != null && result.isNotEmpty) {
+                        await CourseManagementHandlers.createCourse(
+                          _controller,
+                          result,
                         );
-                        if (result != null && result.isNotEmpty) {
-                          await CourseManagementHandlers.createCourse(
-                            _controller,
-                            result,
-                          );
-                        }
-                      },
-                      onDeleteCourse: (Course course) =>
-                          CourseManagementHandlers.deleteCourse(
-                        _controller,
-                        course,
-                      ),
-                      onSelectCourse: (Course? course) {
-                        _controller
-                          ..selectCourse(course)
-                          ..clearError();
-                      },
+                      }
+                    },
+                    onDeleteCourse: (Course course) =>
+                        CourseManagementHandlers.deleteCourse(
+                      _controller,
+                      course,
                     ),
-                    Expanded(
+                    onSelectCourse: (Course? course) {
+                      _controller
+                        ..selectCourse(course)
+                        ..clearError();
+                    },
+                  ),
+                  Expanded(
+                    // Main content extends to the very top and bottom
+                    // Container with background color extends edge-to-edge
+                    child: ColoredBox(
+                      color: theme.colorScheme.surface,
                       child: _buildMainContent(theme),
                     ),
-                  ],
-                ),
-                // Swipe indicator overlay
-                if (_showSwipeIndicator)
-                  _buildSwipeIndicator(theme, constraints),
-              ],
-            );
-          },
-        ),
+                  ),
+                ],
+              ),
+              // Swipe indicator overlay
+              if (_showSwipeIndicator) _buildSwipeIndicator(theme, constraints),
+            ],
+          );
+        },
       ),
       floatingActionButton: _controller.selectedCourse != null
           ? FabMenu(
@@ -241,8 +244,19 @@ class _HomeScreenState extends State<HomeScreen> {
 
     return LayoutBuilder(
       builder: (BuildContext context, BoxConstraints constraints) {
+        // Get top padding to position content below the status bar
+        // while keeping the background extending to the very top
+        final topPadding = MediaQuery.of(context).padding.top;
+        final contentPadding =
+            ResponsiveSizer.paddingFromConstraints(constraints);
+
         return SingleChildScrollView(
-          padding: ResponsiveSizer.paddingFromConstraints(constraints),
+          padding: EdgeInsets.only(
+            top: topPadding + contentPadding.vertical,
+            bottom: contentPadding.vertical,
+            left: contentPadding.horizontal,
+            right: contentPadding.horizontal,
+          ),
           child: Center(
             child: ConstrainedBox(
               constraints: BoxConstraints(

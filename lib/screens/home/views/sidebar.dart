@@ -28,6 +28,9 @@ class Sidebar extends StatelessWidget {
       builder: (BuildContext context, BoxConstraints constraints) {
         final sidebarWidth =
             ResponsiveSizer.sidebarWidthFromConstraints(constraints);
+        // Get top padding to position content below the status bar
+        // while keeping the background extending to the very top
+        final topPadding = MediaQuery.of(context).padding.top;
 
         return Container(
           width: sidebarWidth,
@@ -42,6 +45,10 @@ class Sidebar extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[
+              // Top padding to position content below status bar
+              // This keeps the background extending edge-to-edge while
+              // adding space for the content
+              SizedBox(height: topPadding),
               // Header with clickable logo to go to main screen
               Padding(
                 padding: EdgeInsets.all(
