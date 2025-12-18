@@ -68,12 +68,12 @@ TestMaker follows **Apple's Human Interface Guidelines** to deliver an exception
 
 The codebase emphasizes:
 - 🏗️ **MVC Architecture** - Clean separation with controllers managing business logic, models for data, and views for UI
-- 🔧 **Modular Component Structure** - Highly organized, reusable components split into dialogs, items, views, widgets, and templates
+- 🔧 **Modular Component Structure** - Highly organized, reusable components split into dialogs, items, views, widgets, templates, and handlers
 - ✅ Null safety throughout
 - 🛡️ Comprehensive error handling
 - 📝 Extensive code comments for maintainability
 - 🔄 Reactive state management using ChangeNotifier pattern
-- 📦 **Code Refactoring** - Reduced `home_screen.dart` from ~5,300 lines to ~1,086 lines (80% reduction) through systematic component extraction
+- 📦 **Code Refactoring** - Reduced `home_screen.dart` from ~1,087 lines to ~429 lines (61% reduction) through systematic handler and component extraction
 
 ---
 
@@ -317,14 +317,24 @@ lib/
 │   ├── pdf_viewer_screen.dart     # PDF viewer with page navigation
 │   └── home/                      # Modular home screen components
 │       ├── dialogs/               # Reusable dialog components
+│       │   ├── api_key_dialog.dart
 │       │   ├── create_course_dialog.dart
 │       │   ├── delete_confirmation_dialogs.dart
+│       │   ├── flashcard_count_dialog.dart
 │       │   ├── flashcard_prompt_dialog.dart
 │       │   ├── prompt_preview_dialog.dart
+│       │   ├── question_count_dialog.dart
 │       │   ├── quiz_prompt_dialog.dart
 │       │   ├── rename_dialog.dart
 │       │   ├── settings_dialog.dart
 │       │   └── text_input_dialog.dart
+│       ├── handlers/              # Business logic handlers
+│       │   ├── content_add_handlers.dart
+│       │   ├── course_management_handlers.dart
+│       │   ├── delete_handlers.dart
+│       │   ├── dialog_handlers.dart
+│       │   ├── navigation_handlers.dart
+│       │   └── pdf_generation_handlers.dart
 │       ├── items/                 # Reusable item components
 │       │   ├── course_item.dart
 │       │   ├── flashcard_card.dart
@@ -369,13 +379,14 @@ assets/
 
 ### Code Organization Improvements
 
-The `home_screen.dart` file has been significantly refactored to improve maintainability and code organization:
+The `home_screen.dart` file has been significantly refactored to improve maintainability and code organization through multiple refactoring iterations:
 
 #### 📊 Refactoring Statistics
-- **Original Size**: ~5,312 lines
-- **Current Size**: ~1,086 lines
-- **Reduction**: ~4,226 lines (80% reduction)
-- **Components Extracted**: 30+ reusable components
+- **Original Size**: ~1,087 lines (after initial component extraction)
+- **Current Size**: ~429 lines
+- **Reduction**: ~658 lines (61% reduction in latest iteration)
+- **Total Reduction**: ~658 lines moved to handlers
+- **Components Extracted**: 30+ reusable components + 6 handler classes
 
 #### 🗂️ New Modular Structure
 
@@ -420,6 +431,14 @@ The home screen has been split into a well-organized modular structure:
 - `content_templates_section.dart` - Content templates section UI
 - `prompt_generator.dart` - AI prompt generation utilities
 
+**Handlers** (`lib/screens/home/handlers/`)
+- `content_add_handlers.dart` - Handlers for adding quizzes and flashcards from text
+- `course_management_handlers.dart` - Handlers for course operations (create, delete, upload PDF)
+- `delete_handlers.dart` - Handlers for delete confirmation and deletion operations
+- `dialog_handlers.dart` - Handlers for showing dialogs (rename, create course, settings)
+- `navigation_handlers.dart` - Handlers for navigation (view PDF, start quiz, start flashcards)
+- `pdf_generation_handlers.dart` - Handlers for AI-powered PDF content generation
+
 #### ✨ Benefits of Refactoring
 
 1. **Improved Maintainability** - Each component has a single responsibility
@@ -431,11 +450,15 @@ The home screen has been split into a well-organized modular structure:
 
 #### 🎯 Key Improvements
 
+- **Handler-Based Architecture**: Extracted all business logic from `home_screen.dart` into dedicated handler classes for better separation of concerns
+- **Dialog Extraction**: Moved all dialog code (API key, question count, flashcard count) to separate reusable dialog components
+- **Navigation Simplification**: Centralized navigation logic in `NavigationHandlers` with methods like `startQuizFromCourse` and `startFlashcardsFromCourse`
 - **Text-Based Content Input**: Removed JSON file uploads in favor of simple text paste, making the app more user-friendly
 - **Content Templates**: Added ready-made prompts for AI agents to generate quiz and flashcard content
 - **Smooth Animations**: Enhanced UI with animations for expandable areas, template sections, and swipe indicators
 - **Responsive Design**: Improved responsive layouts with dedicated compact layout component
 - **Modular Dialogs**: All dialogs are now reusable components with consistent styling
+- **Improved Maintainability**: `home_screen.dart` now focuses solely on UI composition and delegation to handlers
 
 ---
 
