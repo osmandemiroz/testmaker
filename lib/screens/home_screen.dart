@@ -848,52 +848,61 @@ class _HomeScreenState extends State<HomeScreen> {
             padding: EdgeInsets.all(
               ResponsiveSizer.cardPaddingFromConstraints(constraints),
             ),
-            child: InkWell(
-              onTap: () {
-                _controller
-                  ..selectCourse(null)
-                  ..clearError();
-              },
-              borderRadius: BorderRadius.circular(
-                ResponsiveSizer.borderRadiusFromConstraints(constraints),
-              ),
-              child: Padding(
-                padding: EdgeInsets.symmetric(
-                  horizontal: ResponsiveSizer.spacingFromConstraints(
-                    constraints,
-                    multiplier: 0.5,
+            child: Builder(
+              builder: (BuildContext context) {
+                return InkWell(
+                  onTap: () {
+                    _controller
+                      ..selectCourse(null)
+                      ..clearError();
+                    // Close the drawer if it's open (for compact layout)
+                    // This ensures the drawer closes after navigating to home
+                    if (Scaffold.of(context).isDrawerOpen) {
+                      Navigator.of(context).pop();
+                    }
+                  },
+                  borderRadius: BorderRadius.circular(
+                    ResponsiveSizer.borderRadiusFromConstraints(constraints),
                   ),
-                  vertical: ResponsiveSizer.spacingFromConstraints(
-                    constraints,
-                    multiplier: 0.5,
-                  ),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: <Widget>[
-                    Text(
-                      'TestMaker',
-                      style: textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: -0.5,
+                  child: Padding(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: ResponsiveSizer.spacingFromConstraints(
+                        constraints,
+                        multiplier: 0.5,
                       ),
-                    ),
-                    SizedBox(
-                      height: ResponsiveSizer.spacingFromConstraints(
+                      vertical: ResponsiveSizer.spacingFromConstraints(
                         constraints,
                         multiplier: 0.5,
                       ),
                     ),
-                    Text(
-                      'Your courses',
-                      style: textTheme.bodySmall?.copyWith(
-                        color:
-                            theme.colorScheme.onSurface.withValues(alpha: 0.7),
-                      ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: <Widget>[
+                        Text(
+                          'TestMaker',
+                          style: textTheme.titleLarge?.copyWith(
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: -0.5,
+                          ),
+                        ),
+                        SizedBox(
+                          height: ResponsiveSizer.spacingFromConstraints(
+                            constraints,
+                            multiplier: 0.5,
+                          ),
+                        ),
+                        Text(
+                          'Your courses',
+                          style: textTheme.bodySmall?.copyWith(
+                            color:
+                                theme.colorScheme.onSurface.withValues(alpha: 0.7),
+                          ),
+                        ),
+                      ],
                     ),
-                  ],
-                ),
-              ),
+                  ),
+                );
+              },
             ),
           ),
           Divider(
@@ -1074,80 +1083,89 @@ class _HomeScreenState extends State<HomeScreen> {
     Course course,
     bool isSelected,
   ) {
-    return InkWell(
-      onTap: () {
-        _controller
-          ..selectCourse(course)
-          ..clearError();
-      },
-      child: LayoutBuilder(
-        builder: (BuildContext context, BoxConstraints constraints) {
-          return Container(
-            margin: EdgeInsets.symmetric(
-              horizontal: ResponsiveSizer.spacingFromConstraints(constraints),
-              vertical: ResponsiveSizer.spacingFromConstraints(
-                constraints,
-                multiplier: 0.5,
-              ),
-            ),
-            padding:
-                ResponsiveSizer.listItemPaddingFromConstraints(constraints),
-            decoration: BoxDecoration(
-              color: isSelected
-                  ? theme.colorScheme.primaryContainer.withValues(alpha: 0.5)
-                  : Colors.transparent,
-              borderRadius: BorderRadius.circular(
-                ResponsiveSizer.borderRadiusFromConstraints(constraints),
-              ),
-            ),
-            child: Row(
-              children: <Widget>[
-                Icon(
-                  Icons.folder_outlined,
-                  size: ResponsiveSizer.iconSizeFromConstraints(constraints),
-                  color: isSelected
-                      ? theme.colorScheme.primary
-                      : theme.colorScheme.onSurface.withValues(alpha: 0.7),
-                ),
-                SizedBox(
-                  width: ResponsiveSizer.spacingFromConstraints(
+    return Builder(
+      builder: (BuildContext context) {
+        return InkWell(
+          onTap: () {
+            _controller
+              ..selectCourse(course)
+              ..clearError();
+            // Close the drawer if it's open (for compact layout)
+            // This ensures the drawer closes after selecting a course
+            if (Scaffold.of(context).isDrawerOpen) {
+              Navigator.of(context).pop();
+            }
+          },
+          child: LayoutBuilder(
+            builder: (BuildContext context, BoxConstraints constraints) {
+              return Container(
+                margin: EdgeInsets.symmetric(
+                  horizontal: ResponsiveSizer.spacingFromConstraints(constraints),
+                  vertical: ResponsiveSizer.spacingFromConstraints(
                     constraints,
-                    multiplier: 1.5,
+                    multiplier: 0.5,
                   ),
                 ),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: <Widget>[
-                      Text(
-                        course.name,
-                        style: textTheme.bodyMedium?.copyWith(
-                          fontWeight:
-                              isSelected ? FontWeight.w600 : FontWeight.w500,
-                          color: isSelected
-                              ? theme.colorScheme.onPrimaryContainer
-                              : null,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
+                padding:
+                    ResponsiveSizer.listItemPaddingFromConstraints(constraints),
+                decoration: BoxDecoration(
+                  color: isSelected
+                      ? theme.colorScheme.primaryContainer.withValues(alpha: 0.5)
+                      : Colors.transparent,
+                  borderRadius: BorderRadius.circular(
+                    ResponsiveSizer.borderRadiusFromConstraints(constraints),
+                  ),
+                ),
+                child: Row(
+                  children: <Widget>[
+                    Icon(
+                      Icons.folder_outlined,
+                      size: ResponsiveSizer.iconSizeFromConstraints(constraints),
+                      color: isSelected
+                          ? theme.colorScheme.primary
+                          : theme.colorScheme.onSurface.withValues(alpha: 0.7),
+                    ),
+                    SizedBox(
+                      width: ResponsiveSizer.spacingFromConstraints(
+                        constraints,
+                        multiplier: 1.5,
                       ),
-                      if (course.quizCount > 0)
-                        Text(
-                          '${course.quizCount} quiz${course.quizCount == 1 ? '' : 'zes'}',
-                          style: textTheme.bodySmall?.copyWith(
-                            color: theme.colorScheme.onSurface
-                                .withValues(alpha: 0.6),
+                    ),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: <Widget>[
+                          Text(
+                            course.name,
+                            style: textTheme.bodyMedium?.copyWith(
+                              fontWeight:
+                                  isSelected ? FontWeight.w600 : FontWeight.w500,
+                              color: isSelected
+                                  ? theme.colorScheme.onPrimaryContainer
+                                  : null,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
-                        ),
-                    ],
-                  ),
+                          if (course.quizCount > 0)
+                            Text(
+                              '${course.quizCount} quiz${course.quizCount == 1 ? '' : 'zes'}',
+                              style: textTheme.bodySmall?.copyWith(
+                                color: theme.colorScheme.onSurface
+                                    .withValues(alpha: 0.6),
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
-              ],
-            ),
-          );
-        },
-      ),
+              );
+            },
+          ),
+        );
+      },
     );
   }
 
