@@ -82,7 +82,8 @@ class ResultScreen extends StatelessWidget {
                         if (incorrectAnswers != null &&
                             incorrectAnswers!.isNotEmpty) ...<Widget>[
                           SizedBox(
-                            height: ResponsiveSizer.sectionSpacingFromConstraints(
+                            height:
+                                ResponsiveSizer.sectionSpacingFromConstraints(
                               constraints,
                             ),
                           ),
@@ -232,13 +233,14 @@ class ResultScreen extends StatelessWidget {
                       ),
                       color: theme.colorScheme.primary.withValues(alpha: 0.14),
                     ),
-                  child: Icon(
-                    Icons.check_circle_rounded,
-                    color: theme.colorScheme.primary,
-                    size: ResponsiveSizer.iconSizeFromConstraints(constraints),
+                    child: Icon(
+                      Icons.check_circle_rounded,
+                      color: theme.colorScheme.primary,
+                      size:
+                          ResponsiveSizer.iconSizeFromConstraints(constraints),
+                    ),
                   ),
-                ),
-                const Spacer(),
+                  const Spacer(),
                   Text(
                     '${percent.toStringAsFixed(0)}%',
                     style: textTheme.titleLarge?.copyWith(
@@ -247,18 +249,18 @@ class ResultScreen extends StatelessWidget {
                   ),
                 ],
               ),
-                  SizedBox(
-                    height: ResponsiveSizer.spacingFromConstraints(
-                      constraints,
-                      multiplier: 2.25,
-                    ),
-                  ),
-                  Text(
+              SizedBox(
+                height: ResponsiveSizer.spacingFromConstraints(
+                  constraints,
+                  multiplier: 2.25,
+                ),
+              ),
+              Text(
                 _summaryText,
                 style: textTheme.headlineSmall?.copyWith(
                   fontWeight: FontWeight.w700,
                   height: 1.15,
-                  ),
+                ),
               ),
               SizedBox(
                 height: ResponsiveSizer.spacingFromConstraints(
@@ -375,158 +377,56 @@ class ResultScreen extends StatelessWidget {
             borderRadius: BorderRadius.circular(
               ResponsiveSizer.borderRadiusFromConstraints(constraints),
             ),
-        color: theme.colorScheme.surface,
-        border: Border.all(
-          color: theme.colorScheme.errorContainer.withValues(alpha: 0.3),
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          // Question text
-          Text(
-            question.text,
-            style: textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.w600,
+            color: theme.colorScheme.surface,
+            border: Border.all(
+              color: theme.colorScheme.errorContainer.withValues(alpha: 0.3),
             ),
           ),
-          SizedBox(
-            height: ResponsiveSizer.spacingFromConstraints(
-              constraints,
-              multiplier: 1.5,
-            ),
-          ),
-          // Selected answer (incorrect)
-          Row(
+          child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
-              Icon(
-                Icons.close_rounded,
-                color: theme.colorScheme.error,
-                size: ResponsiveSizer.iconSizeFromConstraints(constraints),
+              // Question text
+              Text(
+                question.text,
+                style: textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
               ),
               SizedBox(
-                width: ResponsiveSizer.spacingFromConstraints(constraints),
-              ),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: <Widget>[
-                    Text(
-                      'Your answer:',
-                      style: textTheme.labelSmall?.copyWith(
-                        color:
-                            theme.colorScheme.onSurface.withValues(alpha: 0.7),
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      question.options[selectedIndex],
-                      style: textTheme.bodyMedium?.copyWith(
-                        color: theme.colorScheme.error,
-                      ),
-                    ),
-                  ],
+                height: ResponsiveSizer.spacingFromConstraints(
+                  constraints,
+                  multiplier: 1.5,
                 ),
               ),
-            ],
-          ),
-          SizedBox(
-            height: ResponsiveSizer.spacingFromConstraints(
-              constraints,
-              multiplier: 1.5,
-            ),
-          ),
-          // Correct answer
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: <Widget>[
-              Icon(
-                Icons.check_circle_rounded,
-                color: theme.colorScheme.primary,
-                size: ResponsiveSizer.iconSizeFromConstraints(constraints),
-              ),
-              SizedBox(
-                width: ResponsiveSizer.spacingFromConstraints(constraints),
-              ),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: <Widget>[
-                    Text(
-                      'Correct answer:',
-                      style: textTheme.labelSmall?.copyWith(
-                        color:
-                            theme.colorScheme.onSurface.withValues(alpha: 0.7),
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      question.options[question.answerIndex],
-                      style: textTheme.bodyMedium?.copyWith(
-                        color: theme.colorScheme.primary,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          // Explanation
-          if (question.explanation != null &&
-              question.explanation!.isNotEmpty) ...<Widget>[
-            SizedBox(
-              height: ResponsiveSizer.spacingFromConstraints(
-                constraints,
-                multiplier: 2,
-              ),
-            ),
-            Container(
-              padding: EdgeInsets.all(
-                ResponsiveSizer.cardPaddingFromConstraints(constraints) * 0.75,
-              ),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(
-                  ResponsiveSizer.borderRadiusFromConstraints(constraints),
-                ),
-                color:
-                    theme.colorScheme.primaryContainer.withValues(alpha: 0.3),
-              ),
-              child: Row(
+              // Selected answer (incorrect)
+              Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: <Widget>[
                   Icon(
-                    Icons.lightbulb_outline,
-                    color: theme.colorScheme.onPrimaryContainer,
+                    Icons.close_rounded,
+                    color: theme.colorScheme.error,
                     size: ResponsiveSizer.iconSizeFromConstraints(constraints),
                   ),
                   SizedBox(
-                    width: ResponsiveSizer.spacingFromConstraints(
-                      constraints,
-                      multiplier: 1.5,
-                    ),
+                    width: ResponsiveSizer.spacingFromConstraints(constraints),
                   ),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: <Widget>[
                         Text(
-                          'Explanation:',
+                          'Your answer:',
                           style: textTheme.labelSmall?.copyWith(
-                            color: theme.colorScheme.onPrimaryContainer
-                                .withValues(alpha: 0.9),
+                            color: theme.colorScheme.onSurface
+                                .withValues(alpha: 0.7),
                             fontWeight: FontWeight.w600,
                           ),
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          question.explanation!,
-                          style: textTheme.bodySmall?.copyWith(
-                            color: theme.colorScheme.onPrimaryContainer
-                                .withValues(alpha: 0.8),
+                          question.options[selectedIndex],
+                          style: textTheme.bodyMedium?.copyWith(
+                            color: theme.colorScheme.error,
                           ),
                         ),
                       ],
@@ -534,10 +434,115 @@ class ResultScreen extends StatelessWidget {
                   ),
                 ],
               ),
-            ),
-          ],
-        ],
-      ),
+              SizedBox(
+                height: ResponsiveSizer.spacingFromConstraints(
+                  constraints,
+                  multiplier: 1.5,
+                ),
+              ),
+              // Correct answer
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  Icon(
+                    Icons.check_circle_rounded,
+                    color: theme.colorScheme.primary,
+                    size: ResponsiveSizer.iconSizeFromConstraints(constraints),
+                  ),
+                  SizedBox(
+                    width: ResponsiveSizer.spacingFromConstraints(constraints),
+                  ),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: <Widget>[
+                        Text(
+                          'Correct answer:',
+                          style: textTheme.labelSmall?.copyWith(
+                            color: theme.colorScheme.onSurface
+                                .withValues(alpha: 0.7),
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          question.options[question.answerIndex],
+                          style: textTheme.bodyMedium?.copyWith(
+                            color: theme.colorScheme.primary,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              // Explanation
+              if (question.explanation != null &&
+                  question.explanation!.isNotEmpty) ...<Widget>[
+                SizedBox(
+                  height: ResponsiveSizer.spacingFromConstraints(
+                    constraints,
+                    multiplier: 2,
+                  ),
+                ),
+                Container(
+                  padding: EdgeInsets.all(
+                    ResponsiveSizer.cardPaddingFromConstraints(constraints) *
+                        0.75,
+                  ),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(
+                      ResponsiveSizer.borderRadiusFromConstraints(constraints),
+                    ),
+                    color: theme.colorScheme.primaryContainer
+                        .withValues(alpha: 0.3),
+                  ),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: <Widget>[
+                      Icon(
+                        Icons.lightbulb_outline,
+                        color: theme.colorScheme.onPrimaryContainer,
+                        size: ResponsiveSizer.iconSizeFromConstraints(
+                          constraints,
+                        ),
+                      ),
+                      SizedBox(
+                        width: ResponsiveSizer.spacingFromConstraints(
+                          constraints,
+                          multiplier: 1.5,
+                        ),
+                      ),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: <Widget>[
+                            Text(
+                              'Explanation:',
+                              style: textTheme.labelSmall?.copyWith(
+                                color: theme.colorScheme.onPrimaryContainer
+                                    .withValues(alpha: 0.9),
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              question.explanation!,
+                              style: textTheme.bodySmall?.copyWith(
+                                color: theme.colorScheme.onPrimaryContainer
+                                    .withValues(alpha: 0.8),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ],
+          ),
         );
       },
     );

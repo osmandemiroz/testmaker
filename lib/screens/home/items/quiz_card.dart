@@ -40,9 +40,15 @@ class QuizCard extends StatelessWidget {
     return Container(
       margin: ResponsiveSizer.cardMarginFromConstraints(constraints),
       child: Material(
-        color: theme.colorScheme.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(
-          ResponsiveSizer.borderRadiusFromConstraints(constraints),
+        color: theme.colorScheme.surface,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(
+            ResponsiveSizer.borderRadiusFromConstraints(constraints),
+          ),
+          side: BorderSide(
+            color: theme.colorScheme.outlineVariant.withValues(alpha: 0.25),
+            width: 0.8,
+          ),
         ),
         child: InkWell(
           onTap: onTap,
@@ -50,19 +56,25 @@ class QuizCard extends StatelessWidget {
             ResponsiveSizer.borderRadiusFromConstraints(constraints),
           ),
           child: Padding(
-            padding: EdgeInsets.all(
-              ResponsiveSizer.cardPaddingFromConstraints(constraints),
+            padding: EdgeInsets.symmetric(
+              horizontal: ResponsiveSizer.cardPaddingFromConstraints(
+                constraints,
+              ),
+              vertical: ResponsiveSizer.cardPaddingFromConstraints(
+                    constraints,
+                  ) *
+                  0.65,
             ),
             child: Row(
               children: <Widget>[
                 Container(
                   width: ResponsiveSizer.iconContainerSizeFromConstraints(
                     constraints,
-                    multiplier: 1.2,
+                    multiplier: 1.1,
                   ),
                   height: ResponsiveSizer.iconContainerSizeFromConstraints(
                     constraints,
-                    multiplier: 1.2,
+                    multiplier: 1.1,
                   ),
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(
@@ -70,20 +82,29 @@ class QuizCard extends StatelessWidget {
                         constraints,
                       ),
                     ),
-                    color: theme.colorScheme.primaryContainer,
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: <Color>[
+                        theme.colorScheme.primaryContainer,
+                        theme.colorScheme.primaryContainer
+                            .withValues(alpha: 0.85),
+                      ],
+                    ),
                   ),
                   child: Icon(
                     Icons.quiz_outlined,
                     color: theme.colorScheme.onPrimaryContainer,
                     size: ResponsiveSizer.iconSizeFromConstraints(
                       constraints,
+                      multiplier: 0.95,
                     ),
                   ),
                 ),
                 SizedBox(
                   width: ResponsiveSizer.spacingFromConstraints(
                     constraints,
-                    multiplier: 2,
+                    multiplier: 1.5,
                   ),
                 ),
                 Expanded(
@@ -94,25 +115,27 @@ class QuizCard extends StatelessWidget {
                         quizName,
                         style: textTheme.titleMedium?.copyWith(
                           fontWeight: FontWeight.w600,
+                          letterSpacing: -0.1,
                         ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
                       SizedBox(
                         height: ResponsiveSizer.spacingFromConstraints(
                           constraints,
-                          multiplier: 0.5,
+                          multiplier: 0.35,
                         ),
                       ),
                       Text(
                         '$questionCount question${questionCount == 1 ? '' : 's'}',
                         style: textTheme.bodySmall?.copyWith(
                           color: theme.colorScheme.onSurface
-                              .withValues(alpha: 0.7),
+                              .withValues(alpha: 0.65),
                         ),
                       ),
                     ],
                   ),
                 ),
-                // Edit button
                 IconButton(
                   onPressed: () => showRenameDialog(
                     title: 'Rename Quiz',
@@ -125,22 +148,25 @@ class QuizCard extends StatelessWidget {
                     Icons.edit_outlined,
                     size: ResponsiveSizer.iconSizeFromConstraints(
                       constraints,
-                      multiplier: 0.9,
+                      multiplier: 0.8,
                     ),
                   ),
-                  color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+                  padding: EdgeInsets.zero,
+                  visualDensity: VisualDensity.compact,
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
                   tooltip: 'Rename',
                 ),
-                // Delete button
                 IconButton(
                   onPressed: () => onDelete(course, quizIndex, quizName),
                   icon: Icon(
                     Icons.delete_outlined,
                     size: ResponsiveSizer.iconSizeFromConstraints(
                       constraints,
-                      multiplier: 0.9,
+                      multiplier: 0.8,
                     ),
                   ),
+                  padding: EdgeInsets.zero,
+                  visualDensity: VisualDensity.compact,
                   color: theme.colorScheme.error,
                   tooltip: 'Delete',
                 ),
@@ -148,9 +174,9 @@ class QuizCard extends StatelessWidget {
                   Icons.arrow_forward_ios,
                   size: ResponsiveSizer.iconSizeFromConstraints(
                     constraints,
-                    multiplier: 0.8,
+                    multiplier: 0.75,
                   ),
-                  color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.45),
                 ),
               ],
             ),

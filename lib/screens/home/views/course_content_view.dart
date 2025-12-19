@@ -40,7 +40,8 @@ class CourseContentView extends StatelessWidget {
     required Future<void> Function(String) onSave,
   }) showRenameDialog;
   final void Function(Course course, int pdfIndex, String pdfName) onDeletePdf;
-  final void Function(Course course, int quizIndex, String quizName) onDeleteQuiz;
+  final void Function(Course course, int quizIndex, String quizName)
+      onDeleteQuiz;
   final void Function(
     Course course,
     int flashcardSetIndex,
@@ -69,57 +70,101 @@ class CourseContentView extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
-        Row(
-          children: <Widget>[
-            Icon(
-              Icons.folder,
-              color: theme.colorScheme.primary,
-              size: ResponsiveSizer.iconSizeFromConstraints(
-                constraints,
-                multiplier: 1.4,
-              ),
+        /// ─────────────────────────────────────────────────────────────
+        /// Course header
+        /// Slimmed down to feel lighter and more aligned with
+        /// Apple's Human Interface Guidelines while keeping
+        /// the exact same information hierarchy.
+        /// ─────────────────────────────────────────────────────────────
+        Padding(
+          padding: EdgeInsets.only(
+            bottom: ResponsiveSizer.spacingFromConstraints(
+              constraints,
+              multiplier: 1.25,
             ),
-            SizedBox(
-              width: ResponsiveSizer.spacingFromConstraints(
-                constraints,
-                multiplier: 1.5,
-              ),
-            ),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  Text(
-                    course.name,
-                    style: textTheme.headlineMedium?.copyWith(
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: -0.5,
-                    ),
+          ),
+          child: Row(
+            children: <Widget>[
+              Container(
+                width: ResponsiveSizer.iconContainerSizeFromConstraints(
+                  constraints,
+                  multiplier: 1.1,
+                ),
+                height: ResponsiveSizer.iconContainerSizeFromConstraints(
+                  constraints,
+                  multiplier: 1.1,
+                ),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(
+                    ResponsiveSizer.borderRadiusFromConstraints(constraints),
                   ),
-                  if (course.quizCount > 0 ||
-                      course.flashcardSetCount > 0 ||
-                      course.pdfCount > 0)
-                    Text(
-                      [
-                        if (course.quizCount > 0)
-                          '${course.quizCount} quiz${course.quizCount == 1 ? '' : 'zes'} • ${course.totalQuestionCount} questions',
-                        if (course.flashcardSetCount > 0)
-                          '${course.flashcardSetCount} flashcard set${course.flashcardSetCount == 1 ? '' : 's'} • ${course.totalFlashcardCount} cards',
-                        if (course.pdfCount > 0)
-                          '${course.pdfCount} PDF${course.pdfCount == 1 ? '' : 's'}',
-                      ].join(' • '),
-                      style: textTheme.bodySmall?.copyWith(
-                        color:
-                            theme.colorScheme.onSurface.withValues(alpha: 0.7),
-                      ),
-                    ),
-                ],
+                  color: theme.colorScheme.primaryContainer
+                      .withValues(alpha: 0.25),
+                ),
+                child: Icon(
+                  Icons.folder,
+                  color: theme.colorScheme.primary,
+                  size: ResponsiveSizer.iconSizeFromConstraints(
+                    constraints,
+                    multiplier: 1.1,
+                  ),
+                ),
               ),
-            ),
-          ],
+              SizedBox(
+                width: ResponsiveSizer.spacingFromConstraints(
+                  constraints,
+                  multiplier: 1.4,
+                ),
+              ),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    Text(
+                      course.name,
+                      style: textTheme.headlineSmall?.copyWith(
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: -0.4,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    if (course.quizCount > 0 ||
+                        course.flashcardSetCount > 0 ||
+                        course.pdfCount > 0)
+                      Padding(
+                        padding: EdgeInsets.only(
+                          top: ResponsiveSizer.spacingFromConstraints(
+                            constraints,
+                            multiplier: 0.3,
+                          ),
+                        ),
+                        child: Text(
+                          [
+                            if (course.quizCount > 0)
+                              '${course.quizCount} quiz${course.quizCount == 1 ? '' : 'zes'} • ${course.totalQuestionCount} questions',
+                            if (course.flashcardSetCount > 0)
+                              '${course.flashcardSetCount} flashcard set${course.flashcardSetCount == 1 ? '' : 's'} • ${course.totalFlashcardCount} cards',
+                            if (course.pdfCount > 0)
+                              '${course.pdfCount} PDF${course.pdfCount == 1 ? '' : 's'}',
+                          ].join(' • '),
+                          style: textTheme.bodySmall?.copyWith(
+                            color: theme.colorScheme.onSurface
+                                .withValues(alpha: 0.65),
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
         SizedBox(
-          height: ResponsiveSizer.sectionSpacingFromConstraints(constraints),
+          height: ResponsiveSizer.sectionSpacingFromConstraints(constraints)
+              .clamp(8.0, 24.0),
         ),
         if (course.quizzes.isEmpty &&
             course.flashcards.isEmpty &&

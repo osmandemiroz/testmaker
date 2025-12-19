@@ -55,9 +55,18 @@ class _PdfCardState extends State<PdfCard> {
     return Container(
       margin: ResponsiveSizer.cardMarginFromConstraints(widget.constraints),
       child: Material(
-        color: widget.theme.colorScheme.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(
-          ResponsiveSizer.borderRadiusFromConstraints(widget.constraints),
+        /// Softer card color + subtle border for a lighter,
+        /// more MacOS-like card appearance.
+        color: widget.theme.colorScheme.surface,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(
+            ResponsiveSizer.borderRadiusFromConstraints(widget.constraints),
+          ),
+          side: BorderSide(
+            color:
+                widget.theme.colorScheme.outlineVariant.withValues(alpha: 0.25),
+            width: 0.8,
+          ),
         ),
         child: Column(
           children: <Widget>[
@@ -76,21 +85,26 @@ class _PdfCardState extends State<PdfCard> {
                 ),
               ),
               child: Padding(
-                padding: EdgeInsets.all(
-                  ResponsiveSizer.cardPaddingFromConstraints(
+                padding: EdgeInsets.symmetric(
+                  horizontal: ResponsiveSizer.cardPaddingFromConstraints(
                     widget.constraints,
                   ),
+                  vertical: ResponsiveSizer.cardPaddingFromConstraints(
+                        widget.constraints,
+                      ) *
+                      0.65,
                 ),
                 child: Row(
                   children: <Widget>[
+                    /// Leading PDF icon "pill" - compact and friendly.
                     Container(
                       width: ResponsiveSizer.iconContainerSizeFromConstraints(
                         widget.constraints,
-                        multiplier: 1.2,
+                        multiplier: 1.1,
                       ),
                       height: ResponsiveSizer.iconContainerSizeFromConstraints(
                         widget.constraints,
-                        multiplier: 1.2,
+                        multiplier: 1.1,
                       ),
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(
@@ -98,20 +112,29 @@ class _PdfCardState extends State<PdfCard> {
                             widget.constraints,
                           ),
                         ),
-                        color: widget.theme.colorScheme.errorContainer,
+                        gradient: LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: <Color>[
+                            widget.theme.colorScheme.errorContainer,
+                            widget.theme.colorScheme.errorContainer
+                                .withValues(alpha: 0.8),
+                          ],
+                        ),
                       ),
                       child: Icon(
                         Icons.picture_as_pdf,
                         color: widget.theme.colorScheme.onErrorContainer,
                         size: ResponsiveSizer.iconSizeFromConstraints(
                           widget.constraints,
+                          multiplier: 0.95,
                         ),
                       ),
                     ),
                     SizedBox(
                       width: ResponsiveSizer.spacingFromConstraints(
                         widget.constraints,
-                        multiplier: 2,
+                        multiplier: 1.5,
                       ),
                     ),
                     Expanded(
@@ -122,6 +145,7 @@ class _PdfCardState extends State<PdfCard> {
                             pdfName,
                             style: widget.textTheme.titleMedium?.copyWith(
                               fontWeight: FontWeight.w600,
+                              letterSpacing: -0.1,
                             ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
@@ -129,20 +153,22 @@ class _PdfCardState extends State<PdfCard> {
                           SizedBox(
                             height: ResponsiveSizer.spacingFromConstraints(
                               widget.constraints,
-                              multiplier: 0.5,
+                              multiplier: 0.35,
                             ),
                           ),
                           Text(
                             'PDF Document',
                             style: widget.textTheme.bodySmall?.copyWith(
                               color: widget.theme.colorScheme.onSurface
-                                  .withValues(alpha: 0.7),
+                                  .withValues(alpha: 0.65),
                             ),
                           ),
                         ],
                       ),
                     ),
-                    // Edit button
+
+                    /// Edit / delete / expand controls kept functional but
+                    /// visually lighter and tighter.
                     IconButton(
                       onPressed: () => widget.showRenameDialog(
                         title: 'Rename PDF',
@@ -158,14 +184,15 @@ class _PdfCardState extends State<PdfCard> {
                         Icons.edit_outlined,
                         size: ResponsiveSizer.iconSizeFromConstraints(
                           widget.constraints,
-                          multiplier: 0.9,
+                          multiplier: 0.8,
                         ),
                       ),
+                      padding: EdgeInsets.zero,
+                      visualDensity: VisualDensity.compact,
                       color: widget.theme.colorScheme.onSurface
-                          .withValues(alpha: 0.7),
+                          .withValues(alpha: 0.6),
                       tooltip: 'Rename',
                     ),
-                    // Delete button
                     IconButton(
                       onPressed: () => widget.onDelete(
                         widget.course,
@@ -176,13 +203,14 @@ class _PdfCardState extends State<PdfCard> {
                         Icons.delete_outlined,
                         size: ResponsiveSizer.iconSizeFromConstraints(
                           widget.constraints,
-                          multiplier: 0.9,
+                          multiplier: 0.8,
                         ),
                       ),
+                      padding: EdgeInsets.zero,
+                      visualDensity: VisualDensity.compact,
                       color: widget.theme.colorScheme.error,
                       tooltip: 'Delete',
                     ),
-                    // Expand/collapse button with animation
                     IconButton(
                       onPressed: () {
                         setState(() {
@@ -190,19 +218,21 @@ class _PdfCardState extends State<PdfCard> {
                         });
                       },
                       icon: AnimatedRotation(
-                        duration: const Duration(milliseconds: 300),
+                        duration: const Duration(milliseconds: 260),
                         curve: Curves.easeInOutCubic,
                         turns: _isExpanded ? 0.5 : 0.0,
                         child: Icon(
                           Icons.expand_more,
                           size: ResponsiveSizer.iconSizeFromConstraints(
                             widget.constraints,
-                            multiplier: 0.9,
+                            multiplier: 0.85,
                           ),
                         ),
                       ),
+                      padding: EdgeInsets.zero,
+                      visualDensity: VisualDensity.compact,
                       color: widget.theme.colorScheme.onSurface
-                          .withValues(alpha: 0.7),
+                          .withValues(alpha: 0.6),
                       tooltip: _isExpanded ? 'Collapse' : 'Expand',
                     ),
                   ],
