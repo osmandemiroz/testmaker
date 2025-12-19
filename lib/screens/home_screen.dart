@@ -283,6 +283,22 @@ class _HomeScreenState extends State<HomeScreen> {
                       },
                       onSettingsTap: () =>
                           DialogHandlers.showSettingsDialog(context),
+                      onCreateModule: () async {
+                        // Mirror the same create-course (module) flow used
+                        // in the sidebar and compact layout so behavior
+                        // stays consistent across the app.
+                        if (!mounted) return;
+                        final result =
+                            await DialogHandlers.showCreateCourseDialog(
+                          context,
+                        );
+                        if (result != null && result.isNotEmpty) {
+                          await CourseManagementHandlers.createCourse(
+                            _controller,
+                            result,
+                          );
+                        }
+                      },
                       onQuizPromptTap: () => showQuizPromptDialog(
                         context,
                         theme,

@@ -17,6 +17,7 @@ class ModulesView extends StatelessWidget {
     required this.expandedModules,
     required this.onToggleModule,
     required this.onSettingsTap,
+    required this.onCreateModule,
     required this.onQuizPromptTap,
     required this.onFlashcardPromptTap,
     required this.onViewPdf,
@@ -29,6 +30,11 @@ class ModulesView extends StatelessWidget {
   final Set<String> expandedModules;
   final void Function(String courseId) onToggleModule;
   final VoidCallback onSettingsTap;
+  /// Callback used when the user taps "Create Module" in the
+  /// empty-modules state. This is intentionally separate from
+  /// [onSettingsTap] so we open the new-module flow instead of
+  /// the settings/API-key dialog.
+  final VoidCallback onCreateModule;
   final VoidCallback onQuizPromptTap;
   final VoidCallback onFlashcardPromptTap;
   final void Function(String pdfPath, String pdfName) onViewPdf;
@@ -47,7 +53,7 @@ class ModulesView extends StatelessWidget {
             theme: theme,
             textTheme: textTheme,
             constraints: constraints,
-            onCreateModule: onSettingsTap,
+            onCreateModule: onCreateModule,
             onQuizPromptTap: onQuizPromptTap,
             onFlashcardPromptTap: onFlashcardPromptTap,
           );
