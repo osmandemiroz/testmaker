@@ -1,13 +1,21 @@
 name: Test & Build
 
 on:
+  # Allow running the workflow manually from the GitHub Actions tab
+  workflow_dispatch:
+
+  # Run on PRs targeting the main branches
   pull_request:
     branches:
       - master
+      - main
       - dev
+
+  # Run on direct pushes to the main branches
   push:
     branches:
       - master
+      - main
       - dev
 
 jobs:
