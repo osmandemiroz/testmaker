@@ -87,7 +87,7 @@ class _SwipeIndicatorArrowState extends State<SwipeIndicatorArrow>
               child: Icon(
                 Icons.arrow_forward_ios,
                 size: 16,
-                color: widget.theme.colorScheme.primary,
+                color: widget.theme.colorScheme.onPrimary,
               ),
             ),
           ),
