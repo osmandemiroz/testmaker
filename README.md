@@ -29,6 +29,7 @@ TestMaker is a sleek, modern Flutter application that revolutionizes how you cre
 - 💾 **Local Storage** - All data stored locally, works offline
 - 🎲 **Randomized Content** - Prevent memorization with shuffled questions, options, and flashcards
 - ✏️ **Custom Naming** - Rename quizzes, PDFs, and flashcard sets for better organization
+- 📊 **Quiz Analytics** - Track your progress with performance charts and detailed statistics per course
 - 🏗️ **MVC Architecture** - Clean, maintainable codebase with separation of concerns
 
 ---
@@ -48,6 +49,7 @@ TestMaker is a sleek, modern Flutter application that revolutionizes how you cre
 | 🔀 **Content Randomization** | Questions, options, and flashcards shuffled each time for authentic testing |
 | 🎨 **Modern Animated UI** | Card-based layouts with smooth transitions, 3D flip animations, and progress indicators |
 | 📊 **Result Summaries** | Detailed score breakdown with percentage and feedback |
+| 📈 **Quiz Analytics** | Track quiz performance with charts, statistics, and progress tracking per course |
 | 👆 **Swipe Navigation** | Intuitive swipe gestures for navigating through flashcards |
 | ✏️ **Custom Naming** | Long-press any quiz, PDF, or flashcard set to rename it with custom names |
 | 📱 **Responsive Design** | Fully responsive UI that adapts to all screen sizes (mobile, tablet, desktop) |
@@ -87,6 +89,7 @@ The codebase emphasizes:
 - **[Usage Guide](#-usage-guide)**
   - **[Adding Quiz and Flashcard Content](#-adding-quiz-and-flashcard-content)**
   - **[Course Management](#-course-management)**
+  - **[Quiz Analytics & Progress Tracking](#-quiz-analytics--progress-tracking)**
   - **[AI-Powered Content Generation](#-ai-powered-content-generation)**
 - **[Data Storage](#-data-storage)**
 - **[Project Structure](#-project-structure)**
@@ -113,6 +116,7 @@ The codebase emphasizes:
 | `syncfusion_flutter_pdfviewer` | PDF viewing |
 | `http` | API calls to Google Gemini AI |
 | `url_launcher` | Opening external URLs (e.g., API key registration) |
+| `deriv_chart` | Chart visualization for quiz analytics and performance tracking |
 
 ---
 
@@ -124,6 +128,7 @@ The codebase emphasizes:
 - **Quiz Flow** – Animated question cards, progress bar, and score summary
 - **Flashcards** – Swipeable 3D flip cards with front/back content
 - **PDF Viewer** – Integrated viewer with navigation and action buttons
+- **Analytics** – Performance charts, statistics, and progress tracking per course
 
 ---
 
@@ -225,8 +230,34 @@ The app supports both JSON format and simple text format. You can paste:
 | **View PDF** | Tap on any PDF card in a course |
 | **Start Quiz** | Tap on any quiz card (questions are randomized) |
 | **Study Flashcards** | Tap on any flashcard set → Swipe left/right to navigate, tap to flip |
+| **View Analytics** | Select a course → Tap **"Analytics"** tab → See performance charts and statistics |
 | **Rename Items** | Long-press any quiz, PDF, or flashcard set card → Enter new name → Save |
 | **Delete Items** | Swipe left on any course, quiz, flashcard set, or PDF → Confirm deletion |
+
+---
+
+### 📊 Quiz Analytics & Progress Tracking
+
+Track your quiz performance and monitor your progress over time!
+
+#### Viewing Analytics
+
+1. **Select a Course** from the sidebar or modules view
+2. **Tap the "Analytics" tab** at the top of the course content view
+3. **View Your Performance**:
+   - **Summary Statistics**: Total attempts, average score, and best performing quiz
+   - **Performance Chart**: Visual bar chart showing average scores by quiz
+   - **Recent Activity**: List of your most recent quiz attempts with scores and dates
+
+#### Analytics Features
+
+- 📈 **Performance by Quiz**: See which quizzes you're excelling at and which need more practice
+- 📊 **Average Score Tracking**: Monitor your overall performance across all quiz attempts
+- ⭐ **Best Performing Quiz**: Quickly identify your strongest area
+- 📅 **Recent Activity**: Review your recent quiz attempts with dates and scores
+- 💾 **Automatic Tracking**: All quiz results are automatically saved when you complete a quiz
+
+> 💡 **Tip**: Complete quizzes multiple times to see your improvement over time in the analytics!
 
 ---
 
@@ -282,8 +313,9 @@ All data is stored **locally** on your device:
 
 - ✅ **Course metadata** → Stored in SharedPreferences
 - ✅ **PDF files** → Copied to app's documents directory
+- ✅ **Quiz results** → Stored in SharedPreferences for analytics and progress tracking
 - ✅ **Data persistence** → Survives app restarts
-- ✅ **Offline support** → No internet needed for local quizzes, flashcards, and PDFs
+- ✅ **Offline support** → No internet needed for local quizzes, flashcards, PDFs, and analytics
 
 > 🌐 **Note**: Internet connection is only required for AI quiz and flashcard generation.
 
@@ -297,24 +329,28 @@ lib/
 ├── models/
 │   ├── question.dart              # Question model with JSON serialization
 │   ├── flashcard.dart             # Flashcard model with JSON serialization
-│   └── course.dart                # Course model for organizing quizzes/flashcards/PDFs
+│   ├── course.dart                # Course model for organizing quizzes/flashcards/PDFs
+│   └── quiz_result.dart           # Quiz result model for tracking quiz attempts and scores
 ├── controllers/
 │   ├── home_controller.dart       # Business logic for course management and content operations
 │   ├── quiz_controller.dart       # Quiz state management and navigation
-│   └── flashcard_controller.dart  # Flashcard state management and navigation
+│   ├── flashcard_controller.dart  # Flashcard state management and navigation
+│   └── analytics_controller.dart  # Analytics state management and data aggregation
 ├── services/
 │   ├── quiz_service.dart          # Loads questions from assets or JSON files
 │   ├── flashcard_service.dart     # Loads flashcards from assets or JSON files
 │   ├── course_service.dart        # CRUD operations for courses (SharedPreferences)
 │   ├── pdf_text_extractor.dart    # Extracts text content from PDF files
 │   ├── question_generator_service.dart  # AI-powered question generation (Gemini)
-│   └── flashcard_generator_service.dart  # AI-powered flashcard generation (Gemini)
+│   ├── flashcard_generator_service.dart  # AI-powered flashcard generation (Gemini)
+│   └── quiz_result_service.dart  # Persistence and retrieval of quiz results for analytics
 ├── screens/
 │   ├── home_screen.dart           # Main screen with sidebar and course management (refactored)
 │   ├── quiz_screen.dart           # Core quiz flow with randomized questions
 │   ├── flashcard_screen.dart      # Interactive flashcard viewer with swipe navigation
 │   ├── result_screen.dart         # Score summary screen
 │   ├── pdf_viewer_screen.dart     # PDF viewer with page navigation
+│   └── analytics_screen.dart      # Quiz analytics and progress tracking with charts
 │   └── home/                      # Modular home screen components
 │       ├── dialogs/               # Reusable dialog components
 │       │   ├── api_key_dialog.dart
