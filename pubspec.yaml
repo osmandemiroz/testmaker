@@ -6,6 +6,7 @@ environment:
 description: A new Flutter project.
 dependencies:
   cupertino_icons: ^1.0.8
+  deriv_chart: ^0.4.1
   file_picker: ^8.1.5
   flutter:
     sdk: flutter

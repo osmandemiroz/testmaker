@@ -28,6 +28,8 @@ class NavigationHandlers {
   ///
   /// Questions and options are shuffled before starting the quiz to prevent
   /// users from memorizing positions. A new random order is generated each time.
+  ///
+  /// Passes course and quiz information to QuizScreen so results can be saved.
   static Future<void> startQuizFromCourse(
     BuildContext context,
     Course course,
@@ -45,8 +47,16 @@ class NavigationHandlers {
     // Shuffle questions and options to prevent memorization
     final shuffledQuestions = QuestionUtils.shuffleQuestions(questions);
 
+    // Get quiz name (custom or default)
+    final quizName = course.getQuizName(quizIndex);
+
     await Navigator.of(context).push(
-      _createQuizRoute(shuffledQuestions),
+      _createQuizRouteFromCourse(
+        shuffledQuestions,
+        courseId: course.id,
+        quizIndex: quizIndex,
+        quizName: quizName,
+      ),
     );
   }
 
@@ -132,6 +142,58 @@ class NavigationHandlers {
         Animation<double> secondaryAnimation,
       ) {
         return QuizScreen(questions: questions);
+      },
+      transitionsBuilder: (
+        BuildContext context,
+        Animation<double> animation,
+        Animation<double> secondaryAnimation,
+        Widget child,
+      ) {
+        final slideAnimation = Tween<Offset>(
+          begin: const Offset(0, 0.04),
+          end: Offset.zero,
+        ).animate(
+          CurvedAnimation(
+            parent: animation,
+            curve: Curves.easeOutCubic,
+          ),
+        );
+
+        final Animation<double> fadeAnimation = CurvedAnimation(
+          parent: animation,
+          curve: Curves.easeInOut,
+        );
+
+        return FadeTransition(
+          opacity: fadeAnimation,
+          child: SlideTransition(
+            position: slideAnimation,
+            child: child,
+          ),
+        );
+      },
+    );
+  }
+
+  /// Custom route for quiz from course (includes course/quiz metadata for saving results).
+  static Route<void> _createQuizRouteFromCourse(
+    List<Question> questions, {
+    required String courseId,
+    required int quizIndex,
+    required String quizName,
+  }) {
+    return PageRouteBuilder<void>(
+      pageBuilder: (
+        BuildContext context,
+        Animation<double> animation,
+        Animation<double> secondaryAnimation,
+      ) {
+        return QuizScreen(
+          questions: questions,
+          courseId: courseId,
+          quizIndex: quizIndex,
+          quizName: quizName,
+        );
       },
       transitionsBuilder: (
         BuildContext context,

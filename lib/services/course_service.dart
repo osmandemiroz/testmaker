@@ -7,6 +7,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:testmaker/models/course.dart';
 import 'package:testmaker/models/flashcard.dart';
 import 'package:testmaker/models/question.dart';
+import 'package:testmaker/services/quiz_result_service.dart';
 
 /// ********************************************************************
 /// CourseService
@@ -510,6 +511,8 @@ class CourseService {
   }
 
   /// Deletes a course by its ID.
+  ///
+  /// Also cleans up associated quiz results when a course is deleted.
   Future<void> deleteCourse(String courseId) async {
     await _ensureInitialized();
 
@@ -517,6 +520,15 @@ class CourseService {
     courses.removeWhere((Course c) => c.id == courseId);
 
     await _saveCourses(courses);
+
+    // Clean up quiz results for this course
+    try {
+      final quizResultService = QuizResultService();
+      await quizResultService.deleteQuizResultsForCourse(courseId);
+    } on Exception catch (_) {
+      // Silently fail - quiz results cleanup is not critical
+      // In production, you might want to log this
+    }
   }
 
   /// Saves the list of courses to SharedPreferences.

@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:testmaker/controllers/quiz_controller.dart';
 import 'package:testmaker/models/question.dart';
+import 'package:testmaker/models/quiz_result.dart';
 import 'package:testmaker/screens/result_screen.dart';
+import 'package:testmaker/services/quiz_result_service.dart';
 import 'package:testmaker/utils/responsive_sizer.dart';
 import 'package:testmaker/widgets/quiz_option_card.dart';
 import 'package:testmaker/widgets/quiz_progress_bar.dart';
@@ -18,10 +20,16 @@ import 'package:testmaker/widgets/quiz_progress_bar.dart';
 class QuizScreen extends StatefulWidget {
   const QuizScreen({
     required this.questions,
+    this.courseId,
+    this.quizIndex,
+    this.quizName,
     super.key,
   });
 
   final List<Question> questions;
+  final String? courseId;
+  final int? quizIndex;
+  final String? quizName;
 
   @override
   State<QuizScreen> createState() => _QuizScreenState();
@@ -30,6 +38,8 @@ class QuizScreen extends StatefulWidget {
 class _QuizScreenState extends State<QuizScreen> {
   late final QuizController _controller;
   bool _isNavigatingForward = true; // Track navigation direction for animations
+  final QuizResultService _resultService = QuizResultService();
+  final DateTime _startTime = DateTime.now();
 
   @override
   void initState() {
@@ -82,6 +92,32 @@ class _QuizScreenState extends State<QuizScreen> {
   }
 
   Future<void> _goToResults() async {
+    // Save quiz result if course and quiz information is available
+    if (widget.courseId != null &&
+        widget.quizIndex != null &&
+        widget.quizName != null) {
+      final duration = DateTime.now().difference(_startTime).inSeconds;
+      final result = QuizResult(
+        courseId: widget.courseId!,
+        quizIndex: widget.quizIndex!,
+        quizName: widget.quizName!,
+        score: _controller.score,
+        totalQuestions: _controller.totalQuestions,
+        timestamp: DateTime.now().millisecondsSinceEpoch,
+        duration: duration,
+      );
+
+      try {
+        await _resultService.saveQuizResult(result);
+      } on Exception catch (e) {
+        // Silently fail - don't interrupt the user experience
+        // In production, you might want to log this error
+        if (mounted) {
+          debugPrint('[QuizScreen._goToResults] Failed to save result: $e');
+        }
+      }
+    }
+
     // Check if any questions have explanations (AI-generated quiz)
     final hasExplanations = widget.questions.any(
       (Question q) => q.explanation != null && q.explanation!.isNotEmpty,

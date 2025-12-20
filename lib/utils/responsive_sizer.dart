@@ -65,6 +65,21 @@ class ResponsiveSizer {
     return constraints.maxHeight;
   }
 
+  /// Gets responsive chart height from constraints.
+  ///
+  /// Mobile: 200px
+  /// Tablet: 300px
+  /// Desktop: 400px
+  static double chartHeightFromConstraints(BoxConstraints constraints) {
+    if (isMobileFromConstraints(constraints)) {
+      return 200;
+    } else if (isTabletFromConstraints(constraints)) {
+      return 300;
+    } else {
+      return 400;
+    }
+  }
+
   /// Determines if the current screen is mobile-sized.
   static bool isMobile(BuildContext context) {
     return width(context) < mobileBreakpoint;
