@@ -333,6 +333,10 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
   }
 
   /// Builds the chart section with deriv_chart visualization.
+  ///
+  /// Creates a beautifully designed chart section following Apple's Human
+  /// Interface Guidelines with smooth animations, gradients, and polished
+  /// visual design.
   Widget _buildChartSection(
     ThemeData theme,
     TextTheme textTheme,
@@ -385,21 +389,37 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
+          // Header section with icon and title
           Row(
             children: <Widget>[
-              Icon(
-                Icons.bar_chart,
-                color: theme.colorScheme.primary,
-                size: ResponsiveSizer.iconSizeFromConstraints(constraints),
+              Container(
+                padding: EdgeInsets.all(
+                  ResponsiveSizer.spacingFromConstraints(constraints) * 0.5,
+                ),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(
+                    ResponsiveSizer.borderRadiusFromConstraints(constraints) *
+                        0.5,
+                  ),
+                  color: theme.colorScheme.primaryContainer.withValues(alpha: 0.2),
+                ),
+                child: Icon(
+                  Icons.bar_chart_rounded,
+                  color: theme.colorScheme.primary,
+                  size: ResponsiveSizer.iconSizeFromConstraints(constraints),
+                ),
               ),
               SizedBox(
                 width:
                     ResponsiveSizer.spacingFromConstraints(constraints) * 0.75,
               ),
-              Text(
-                'Performance by Quiz',
-                style: textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w600,
+              Expanded(
+                child: Text(
+                  'Performance by Quiz',
+                  style: textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: -0.2,
+                  ),
                 ),
               ),
             ],
@@ -410,9 +430,10 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
               multiplier: 1.5,
             ),
           ),
-          // Chart container with fixed height
+          // Chart container with fixed height and improved styling
           SizedBox(
-            height: ResponsiveSizer.chartHeightFromConstraints(constraints),
+            height: ResponsiveSizer.chartHeightFromConstraints(constraints) +
+                ResponsiveSizer.spacingFromConstraints(constraints) * 3,
             child: candles.isEmpty
                 ? Center(
                     child: Text(
@@ -423,7 +444,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                       ),
                     ),
                   )
-                : _buildSimpleBarChart(
+                : _buildEnhancedBarChart(
                     candles: candles,
                     chartData: chartData,
                     theme: theme,
@@ -432,14 +453,47 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                   ),
           ),
           SizedBox(
-            height: ResponsiveSizer.spacingFromConstraints(constraints),
+            height: ResponsiveSizer.spacingFromConstraints(constraints) * 0.75,
           ),
-          // Chart legend/explanation
-          Text(
-            'Shows average score percentage for each quiz. '
-            'Higher bars indicate better performance.',
-            style: textTheme.bodySmall?.copyWith(
-              color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+          // Chart legend/explanation with improved styling
+          Container(
+            padding: EdgeInsets.symmetric(
+              horizontal: ResponsiveSizer.spacingFromConstraints(constraints) *
+                  0.75,
+              vertical: ResponsiveSizer.spacingFromConstraints(constraints) *
+                  0.5,
+            ),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(
+                ResponsiveSizer.borderRadiusFromConstraints(constraints) * 0.5,
+              ),
+              color: theme.colorScheme.surfaceContainerHighest.withValues(
+                alpha: 0.3,
+              ),
+            ),
+            child: Row(
+              children: <Widget>[
+                Icon(
+                  Icons.info_outline,
+                  size: ResponsiveSizer.iconSizeFromConstraints(constraints) *
+                      0.75,
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                ),
+                SizedBox(
+                  width: ResponsiveSizer.spacingFromConstraints(constraints) *
+                      0.5,
+                ),
+                Expanded(
+                  child: Text(
+                    'Shows average score percentage for each quiz. '
+                    'Higher bars indicate better performance.',
+                    style: textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                      height: 1.4,
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
         ],
@@ -605,11 +659,17 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
     }
   }
 
-  /// Builds a simple bar chart visualization as fallback.
+  /// Builds an enhanced bar chart visualization with animations and modern styling.
   ///
-  /// This is used when the deriv_chart Chart widget has issues.
-  /// Creates a custom bar chart showing average scores by quiz.
-  Widget _buildSimpleBarChart({
+  /// This creates a beautiful, animated bar chart following Apple's Human
+  /// Interface Guidelines with:
+  ///  - Smooth entrance animations for each bar
+  ///  - Gradient fills for visual depth
+  ///  - Value labels on top of bars
+  ///  - Quiz labels below bars
+  ///  - Subtle grid lines for better readability
+  ///  - Polished, modern design
+  Widget _buildEnhancedBarChart({
     required List<Candle> candles,
     required List<Map<String, dynamic>> chartData,
     required ThemeData theme,
@@ -625,30 +685,290 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
           (double a, double b) => a > b ? a : b,
         );
     final chartHeight = ResponsiveSizer.chartHeightFromConstraints(constraints);
+    final labelHeight = ResponsiveSizer.spacingFromConstraints(constraints) * 2;
 
-    return CustomPaint(
-      size: Size(double.infinity, chartHeight),
-      painter: _SimpleBarChartPainter(
-        chartData: chartData,
-        maxScore: maxScore > 0 ? maxScore : 100.0,
-        chartHeight: chartHeight,
-        theme: theme,
-      ),
+    return Stack(
+      children: <Widget>[
+        // Background grid layer
+        CustomPaint(
+          size: Size(
+            double.infinity,
+            chartHeight + labelHeight,
+          ),
+          painter: _ChartGridPainter(
+            chartData: chartData,
+            chartHeight: chartHeight,
+            theme: theme,
+          ),
+        ),
+        // Bars and labels layer
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: <Widget>[
+            // Chart area with bars
+            SizedBox(
+              height: chartHeight,
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: List<Widget>.generate(
+                  chartData.length,
+                  (int index) {
+                    final data = chartData[index];
+                    final averageScore = data['close'] as double;
+                    final quizName = data['quizName'] as String;
+
+                    return Expanded(
+                      child: Padding(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: ResponsiveSizer.spacingFromConstraints(
+                            constraints,
+                          ) *
+                              0.25,
+                        ),
+                        child: _AnimatedBarWidget(
+                          delay: Duration(milliseconds: 100 + (index * 150)),
+                          score: averageScore,
+                          maxScore: maxScore > 0 ? maxScore : 100.0,
+                          quizName: quizName,
+                          theme: theme,
+                          textTheme: textTheme,
+                          constraints: constraints,
+                          chartHeight: chartHeight,
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ),
+            // Quiz labels below chart
+            SizedBox(
+              height: labelHeight,
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: List<Widget>.generate(
+                  chartData.length,
+                  (int index) {
+                    final data = chartData[index];
+                    final quizName = data['quizName'] as String;
+
+                    return Expanded(
+                      child: Padding(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: ResponsiveSizer.spacingFromConstraints(
+                            constraints,
+                          ) *
+                              0.25,
+                        ),
+                        child: TweenAnimationBuilder<double>(
+                          tween: Tween<double>(
+                            begin: 0,
+                            end: 1,
+                          ),
+                          duration: Duration(
+                            milliseconds: 300 + (index * 100),
+                          ),
+                          curve: Curves.easeOutCubic,
+                          builder: (
+                            BuildContext context,
+                            double value,
+                            Widget? child,
+                          ) {
+                            return Opacity(
+                              opacity: value,
+                              child: Transform.translate(
+                                offset: Offset(0, 10 * (1 - value)),
+                                child: Text(
+                                  quizName,
+                                  textAlign: TextAlign.center,
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: textTheme.labelSmall?.copyWith(
+                                    color: theme.colorScheme.onSurface
+                                        .withValues(alpha: 0.7),
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ),
+          ],
+        ),
+      ],
     );
   }
 }
 
-/// Custom painter for simple bar chart visualization.
-class _SimpleBarChartPainter extends CustomPainter {
-  _SimpleBarChartPainter({
-    required this.chartData,
+/// Animated bar widget with gradient fill and value label.
+///
+/// Creates a single animated bar for the chart with smooth entrance animation,
+/// gradient fill, and a value label displayed on top.
+/// Uses staggered delays for a cascading animation effect.
+class _AnimatedBarWidget extends StatefulWidget {
+  const _AnimatedBarWidget({
+    required this.delay,
+    required this.score,
     required this.maxScore,
+    required this.quizName,
+    required this.theme,
+    required this.textTheme,
+    required this.constraints,
+    required this.chartHeight,
+  });
+
+  final Duration delay;
+  final double score;
+  final double maxScore;
+  final String quizName;
+  final ThemeData theme;
+  final TextTheme textTheme;
+  final BoxConstraints constraints;
+  final double chartHeight;
+
+  @override
+  State<_AnimatedBarWidget> createState() => _AnimatedBarWidgetState();
+}
+
+class _AnimatedBarWidgetState extends State<_AnimatedBarWidget> {
+  bool _shouldAnimate = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // Start animation after delay for staggered effect
+    Future.delayed(widget.delay, () {
+      if (mounted) {
+        setState(() {
+          _shouldAnimate = true;
+        });
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    // Calculate bar height as percentage of chart height
+    // Leave padding at top and bottom for labels
+    const topPadding = 32.0;
+    const bottomPadding = 8.0;
+    final availableHeight =
+        widget.chartHeight - topPadding - bottomPadding;
+    final barHeight = ((widget.score / widget.maxScore) * availableHeight)
+        .clamp(0.0, availableHeight);
+
+    return TweenAnimationBuilder<double>(
+      tween: Tween<double>(
+        begin: 0,
+        end: _shouldAnimate ? barHeight : 0,
+      ),
+      duration: const Duration(milliseconds: 800),
+      curve: Curves.easeOutCubic,
+      builder: (BuildContext context, double animatedHeight, Widget? child) {
+        return Stack(
+          alignment: Alignment.bottomCenter,
+          children: <Widget>[
+            // Bar with gradient fill
+            Container(
+              width: double.infinity,
+              height: animatedHeight.clamp(0.0, availableHeight),
+              margin: const EdgeInsets.only(bottom: bottomPadding),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(8),
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: <Color>[
+                    widget.theme.colorScheme.primary,
+                    widget.theme.colorScheme.primary.withValues(alpha: 0.8),
+                  ],
+                ),
+                boxShadow: <BoxShadow>[
+                  BoxShadow(
+                    color: widget.theme.colorScheme.primary
+                        .withValues(alpha: 0.3),
+                    blurRadius: 8,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+            ),
+            // Value label on top of bar
+            if (animatedHeight > 20)
+              Positioned(
+                top: widget.chartHeight - animatedHeight - bottomPadding - 24,
+                child: TweenAnimationBuilder<double>(
+                  tween: Tween<double>(
+                    begin: 0,
+                    end: _shouldAnimate ? 1 : 0,
+                  ),
+                  duration: const Duration(milliseconds: 400),
+                  curve: Curves.easeOut,
+                  builder: (
+                    BuildContext context,
+                    double opacity,
+                    Widget? child,
+                  ) {
+                    return Opacity(
+                      opacity: opacity,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 3,
+                        ),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(6),
+                          color: widget.theme.colorScheme.surfaceContainerHighest
+                              .withValues(alpha: 0.95),
+                          boxShadow: <BoxShadow>[
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.1),
+                              blurRadius: 4,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: Text(
+                          '${widget.score.toStringAsFixed(1)}%',
+                          style: widget.textTheme.labelSmall?.copyWith(
+                            color: widget.theme.colorScheme.onSurface,
+                            fontWeight: FontWeight.w600,
+                            fontSize: 10,
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+          ],
+        );
+      },
+    );
+  }
+}
+
+/// Custom painter for chart grid background.
+///
+/// Draws subtle grid lines to improve chart readability, following
+/// Apple's Human Interface Guidelines for data visualization.
+class _ChartGridPainter extends CustomPainter {
+  _ChartGridPainter({
+    required this.chartData,
     required this.chartHeight,
     required this.theme,
   });
 
   final List<Map<String, dynamic>> chartData;
-  final double maxScore;
   final double chartHeight;
   final ThemeData theme;
 
@@ -658,38 +978,33 @@ class _SimpleBarChartPainter extends CustomPainter {
       return;
     }
 
-    final barWidth = (size.width / chartData.length) * 0.6;
-    final barSpacing = (size.width / chartData.length) * 0.4;
-    const padding = 20.0;
+    // Draw horizontal grid lines for better readability
+    // Following Apple's design principles: subtle, non-intrusive
+    const topPadding = 32.0;
+    const bottomPadding = 8.0;
+    final availableHeight = chartHeight - topPadding - bottomPadding;
+    const gridLines = 4; // Number of horizontal grid lines
 
-    final paint = Paint()
-      ..color = theme.colorScheme.primary
-      ..style = PaintingStyle.fill;
+    final gridPaint = Paint()
+      ..color = theme.colorScheme.onSurface.withValues(alpha: 0.08)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1;
 
-    for (var i = 0; i < chartData.length; i++) {
-      final data = chartData[i];
-      final averageScore = data['close'] as double;
-      final barHeight = ((averageScore / 100) * (size.height - padding * 2))
-          .clamp(0.0, size.height - padding * 2);
-
-      final x = padding + (i * (barWidth + barSpacing)) + (barSpacing / 2);
-      final y = size.height - padding - barHeight;
-
-      // Draw bar
-      canvas.drawRRect(
-        RRect.fromRectAndRadius(
-          Rect.fromLTWH(x, y, barWidth, barHeight),
-          const Radius.circular(4),
-        ),
-        paint,
+    // Draw horizontal grid lines
+    for (var i = 0; i <= gridLines; i++) {
+      final y = topPadding + (availableHeight / gridLines) * i;
+      canvas.drawLine(
+        Offset(0, y),
+        Offset(size.width, y),
+        gridPaint,
       );
     }
   }
 
   @override
-  bool shouldRepaint(_SimpleBarChartPainter oldDelegate) {
+  bool shouldRepaint(_ChartGridPainter oldDelegate) {
     return oldDelegate.chartData != chartData ||
-        oldDelegate.maxScore != maxScore ||
+        oldDelegate.chartHeight != chartHeight ||
         oldDelegate.theme != theme;
   }
 }
