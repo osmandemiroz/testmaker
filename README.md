@@ -1,7 +1,5 @@
 <div align="center">
 
-<img src="assets/logo/app_logo.png" alt="TestMaker Logo" width="120" height="120" />
-
 # 📚 TestMaker
 
 ### *Transform PDFs into Interactive Learning Experiences with AI*
@@ -137,40 +135,44 @@ First-time users are greeted with a stunning **4-screen onboarding flow** showca
 <tr>
 <td width="25%" align="center">
 
-#### Screen 1
+### 1️⃣
+
 **Welcome**
 
-<img src="https://via.placeholder.com/150x300/007AFF/FFFFFF?text=Welcome" alt="Welcome Screen" width="120"/>
+🎓
 
-App logo with breathing animation and introduction
+App logo with breathing animation and introduction to TestMaker
 
 </td>
 <td width="25%" align="center">
 
-#### Screen 2
+### 2️⃣
+
 **AI Quizzes**
 
-<img src="https://via.placeholder.com/150x300/9C27B0/FFFFFF?text=AI+Quiz" alt="Quiz Generation" width="120"/>
+🤖
 
 PDF to quiz transformation with arrow animations
 
 </td>
 <td width="25%" align="center">
 
-#### Screen 3
+### 3️⃣
+
 **Flashcards**
 
-<img src="https://via.placeholder.com/150x300/4CAF50/FFFFFF?text=Flashcards" alt="Flashcards" width="120"/>
+🎴
 
 3D flip animation demonstrating card interaction
 
 </td>
 <td width="25%" align="center">
 
-#### Screen 4
+### 4️⃣
+
 **Analytics**
 
-<img src="https://via.placeholder.com/150x300/FF9800/FFFFFF?text=Analytics" alt="Progress Tracking" width="120"/>
+📊
 
 Progress tracking and course organization
 
@@ -188,68 +190,122 @@ Progress tracking and course organization
 
 ---
 
-## 🖼️ Screenshots
+## 📱 App Screens
 
 <div align="center">
+
+### Key Screens & Features
+
+</div>
 
 <table>
 <tr>
 <td width="33%" align="center">
 
-### Home Screen
-<img src="https://via.placeholder.com/300x600/E3F2FD/007AFF?text=Home+Screen" alt="Home Screen" width="200"/>
+### 🏠 Home Screen
 
-*Sidebar navigation with courses*
+**Sidebar Navigation**
+- Course list with icons
+- Create/delete courses
+- Quick access menu
+- Swipe indicator for drawer
+
+**Main Content**
+- Module cards with expansion
+- Empty states with guidance
+- Floating action button menu
 
 </td>
 <td width="33%" align="center">
 
-### Quiz Flow
-<img src="https://via.placeholder.com/300x600/F3E5F5/9C27B0?text=Quiz+Screen" alt="Quiz Screen" width="200"/>
+### 📝 Quiz Screen
 
-*Interactive quiz with progress bar*
+**Interactive Testing**
+- Question cards with animations
+- Multiple choice options
+- Progress bar indicator
+- Randomized questions
+- Timer (optional)
+
+**Navigation**
+- Next/Previous buttons
+- Question counter
+- Exit confirmation
 
 </td>
 <td width="33%" align="center">
 
-### Analytics
-<img src="https://via.placeholder.com/300x600/E8F5E9/4CAF50?text=Analytics" alt="Analytics Screen" width="200"/>
+### 📊 Analytics Screen
 
-*Performance tracking with charts*
+**Performance Tracking**
+- Summary statistics
+- Bar chart visualization
+- Average score display
+- Best performing quiz
+- Recent activity list
+
+**Insights**
+- Course-specific analytics
+- Quiz comparison
+- Progress over time
 
 </td>
 </tr>
 <tr>
 <td width="33%" align="center">
 
-### Flashcards
-<img src="https://via.placeholder.com/300x600/FFF3E0/FF9800?text=Flashcards" alt="Flashcard Screen" width="200"/>
+### 🎴 Flashcard Screen
 
-*Swipeable 3D flip cards*
+**Study Interface**
+- 3D flip animations
+- Swipe navigation
+- Card counter
+- Front/back content
+- Explanation text
+
+**Controls**
+- Tap to flip
+- Swipe left/right
+- Shuffle option
+- Progress indicator
 
 </td>
 <td width="33%" align="center">
 
-### PDF Viewer
-<img src="https://via.placeholder.com/300x600/E3F2FD/007AFF?text=PDF+Viewer" alt="PDF Viewer" width="200"/>
+### 📄 PDF Viewer
 
-*Integrated PDF viewing*
+**Document Viewing**
+- Full-screen PDF display
+- Page navigation
+- Zoom controls
+- Page counter
+
+**Actions**
+- Generate questions
+- Generate flashcards
+- Close viewer
+- Scroll navigation
 
 </td>
 <td width="33%" align="center">
 
-### Course View
-<img src="https://via.placeholder.com/300x600/F3E5F5/9C27B0?text=Course+View" alt="Course View" width="200"/>
+### 📚 Course View
 
-*Organized study materials*
+**Content Organization**
+- PDF cards with previews
+- Quiz cards with counts
+- Flashcard set cards
+- Expandable actions
+
+**Management**
+- Rename items
+- Delete with swipe
+- Reorder content
+- Add new materials
 
 </td>
 </tr>
 </table>
-
-> 💡 **Note**: Replace placeholder images with actual screenshots in `/screenshots` directory
-
-</div>
 
 ---
 
