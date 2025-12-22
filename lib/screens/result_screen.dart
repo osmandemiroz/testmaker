@@ -101,10 +101,47 @@ class ResultScreen extends StatelessWidget {
                           height: ResponsiveSizer.buttonHeight(context),
                           child: ElevatedButton(
                             onPressed: () {
+                              // Use a smooth, Cupertino-style animated transition
+                              // when returning to the home screen so the flow
+                              // feels consistent with the rest of the app.
                               Navigator.of(context).pushReplacement(
-                                MaterialPageRoute<void>(
-                                  builder: (BuildContext context) =>
-                                      const HomeScreen(),
+                                PageRouteBuilder<void>(
+                                  pageBuilder: (
+                                    BuildContext context,
+                                    Animation<double> animation,
+                                    Animation<double> secondaryAnimation,
+                                  ) {
+                                    return const HomeScreen();
+                                  },
+                                  transitionsBuilder: (
+                                    BuildContext context,
+                                    Animation<double> animation,
+                                    Animation<double> secondaryAnimation,
+                                    Widget child,
+                                  ) {
+                                    final slideCurve = CurvedAnimation(
+                                      parent: animation,
+                                      curve: Curves.easeOutCubic,
+                                    );
+
+                                    final slideAnimation = Tween<Offset>(
+                                      begin: const Offset(0, 0.04),
+                                      end: Offset.zero,
+                                    ).animate(slideCurve);
+
+                                    final fadeCurve = CurvedAnimation(
+                                      parent: animation,
+                                      curve: Curves.easeInOut,
+                                    );
+
+                                    return FadeTransition(
+                                      opacity: fadeCurve,
+                                      child: SlideTransition(
+                                        position: slideAnimation,
+                                        child: child,
+                                      ),
+                                    );
+                                  },
                                 ),
                               );
                             },
@@ -140,9 +177,47 @@ class ResultScreen extends StatelessWidget {
                           child: OutlinedButton(
                             onPressed: () {
                               Navigator.of(context).pushAndRemoveUntil(
-                                MaterialPageRoute<void>(
-                                  builder: (BuildContext context) =>
-                                      const HomeScreen(),
+                                PageRouteBuilder<void>(
+                                  pageBuilder: (
+                                    BuildContext context,
+                                    Animation<double> animation,
+                                    Animation<double> secondaryAnimation,
+                                  ) {
+                                    return const HomeScreen();
+                                  },
+                                  transitionsBuilder: (
+                                    BuildContext context,
+                                    Animation<double> animation,
+                                    Animation<double> secondaryAnimation,
+                                    Widget child,
+                                  ) {
+                                    // Match the same fade + subtle upward slide
+                                    // used elsewhere so that even "reset to home"
+                                    // feels soft and fluid, in line with Apple's
+                                    // motion guidelines.
+                                    final slideCurve = CurvedAnimation(
+                                      parent: animation,
+                                      curve: Curves.easeOutCubic,
+                                    );
+
+                                    final slideAnimation = Tween<Offset>(
+                                      begin: const Offset(0, 0.04),
+                                      end: Offset.zero,
+                                    ).animate(slideCurve);
+
+                                    final fadeCurve = CurvedAnimation(
+                                      parent: animation,
+                                      curve: Curves.easeInOut,
+                                    );
+
+                                    return FadeTransition(
+                                      opacity: fadeCurve,
+                                      child: SlideTransition(
+                                        position: slideAnimation,
+                                        child: child,
+                                      ),
+                                    );
+                                  },
                                 ),
                                 (Route<dynamic> route) => false,
                               );

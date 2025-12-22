@@ -15,8 +15,8 @@ class NavigationHandlers {
     String title,
   ) async {
     await Navigator.of(context).push(
-      MaterialPageRoute<void>(
-        builder: (BuildContext context) => PdfViewerScreen(
+      _createStandardRoute<void>(
+        PdfViewerScreen(
           pdfPath: pdfPath,
           title: title,
         ),
@@ -102,8 +102,8 @@ class NavigationHandlers {
     final shuffledFlashcards = FlashcardUtils.shuffleFlashcards(flashcards);
 
     await Navigator.of(context).push(
-      MaterialPageRoute<void>(
-        builder: (BuildContext context) => FlashcardScreen(
+      _createStandardRoute<void>(
+        FlashcardScreen(
           flashcards: shuffledFlashcards,
         ),
       ),
@@ -125,11 +125,60 @@ class NavigationHandlers {
     final shuffledFlashcards = FlashcardUtils.shuffleFlashcards(flashcards);
 
     await Navigator.of(context).push(
-      MaterialPageRoute<void>(
-        builder: (BuildContext context) => FlashcardScreen(
+      _createStandardRoute<void>(
+        FlashcardScreen(
           flashcards: shuffledFlashcards,
         ),
       ),
+    );
+  }
+
+  /// Standard Cupertino-inspired page route used for most screen transitions.
+  ///
+  ///  - Uses a gentle fade + upward slide, matching Apple's Human Interface
+  ///    Guidelines emphasis on smooth, subtle motion.
+  ///  - Keeps timings and curves aligned with quiz transitions so navigation
+  ///    feels cohesive across the whole app.
+  static Route<T> _createStandardRoute<T>(Widget page) {
+    return PageRouteBuilder<T>(
+      pageBuilder: (
+        BuildContext context,
+        Animation<double> animation,
+        Animation<double> secondaryAnimation,
+      ) {
+        return page;
+      },
+      transitionsBuilder: (
+        BuildContext context,
+        Animation<double> animation,
+        Animation<double> secondaryAnimation,
+        Widget child,
+      ) {
+        // Slide the new page up very slightly while fading it in, similar to
+        // iOS card‑style presentations.
+        final slideCurve = CurvedAnimation(
+          parent: animation,
+          curve: Curves.easeOutCubic,
+        );
+
+        final slideAnimation = Tween<Offset>(
+          begin: const Offset(0, 0.04),
+          end: Offset.zero,
+        ).animate(slideCurve);
+
+        final fadeCurve = CurvedAnimation(
+          parent: animation,
+          curve: Curves.easeInOut,
+        );
+
+        return FadeTransition(
+          opacity: fadeCurve,
+          child: SlideTransition(
+            position: slideAnimation,
+            child: child,
+          ),
+        );
+      },
     );
   }
 
