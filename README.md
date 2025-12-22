@@ -325,7 +325,9 @@ All data is stored **locally** on your device:
 
 ```
 lib/
-├── main.dart                      # App entry point and global theming
+├── main.dart                      # App entry point and MaterialApp wiring
+├── theme/
+│   └── app_theme.dart             # Centralized light/dark ThemeData (Apple HIG-inspired)
 ├── models/
 │   ├── question.dart              # Question model with JSON serialization
 │   ├── flashcard.dart             # Flashcard model with JSON serialization
