@@ -12,6 +12,12 @@
 .swiftpm/
 migrate_working_dir/
 
+# Environment files - NEVER commit these!
+.env
+.env.local
+.env.*.local
+*.env
+
 # IntelliJ related
 *.iml
 *.ipr
@@ -25,7 +31,9 @@ migrate_working_dir/
 
 # Flutter/Dart/Pub related
 **/ios/Runner/GoogleService-Info.plist
+**/android/app/google-services.json
 **/android/app/google-service.json
+lib/firebase_options.dart
 **/doc/api/
 **/ios/Flutter/.last_build_id
 .dart_tool/

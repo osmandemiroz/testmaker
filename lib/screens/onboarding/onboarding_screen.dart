@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:testmaker/screens/home_screen.dart';
+import 'package:testmaker/screens/auth/auth_screen.dart';
 import 'package:testmaker/screens/onboarding/onboarding_content.dart';
 import 'package:testmaker/screens/onboarding/onboarding_page.dart';
 import 'package:testmaker/services/onboarding_service.dart';
@@ -124,18 +124,18 @@ class _OnboardingScreenState extends State<OnboardingScreen>
 
   /// [_completeOnboarding]
   ///
-  /// Marks onboarding as complete and navigates to the home screen.
+  /// Marks onboarding as complete and navigates to the auth screen.
   /// Called when user taps "Get Started" on the final page or "Skip".
   Future<void> _completeOnboarding() async {
     await OnboardingService.markOnboardingComplete();
 
     if (!mounted) return;
 
-    // Navigate to home screen with fade transition
+    // Navigate to auth screen with fade transition
     await Navigator.of(context).pushReplacement(
       PageRouteBuilder<void>(
         pageBuilder: (context, animation, secondaryAnimation) =>
-            const HomeScreen(),
+            const AuthScreen(),
         transitionsBuilder: (context, animation, secondaryAnimation, child) {
           return FadeTransition(
             opacity: animation,

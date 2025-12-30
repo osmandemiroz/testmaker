@@ -5,14 +5,22 @@ environment:
   sdk: ">=3.6.1 <4.0.0"
 description: A new Flutter project.
 dependencies:
+  # Firebase packages for authentication
+  crypto: ^3.0.6
   cupertino_icons: ^1.0.8
   deriv_chart: ^0.4.1
   file_picker: ^8.1.5
+  firebase_auth: ^5.3.4
+  firebase_core: ^3.8.1
   flutter:
     sdk: flutter
+  flutter_dotenv: ^5.2.1
+  flutter_svg: ^2.0.10+1
+  google_sign_in: ^6.2.2
   http: ^1.2.2
   path_provider: ^2.1.4
   shared_preferences: ^2.3.3
+  sign_in_with_apple: ^6.1.4
   syncfusion_flutter_pdf: ^28.2.8
   syncfusion_flutter_pdfviewer: ^28.2.8
   url_launcher: ^6.3.1
@@ -22,11 +30,17 @@ dev_dependencies:
     sdk: flutter
   pubspec_dependency_sorter: ^1.0.5
   very_good_analysis: ^7.0.0
+
+# Override to resolve intl version conflict between deriv_chart and firebase
+dependency_overrides:
+  intl: ^0.19.0
 flutter:
   uses-material-design: true
   assets:
+    - .env
     - assets/logo/app_logo.png
     - assets/quizzes/sample_quiz.json
+    - assets/icons/
 flutter_launcher_icons:
   android: true
   ios: true
