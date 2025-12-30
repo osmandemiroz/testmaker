@@ -3,8 +3,10 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:testmaker/controllers/auth_controller.dart';
 import 'package:testmaker/controllers/home_controller.dart';
 import 'package:testmaker/models/course.dart';
+import 'package:testmaker/screens/auth/auth_screen.dart';
 import 'package:testmaker/screens/home/dialogs/dialogs.dart';
 import 'package:testmaker/screens/home/handlers/handlers.dart';
 import 'package:testmaker/screens/home/views/views.dart';
@@ -39,6 +41,7 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   late final HomeController _controller;
+  late final AuthController _authController;
   // Track which modules (courses) are expanded to show their contents
   final Set<String> _expandedModules = <String>{};
   // GlobalKey to control drawer programmatically on mobile
@@ -51,6 +54,7 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     _controller = HomeController();
+    _authController = AuthController();
     _controller
       ..addListener(_onControllerChanged)
       ..initialize();
@@ -65,7 +69,54 @@ class _HomeScreenState extends State<HomeScreen> {
     _controller
       ..removeListener(_onControllerChanged)
       ..dispose();
+    _authController.dispose();
     super.dispose();
+  }
+
+  /// Handles user logout
+  Future<void> _handleLogout() async {
+    // Show confirmation dialog
+    final shouldLogout = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Log Out'),
+        content: const Text('Are you sure you want to log out?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            style: TextButton.styleFrom(
+              foregroundColor: Theme.of(context).colorScheme.error,
+            ),
+            child: const Text('Log Out'),
+          ),
+        ],
+      ),
+    );
+
+    if (shouldLogout == true) {
+      await _authController.signOut();
+      if (mounted) {
+        // Navigate to auth screen
+        await Navigator.of(context).pushReplacement(
+          PageRouteBuilder<void>(
+            pageBuilder: (context, animation, secondaryAnimation) =>
+                const AuthScreen(),
+            transitionsBuilder:
+                (context, animation, secondaryAnimation, child) {
+              return FadeTransition(
+                opacity: animation,
+                child: child,
+              );
+            },
+            transitionDuration: const Duration(milliseconds: 400),
+          ),
+        );
+      }
+    }
   }
 
   void _onControllerChanged() {
@@ -151,6 +202,8 @@ class _HomeScreenState extends State<HomeScreen> {
                 children: <Widget>[
                   Sidebar(
                     controller: _controller,
+                    currentUser: _authController.user,
+                    onLogout: _handleLogout,
                     onCreateCourse: () async {
                       if (!mounted) return;
                       final result =
@@ -443,6 +496,8 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
       showSwipeIndicator: _showSwipeIndicator,
       buildMainContent: _buildMainContent,
+      currentUser: _authController.user,
+      onLogout: _handleLogout,
       onCreateCourse: () async {
         if (!mounted) return;
         final result = await DialogHandlers.showCreateCourseDialog(context);

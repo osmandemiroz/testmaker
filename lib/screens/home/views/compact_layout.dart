@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:testmaker/controllers/home_controller.dart';
+import 'package:testmaker/models/app_user.dart';
 import 'package:testmaker/models/course.dart';
 import 'package:testmaker/screens/home/views/sidebar.dart';
 import 'package:testmaker/screens/home/widgets/swipe_indicator_arrow.dart';
@@ -15,6 +16,8 @@ class CompactLayout extends StatelessWidget {
     required this.buildMainContent,
     required this.onCreateCourse,
     required this.onDeleteCourse,
+    this.currentUser,
+    this.onLogout,
     super.key,
   });
 
@@ -26,6 +29,12 @@ class CompactLayout extends StatelessWidget {
   final VoidCallback onCreateCourse;
   final Future<void> Function(Course course) onDeleteCourse;
 
+  /// The currently authenticated user (null if not logged in)
+  final AppUser? currentUser;
+
+  /// Callback when user taps logout
+  final VoidCallback? onLogout;
+
   @override
   Widget build(BuildContext context) {
     return LayoutBuilder(
@@ -36,6 +45,8 @@ class CompactLayout extends StatelessWidget {
             width: ResponsiveSizer.sidebarWidthFromConstraints(itemConstraints),
             child: Sidebar(
               controller: controller,
+              currentUser: currentUser,
+              onLogout: onLogout,
               onCreateCourse: onCreateCourse,
               onDeleteCourse: onDeleteCourse,
               onSelectCourse: (course) {
