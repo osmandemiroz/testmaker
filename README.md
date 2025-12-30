@@ -7,7 +7,8 @@
 <p align="center">
   <img src="https://img.shields.io/badge/Flutter-3.6.1+-02569B?style=for-the-badge&logo=flutter&logoColor=white" alt="Flutter"/>
   <img src="https://img.shields.io/badge/Dart-3.6.1+-0175C2?style=for-the-badge&logo=dart&logoColor=white" alt="Dart"/>
-  <img src="https://img.shields.io/badge/Platform-Android%20|%20iOS%20|%20Desktop-lightgrey?style=for-the-badge" alt="Platform"/>
+  <img src="https://img.shields.io/badge/Firebase-Auth-FFCA28?style=for-the-badge&logo=firebase&logoColor=black" alt="Firebase"/>
+  <img src="https://img.shields.io/badge/Platform-Android%20|%20iOS-lightgrey?style=for-the-badge" alt="Platform"/>
 </p>
 
 <p align="center">
@@ -60,6 +61,19 @@ Monitor your learning with detailed analytics and performance charts
 ---
 
 ## 🚀 Key Features
+
+<details open>
+<summary><strong>🔐 Firebase Authentication</strong></summary>
+<br>
+
+- **Email/Password Login** - Traditional authentication with secure password handling
+- **Google Sign-In** - One-tap authentication with Google account
+- **Apple Sign-In** - Native Apple authentication on iOS devices
+- **Guest Mode** - Continue without account, upgrade anytime
+- **Password Recovery** - Forgot password with email reset
+- **Account Linking** - Upgrade guest accounts to full accounts
+
+</details>
 
 <details open>
 <summary><strong>🎬 First Launch Experience</strong></summary>
@@ -202,6 +216,23 @@ Progress tracking and course organization
 <tr>
 <td width="33%" align="center">
 
+### 🔐 Auth Screen
+
+**Sign In Options**
+- Email/Password form
+- Google Sign-In button
+- Apple Sign-In (iOS)
+- Continue as Guest
+
+**Features**
+- Toggle Login/Register
+- Password visibility
+- Forgot password link
+- Form validation
+
+</td>
+<td width="33%" align="center">
+
 ### 🏠 Home Screen
 
 **Sidebar Navigation**
@@ -233,6 +264,8 @@ Progress tracking and course organization
 - Exit confirmation
 
 </td>
+</tr>
+<tr>
 <td width="33%" align="center">
 
 ### 📊 Analytics Screen
@@ -250,8 +283,6 @@ Progress tracking and course organization
 - Progress over time
 
 </td>
-</tr>
-<tr>
 <td width="33%" align="center">
 
 ### 🎴 Flashcard Screen
@@ -315,6 +346,7 @@ Progress tracking and course organization
 
 - Flutter SDK `>=3.6.1 <4.0.0`
 - Dart SDK `>=3.6.1 <4.0.0`
+- Firebase project (for authentication)
 - Google Gemini API key (for AI features)
 
 ### Installation
@@ -324,12 +356,61 @@ Progress tracking and course organization
 git clone https://github.com/osmandemiroz/testmaker.git
 cd testmaker
 
-# 2. Install dependencies
+# 2. Set up environment variables
+cp .env.example .env
+# Edit .env with your Firebase API keys (see Environment Setup below)
+
+# 3. Install dependencies
 flutter pub get
 
-# 3. Run the app
+# 4. Run the app
 flutter run
 ```
+
+### 🔧 Environment Setup
+
+This project uses environment variables to securely store Firebase API keys.
+
+**Step 1:** Copy the example environment file:
+```bash
+cp .env.example .env
+```
+
+**Step 2:** Get your Firebase configuration:
+1. Go to [Firebase Console](https://console.firebase.google.com)
+2. Select your project → Project Settings → General
+3. Scroll to "Your apps" section
+4. Copy the configuration values
+
+**Step 3:** Fill in your `.env` file:
+```env
+# Android Firebase Config
+FIREBASE_ANDROID_API_KEY=your_android_api_key
+FIREBASE_ANDROID_APP_ID=your_android_app_id
+FIREBASE_ANDROID_MESSAGING_SENDER_ID=your_sender_id
+FIREBASE_ANDROID_PROJECT_ID=your_project_id
+FIREBASE_ANDROID_STORAGE_BUCKET=your_storage_bucket
+
+# iOS Firebase Config
+FIREBASE_IOS_API_KEY=your_ios_api_key
+FIREBASE_IOS_APP_ID=your_ios_app_id
+FIREBASE_IOS_MESSAGING_SENDER_ID=your_sender_id
+FIREBASE_IOS_PROJECT_ID=your_project_id
+FIREBASE_IOS_STORAGE_BUCKET=your_storage_bucket
+FIREBASE_IOS_CLIENT_ID=your_ios_client_id
+FIREBASE_IOS_BUNDLE_ID=your_bundle_id
+```
+
+> ⚠️ **Important**: Never commit your `.env` file to version control!
+
+### 🔥 Firebase Setup
+
+**Enable Authentication Methods:**
+1. Go to Firebase Console → Authentication → Sign-in method
+2. Enable the following providers:
+   - ✅ Email/Password
+   - ✅ Google
+   - ✅ Apple (iOS only)
 
 ### 🎬 First Launch
 
@@ -354,6 +435,40 @@ After onboarding:
 ---
 
 ## 📖 Usage Guide
+
+<details>
+<summary><h3>🔐 Authentication</h3></summary>
+
+#### Sign In Options
+
+| Method | Description |
+|--------|-------------|
+| **Email/Password** | Create account or sign in with email |
+| **Google** | One-tap sign in with Google account |
+| **Apple** | Sign in with Apple ID (iOS only) |
+| **Guest** | Continue without account |
+
+#### Account Features
+
+```
+• Create Account → Enter name, email, password
+• Sign In → Enter email and password
+• Forgot Password → Enter email to receive reset link
+• Guest Mode → Explore app, upgrade account later
+• Sign Out → Available in settings
+```
+
+#### Upgrading Guest Account
+
+Guest users can upgrade to a full account anytime:
+1. Go to Settings
+2. Tap "Upgrade Account"
+3. Choose Google or Apple sign-in
+4. Your data will be preserved!
+
+> 🔒 **Security**: All authentication is handled by Firebase with industry-standard encryption.
+
+</details>
 
 <details>
 <summary><h3>📝 Adding Quizzes & Flashcards</h3></summary>
@@ -616,24 +731,28 @@ SharedPreferences
 
 ```
 lib/
-├── 📱 main.dart                    # Entry point with onboarding routing
+├── 📱 main.dart                    # Entry point with Firebase & env loading
+├── 🔥 firebase_options.dart        # Firebase config (from env vars)
 │
 ├── 🎨 theme/
 │   └── app_theme.dart              # Light/dark themes (Apple HIG)
 │
 ├── 📦 models/
+│   ├── app_user.dart               # Authenticated user model
 │   ├── question.dart               # Quiz question model
 │   ├── flashcard.dart              # Flashcard model
 │   ├── course.dart                 # Course organization model
 │   └── quiz_result.dart            # Result tracking model
 │
 ├── 🎮 controllers/
+│   ├── auth_controller.dart        # Authentication state management
 │   ├── home_controller.dart        # Course management logic
 │   ├── quiz_controller.dart        # Quiz state management
 │   ├── flashcard_controller.dart   # Flashcard state management
 │   └── analytics_controller.dart   # Analytics data aggregation
 │
 ├── ⚙️ services/
+│   ├── auth_service.dart           # Firebase auth operations
 │   ├── quiz_service.dart           # Quiz data operations
 │   ├── flashcard_service.dart      # Flashcard data operations
 │   ├── course_service.dart         # Course CRUD operations
@@ -650,6 +769,15 @@ lib/
 │   ├── result_screen.dart          # Score summary
 │   ├── pdf_viewer_screen.dart      # PDF viewer
 │   ├── analytics_screen.dart       # Analytics dashboard
+│   │
+│   ├── 🔐 auth/                    # Authentication screens
+│   │   ├── auth_screen.dart             # Login/Register screen
+│   │   └── widgets/                     # Auth UI components
+│   │       ├── auth_text_field.dart     # Styled text inputs
+│   │       ├── auth_primary_button.dart # Primary action button
+│   │       ├── social_sign_in_button.dart # Google/Apple buttons
+│   │       ├── guest_button.dart        # Continue as guest
+│   │       └── auth_divider.dart        # "or" divider
 │   │
 │   ├── 🎬 onboarding/              # Onboarding flow
 │   │   ├── onboarding_screen.dart       # Main PageView screen
@@ -719,6 +847,37 @@ lib/
 <td>SDK</td>
 </tr>
 <tr>
+<td colspan="3"><strong>🔐 Authentication</strong></td>
+</tr>
+<tr>
+<td><code>firebase_core</code></td>
+<td>Firebase initialization</td>
+<td>^3.8.1</td>
+</tr>
+<tr>
+<td><code>firebase_auth</code></td>
+<td>Firebase authentication</td>
+<td>^5.3.4</td>
+</tr>
+<tr>
+<td><code>google_sign_in</code></td>
+<td>Google OAuth login</td>
+<td>^6.2.2</td>
+</tr>
+<tr>
+<td><code>sign_in_with_apple</code></td>
+<td>Apple Sign-In (iOS)</td>
+<td>^6.1.4</td>
+</tr>
+<tr>
+<td><code>flutter_dotenv</code></td>
+<td>Environment variables</td>
+<td>^5.2.1</td>
+</tr>
+<tr>
+<td colspan="3"><strong>📚 Content & Storage</strong></td>
+</tr>
+<tr>
 <td><code>file_picker</code></td>
 <td>File selection</td>
 <td>^8.1.5</td>
@@ -744,6 +903,14 @@ lib/
 <td>^28.2.8</td>
 </tr>
 <tr>
+<td colspan="3"><strong>🎨 UI & Utilities</strong></td>
+</tr>
+<tr>
+<td><code>flutter_svg</code></td>
+<td>SVG rendering</td>
+<td>^2.0.10</td>
+</tr>
+<tr>
 <td><code>http</code></td>
 <td>API calls</td>
 <td>^1.2.2</td>
@@ -758,11 +925,72 @@ lib/
 <td>Analytics charts</td>
 <td>^0.4.1</td>
 </tr>
+<tr>
+<td><code>crypto</code></td>
+<td>Cryptographic functions</td>
+<td>^3.0.6</td>
+</tr>
 </table>
 
 ---
 
+## 🔒 Security
+
+<div align="center">
+
+### Secure by Design
+
+</div>
+
+| Feature | Implementation |
+|---------|---------------|
+| **API Keys** | Stored in `.env` file (never committed) |
+| **Firebase Config** | Loaded from environment variables |
+| **Authentication** | Firebase Auth with industry encryption |
+| **Password Storage** | Handled by Firebase (never stored locally) |
+| **Guest Sessions** | Anonymous Firebase accounts |
+
+**Protected Files (in `.gitignore`):**
+```
+.env                              # Your API keys
+lib/firebase_options.dart         # Firebase configuration
+ios/Runner/GoogleService-Info.plist
+android/app/google-services.json
+```
+
+> 🔐 **Note**: When cloning, you must create your own `.env` file from `.env.example`
+
+---
+
 ## 🔄 Recent Updates
+
+### 🔐 Firebase Authentication (December 2024)
+
+<table>
+<tr>
+<td width="50%">
+
+**Features Added:**
+- ✅ Email/Password authentication
+- ✅ Google Sign-In integration
+- ✅ Apple Sign-In (iOS)
+- ✅ Guest mode with account upgrade
+- ✅ Password reset via email
+- ✅ Secure environment variables
+
+</td>
+<td width="50%">
+
+**Security Improvements:**
+- 🔒 API keys moved to `.env` file
+- 🔒 Firebase config from environment
+- 🔒 Sensitive files in `.gitignore`
+- 🔒 `.env.example` template for devs
+- 🔒 No hardcoded secrets in code
+
+</td>
+</tr>
+</table>
 
 ### 🎬 Onboarding System (December 2024)
 
@@ -890,6 +1118,7 @@ See the [LICENSE](LICENSE) file for full details.
 ## 🙏 Acknowledgments
 
 - **Flutter Team** - For the amazing framework
+- **Firebase** - Authentication and backend services
 - **Google Gemini** - AI-powered content generation
 - **Syncfusion** - PDF viewing and text extraction
 - **Community** - For inspiration and support
