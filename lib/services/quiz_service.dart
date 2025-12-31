@@ -160,7 +160,7 @@ class QuizService {
               id: questionId++,
               text: questionText,
               options: options,
-              answerIndex: correctIndex,
+              answerIndices: [correctIndex],
             ),
           );
         }

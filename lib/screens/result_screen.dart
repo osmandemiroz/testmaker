@@ -413,7 +413,8 @@ class ResultScreen extends StatelessWidget {
                   final index = entry.key;
                   final data = entry.value;
                   final question = data['question'] as Question;
-                  final selectedIndex = data['selectedIndex'] as int;
+                  final selectedIndices =
+                      (data['selectedIndices'] as List).cast<int>();
 
                   return Padding(
                     padding: EdgeInsets.only(
@@ -423,7 +424,7 @@ class ResultScreen extends StatelessWidget {
                       theme,
                       textTheme,
                       question,
-                      selectedIndex,
+                      selectedIndices,
                     ),
                   );
                 },
@@ -440,7 +441,7 @@ class ResultScreen extends StatelessWidget {
     ThemeData theme,
     TextTheme textTheme,
     Question question,
-    int selectedIndex,
+    List<int> selectedIndices,
   ) {
     return LayoutBuilder(
       builder: (BuildContext context, BoxConstraints constraints) {
@@ -473,7 +474,7 @@ class ResultScreen extends StatelessWidget {
                   multiplier: 1.5,
                 ),
               ),
-              // Selected answer (incorrect)
+              // Selected answer(s) (incorrect because they didn't match perfectly)
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: <Widget>[
@@ -490,7 +491,7 @@ class ResultScreen extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: <Widget>[
                         Text(
-                          'Your answer:',
+                          'Your answer${selectedIndices.length > 1 ? 's' : ''}:',
                           style: textTheme.labelSmall?.copyWith(
                             color: theme.colorScheme.onSurface
                                 .withValues(alpha: 0.7),
@@ -498,10 +499,12 @@ class ResultScreen extends StatelessWidget {
                           ),
                         ),
                         const SizedBox(height: 4),
-                        Text(
-                          question.options[selectedIndex],
-                          style: textTheme.bodyMedium?.copyWith(
-                            color: theme.colorScheme.error,
+                        ...selectedIndices.map(
+                          (i) => Text(
+                            question.options[i],
+                            style: textTheme.bodyMedium?.copyWith(
+                              color: theme.colorScheme.error,
+                            ),
                           ),
                         ),
                       ],
@@ -515,7 +518,7 @@ class ResultScreen extends StatelessWidget {
                   multiplier: 1.5,
                 ),
               ),
-              // Correct answer
+              // Correct answer(s)
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: <Widget>[
@@ -532,7 +535,7 @@ class ResultScreen extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: <Widget>[
                         Text(
-                          'Correct answer:',
+                          'Correct answer${question.answerIndices.length > 1 ? 's' : ''}:',
                           style: textTheme.labelSmall?.copyWith(
                             color: theme.colorScheme.onSurface
                                 .withValues(alpha: 0.7),
@@ -540,11 +543,13 @@ class ResultScreen extends StatelessWidget {
                           ),
                         ),
                         const SizedBox(height: 4),
-                        Text(
-                          question.options[question.answerIndex],
-                          style: textTheme.bodyMedium?.copyWith(
-                            color: theme.colorScheme.primary,
-                            fontWeight: FontWeight.w500,
+                        ...question.answerIndices.map(
+                          (i) => Text(
+                            question.options[i],
+                            style: textTheme.bodyMedium?.copyWith(
+                              color: theme.colorScheme.primary,
+                              fontWeight: FontWeight.w500,
+                            ),
                           ),
                         ),
                       ],

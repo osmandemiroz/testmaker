@@ -285,7 +285,7 @@ Generate questions in the following JSON format (array of question objects):
     "id": 1,
     "text": "Question text here?",
     "options": ["Option A", "Option B", "Option C", "Option D"],
-    "answerIndex": 0,
+    "answerIndices": [0, 2],
     "explanation": "Brief explanation of why the correct answer is correct, referencing the study material."
   },
   ...
@@ -294,11 +294,11 @@ Generate questions in the following JSON format (array of question objects):
 Requirements:
 - Generate exactly $count questions
 - Each question must have exactly 4 options
-- answerIndex must be 0, 1, 2, or 3 (pointing to the correct option)
+- "answerIndices" must be an array of integers (0, 1, 2, or 3) pointing to the valid correct option(s)
+- Questions can have one or more correct answers
 - Each question MUST include an "explanation" field that explains why the correct answer is correct, referencing specific concepts from the study material
 - Questions should test understanding of key concepts from the material
 - Make questions clear and unambiguous
-- Ensure only one correct answer per question
 - Explanations should be concise (1-2 sentences) and help students understand the concept
 - Return ONLY valid JSON, no additional text or explanation
 

@@ -360,8 +360,10 @@ class _QuizScreenState extends State<QuizScreen> {
               itemCount: question.options.length,
               itemBuilder: (BuildContext context, int index) {
                 final option = question.options[index];
-                final isSelected = _controller.selectedIndex == index;
-                final isCorrect = question.answerIndex == index;
+
+                // Use selectedIndices for multiple selection support
+                final isSelected = _controller.selectedIndices.contains(index);
+                final isCorrect = question.answerIndices.contains(index);
 
                 return QuizOptionCard(
                   label: option,
@@ -377,6 +379,45 @@ class _QuizScreenState extends State<QuizScreen> {
               },
             ),
           ),
+
+          // Show "Check Answer" button for multi-select questions
+          if (question.isMultiSelect &&
+              !_controller.revealAnswer &&
+              _controller.selectedIndices.isNotEmpty) ...<Widget>[
+            SizedBox(
+              height: ResponsiveSizer.spacingFromConstraints(
+                constraints,
+                multiplier: 1.5,
+              ),
+            ),
+            SizedBox(
+              width: double.infinity,
+              height: ResponsiveSizer.buttonHeight(context),
+              child: ElevatedButton(
+                onPressed: () {
+                  _controller.checkAnswer();
+                },
+                style: ElevatedButton.styleFrom(
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(
+                      ResponsiveSizer.borderRadiusFromConstraints(
+                        constraints,
+                      ),
+                    ),
+                  ),
+                  elevation: 0,
+                ),
+                child: Text(
+                  'Check Answer',
+                  style: textTheme.labelLarge?.copyWith(
+                    color: theme.colorScheme.onPrimary,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ),
+          ],
+
           // Show swipe hints when answer is revealed
           if (_controller.revealAnswer)
             AnimatedOpacity(

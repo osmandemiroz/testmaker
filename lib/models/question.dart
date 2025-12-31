@@ -21,24 +21,52 @@ class Question {
     required this.id,
     required this.text,
     required this.options,
-    required this.answerIndex,
+    required this.answerIndices,
     this.explanation,
   }) : assert(
-          answerIndex >= 0 && answerIndex < options.length,
-          'answerIndex must point to a valid option.',
+          answerIndices.length > 0,
+          'Question must have at least one correct answer.',
         );
 
   /// Factory for creating a [Question] from decoded JSON.
+  ///
+  /// Supports both legacy format (single "answerIndex") and
+  /// new format (list of "answerIndices").
   factory Question.fromJson(Map<String, dynamic> json) {
+    // Handle options list
+    final options = List<String>.from(
+      (json['options'] as List<dynamic>).map<String>((dynamic value) {
+        return value as String;
+      }),
+    );
+
+    // Handle answer indices
+    final List<int> indices;
+    if (json.containsKey('answerIndices')) {
+      indices = List<int>.from(json['answerIndices'] as List<dynamic>);
+    } else if (json.containsKey('answerIndex')) {
+      // Backward compatibility for single-answer legacy JSON
+      indices = <int>[json['answerIndex'] as int];
+    } else {
+      throw const FormatException(
+        'Question JSON must contain either answerIndex or answerIndices',
+      );
+    }
+
+    // Validate indices
+    for (final index in indices) {
+      if (index < 0 || index >= options.length) {
+        throw RangeError(
+          'Answer index $index is out of bounds for options length ${options.length}',
+        );
+      }
+    }
+
     return Question(
       id: json['id'] as int,
       text: json['text'] as String,
-      options: List<String>.from(
-        (json['options'] as List<dynamic>).map<String>((dynamic value) {
-          return value as String;
-        }),
-      ),
-      answerIndex: json['answerIndex'] as int,
+      options: options,
+      answerIndices: indices,
       explanation: json['explanation'] as String?,
     );
   }
@@ -52,14 +80,19 @@ class Question {
   /// All answer options, in display order.
   final List<String> options;
 
-  /// Index into [options] for the correct answer.
-  final int answerIndex;
+  /// Indices into [options] for the correct answer(s).
+  final List<int> answerIndices;
+
+  /// Compatibility getter for single-answer questions.
+  /// Returns the first correct answer index.
+  @Deprecated('Use answerIndices instead')
+  int get answerIndex => answerIndices.first;
 
   /// Optional explanation for why the correct answer is correct.
-  ///
-  /// This is typically provided for AI-generated questions based on study material.
-  /// If present, indicates this is an AI-generated question with review capabilities.
   final String? explanation;
+
+  /// Helper to check if this is a multiple-choice (checkbox) question.
+  bool get isMultiSelect => answerIndices.length > 1;
 
   /// Converts this question back to JSON.
   Map<String, dynamic> toJson() {
@@ -67,32 +100,49 @@ class Question {
       'id': id,
       'text': text,
       'options': options,
-      'answerIndex': answerIndex,
+      // Always store as answerIndices for consistency going forward
+      'answerIndices': answerIndices,
       if (explanation != null) 'explanation': explanation,
     };
   }
 
   /// Creates a copy of this question with shuffled options.
-  ///
-  /// This method shuffles the options list and updates the answerIndex
-  /// to point to the correct answer in the new shuffled order.
-  /// This prevents users from memorizing option positions.
   Question withShuffledOptions([Random? random]) {
     final rng = random ?? Random();
-    final shuffledOptions = List<String>.from(options);
-    final correctAnswer = shuffledOptions[answerIndex];
 
-    // Shuffle the options
-    shuffledOptions.shuffle(rng);
+    // Create a list of indices [0, 1, 2, ...] to track original positions
+    final originalIndices = List<int>.generate(options.length, (i) => i);
 
-    // Find the new index of the correct answer
-    final newAnswerIndex = shuffledOptions.indexOf(correctAnswer);
+    // Create pairs of (option, originalIndex)
+    final pairs = List.generate(options.length, (i) {
+      return MapEntry(options[i], originalIndices[i]);
+    })
+
+      // Shuffle the pairs
+      ..shuffle(rng);
+
+    // Extract shuffled options and new indices
+    final shuffledOptions = pairs.map((e) => e.key).toList();
+
+    // Create a map to find new index from old index
+    // current map: new_index -> (option, old_index)
+    // we want: old_index -> new_index
+    final oldToNewIndex = <int, int>{};
+    for (var i = 0; i < pairs.length; i++) {
+      oldToNewIndex[pairs[i].value] = i;
+    }
+
+    // Map the correct answer indices to their new positions
+    final newAnswerIndices = answerIndices
+        .map((oldIndex) => oldToNewIndex[oldIndex]!)
+        .toList()
+      ..sort(); // Sort for consistent comparison
 
     return Question(
       id: id,
       text: text,
       options: shuffledOptions,
-      answerIndex: newAnswerIndex,
+      answerIndices: newAnswerIndices,
       explanation: explanation,
     );
   }
@@ -100,7 +150,7 @@ class Question {
   /// Debug helper for logging.
   @override
   String toString() {
-    return 'Question(id: $id, text: $text, options: $options, answerIndex: $answerIndex)';
+    return 'Question(id: $id, text: $text, options: $options, answerIndices: $answerIndices)';
   }
 }
 

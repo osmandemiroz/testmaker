@@ -11,19 +11,30 @@ class QuizController extends ChangeNotifier {
   final List<Question> questions;
   int _currentIndex = 0;
   int _score = 0;
-  int? _selectedIndex;
+
+  // Changed from single index to a Set to support multiple selections
+  final Set<int> _selectedIndices = <int>{};
+
   bool _revealAnswer = false;
   bool _isTransitioning = false;
   final List<Map<String, dynamic>> _incorrectAnswers = <Map<String, dynamic>>[];
 
   // Track answers per question index
-  // Maps question index to a map containing: selectedIndex, revealAnswer
-  final Map<int, Map<String, dynamic>> _questionAnswers = <int, Map<String, dynamic>>{};
+  // Maps question index to a map containing: selectedIndices (List), revealAnswer
+  final Map<int, Map<String, dynamic>> _questionAnswers =
+      <int, Map<String, dynamic>>{};
 
   // Getters
   int get currentIndex => _currentIndex;
   int get score => _score;
-  int? get selectedIndex => _selectedIndex;
+
+  // Public getter returns a list for easier usage in UI
+  List<int> get selectedIndices => _selectedIndices.toList()..sort();
+
+  // Deprecated getter for backward compatibility (returns first selected or null)
+  int? get selectedIndex =>
+      _selectedIndices.isNotEmpty ? _selectedIndices.first : null;
+
   bool get revealAnswer => _revealAnswer;
   bool get isTransitioning => _isTransitioning;
   List<Map<String, dynamic>> get incorrectAnswers =>
@@ -34,16 +45,46 @@ class QuizController extends ChangeNotifier {
   int get totalQuestions => questions.length;
   double get progress => (_currentIndex + 1) / questions.length;
 
-  /// Handles option selection and answer validation.
+  /// Handles option selection.
   ///
-  /// Records the selected answer and reveals correctness, but does NOT
-  /// automatically move to the next question. The user must swipe to proceed.
-  bool selectOption(int index) {
+  /// For single-select questions: selects and reveals immediately (legacy behavior).
+  /// For multi-select questions: toggles selection but DOES NOT reveal.
+  void selectOption(int index) {
+    if (_isTransitioning || _revealAnswer) {
+      return;
+    }
+
+    if (currentQuestion.isMultiSelect) {
+      // Toggle selection for multi-select
+      if (_selectedIndices.contains(index)) {
+        _selectedIndices.remove(index);
+      } else {
+        _selectedIndices.add(index);
+      }
+      notifyListeners();
+    } else {
+      // Single select behavior: select and reveal immediately
+      _selectedIndices
+        ..clear()
+        ..add(index);
+      checkAnswer(); // Auto-reveal for single select
+    }
+  }
+
+  /// Explicitly checks the answer (reveals correctness).
+  ///
+  /// This is called automatically for single-select questions,
+  /// but must be called manually (e.g. via "Check Answer" button) for multi-select.
+  bool checkAnswer() {
     if (_isTransitioning || _revealAnswer) {
       return false;
     }
 
-    _selectedIndex = index;
+    // Ensure at least one option is selected
+    if (_selectedIndices.isEmpty) {
+      return false;
+    }
+
     _revealAnswer = true;
 
     // Check if this question has been answered before to avoid double-counting score
@@ -51,7 +92,7 @@ class QuizController extends ChangeNotifier {
 
     // Store the answer for this question
     _questionAnswers[_currentIndex] = <String, dynamic>{
-      'selectedIndex': index,
+      'selectedIndices': _selectedIndices.toList(),
       'revealAnswer': true,
     };
 
@@ -59,19 +100,27 @@ class QuizController extends ChangeNotifier {
 
     // Only update score and incorrectAnswers if this is the first time answering
     if (!wasAlreadyAnswered) {
-      final isCorrect = index == currentQuestion.answerIndex;
+      final correctIndices = currentQuestion.answerIndices;
+      final selected = selectedIndices; // Sorted list
+
+      // Check for exact match
+      // 1. Same number of selected items
+      // 2. All selected items are in correct items
+      final isCorrect = selected.length == correctIndices.length &&
+          selected.every(correctIndices.contains);
+
       if (isCorrect) {
         _score += 1;
       } else {
         _incorrectAnswers.add(<String, dynamic>{
           'question': currentQuestion,
-          'selectedIndex': index,
+          'selectedIndices': selected,
         });
       }
     }
 
     notifyListeners();
-    return false; // Quiz continues (user must swipe to move on)
+    return true;
   }
 
   /// Moves to the next question.
@@ -109,13 +158,22 @@ class QuizController extends ChangeNotifier {
   /// and reveal state. Otherwise, resets to unanswered state.
   void _loadQuestionState() {
     final savedState = _questionAnswers[_currentIndex];
+
+    _selectedIndices.clear();
+
     if (savedState != null) {
       // Restore previous answer state
-      _selectedIndex = savedState['selectedIndex'] as int?;
+      final savedIndices = savedState['selectedIndices'];
+      if (savedIndices is List) {
+        _selectedIndices.addAll(savedIndices.cast<int>());
+      } else if (savedState['selectedIndex'] != null) {
+        // Should not happen for new answers but handle legacy in-memory state if mixed
+        _selectedIndices.add(savedState['selectedIndex'] as int);
+      }
+
       _revealAnswer = savedState['revealAnswer'] as bool? ?? false;
     } else {
       // No previous answer, reset to unanswered state
-      _selectedIndex = null;
       _revealAnswer = false;
     }
     _isTransitioning = false;
@@ -125,7 +183,7 @@ class QuizController extends ChangeNotifier {
   void reset() {
     _currentIndex = 0;
     _score = 0;
-    _selectedIndex = null;
+    _selectedIndices.clear();
     _revealAnswer = false;
     _isTransitioning = false;
     _incorrectAnswers.clear();
