@@ -232,73 +232,9 @@ class CourseContentView extends StatelessWidget {
               course.pdfs.isEmpty) ...<Widget>[
             buildEmptyCourseState(theme, textTheme, course, constraints),
           ] else ...<Widget>[
-            // PDFs section with animation
-            AnimatedSize(
-              duration: const Duration(milliseconds: 300),
-              curve: Curves.easeInOutCubic,
-              alignment: Alignment.topCenter,
-              child: course.pdfs.isNotEmpty
-                  ? Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: <Widget>[
-                        Text(
-                          'Study Materials',
-                          style: textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        SizedBox(
-                          height: ResponsiveSizer.spacingFromConstraints(
-                            constraints,
-                            multiplier: 1.5,
-                          ),
-                        ),
-                        ReorderableListView.builder(
-                          shrinkWrap: true,
-                          physics: const NeverScrollableScrollPhysics(),
-                          itemCount: course.pdfs.length,
-                          onReorder: (int oldIndex, int newIndex) async {
-                            if (oldIndex < newIndex) {
-                              newIndex -= 1;
-                            }
-                            await controller.reorderPdfsInCourse(
-                              oldIndex,
-                              newIndex,
-                            );
-                          },
-                          itemBuilder: (BuildContext context, int index) {
-                            final pdfPath = course.pdfs[index];
-                            final fileName = pdfPath.split('/').last;
-
-                            return ReorderablePdfItem(
-                              key: Key('pdf_${course.id}_$index'),
-                              itemKey: Key('pdf_${course.id}_$index'),
-                              theme: theme,
-                              textTheme: textTheme,
-                              controller: controller,
-                              course: course,
-                              pdfIndex: index,
-                              fileName: fileName,
-                              pdfPath: pdfPath,
-                              constraints: constraints,
-                              onViewPdf: onViewPdf,
-                              showRenameDialog: showRenameDialog,
-                              onDelete: onDeletePdf,
-                              onGenerateQuestions: onGenerateQuestions,
-                              onGenerateFlashcards: onGenerateFlashcards,
-                            );
-                          },
-                        ),
-                        SizedBox(
-                          height: ResponsiveSizer.sectionSpacingFromConstraints(
-                            constraints,
-                          ),
-                        ),
-                      ],
-                    )
-                  : const SizedBox.shrink(),
-            ),
-            // Quizzes section with animation
+            // ─────────────────────────────────────────────────────────────
+            // Quizzes section FIRST - prioritize generated content
+            // ─────────────────────────────────────────────────────────────
             AnimatedSize(
               duration: const Duration(milliseconds: 300),
               curve: Curves.easeInOutCubic,
@@ -359,11 +295,18 @@ class CourseContentView extends StatelessWidget {
                             );
                           },
                         ),
+                        SizedBox(
+                          height: ResponsiveSizer.sectionSpacingFromConstraints(
+                            constraints,
+                          ),
+                        ),
                       ],
                     )
                   : const SizedBox.shrink(),
             ),
-            // Flashcards section with animation
+            // ─────────────────────────────────────────────────────────────
+            // Flashcards section SECOND - prioritize generated content
+            // ─────────────────────────────────────────────────────────────
             AnimatedSize(
               duration: const Duration(milliseconds: 300),
               curve: Curves.easeInOutCubic,
@@ -372,11 +315,6 @@ class CourseContentView extends StatelessWidget {
                   ? Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: <Widget>[
-                        SizedBox(
-                          height: ResponsiveSizer.sectionSpacingFromConstraints(
-                            constraints,
-                          ),
-                        ),
                         Text(
                           'Flashcards',
                           style: textTheme.titleMedium?.copyWith(
@@ -426,6 +364,74 @@ class CourseContentView extends StatelessWidget {
                               showRenameDialog: showRenameDialog,
                               onDelete: onDeleteFlashcardSet,
                               constraints: constraints,
+                            );
+                          },
+                        ),
+                        SizedBox(
+                          height: ResponsiveSizer.sectionSpacingFromConstraints(
+                            constraints,
+                          ),
+                        ),
+                      ],
+                    )
+                  : const SizedBox.shrink(),
+            ),
+            // ─────────────────────────────────────────────────────────────
+            // Study Materials (PDFs) LAST - source materials with generate CTAs
+            // ─────────────────────────────────────────────────────────────
+            AnimatedSize(
+              duration: const Duration(milliseconds: 300),
+              curve: Curves.easeInOutCubic,
+              alignment: Alignment.topCenter,
+              child: course.pdfs.isNotEmpty
+                  ? Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: <Widget>[
+                        Text(
+                          'Study Materials',
+                          style: textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        SizedBox(
+                          height: ResponsiveSizer.spacingFromConstraints(
+                            constraints,
+                            multiplier: 1.5,
+                          ),
+                        ),
+                        ReorderableListView.builder(
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          itemCount: course.pdfs.length,
+                          onReorder: (int oldIndex, int newIndex) async {
+                            if (oldIndex < newIndex) {
+                              newIndex -= 1;
+                            }
+                            await controller.reorderPdfsInCourse(
+                              oldIndex,
+                              newIndex,
+                            );
+                          },
+                          itemBuilder: (BuildContext context, int index) {
+                            final pdfPath = course.pdfs[index];
+                            final fileName = pdfPath.split('/').last;
+
+                            return ReorderablePdfItem(
+                              key: Key('pdf_${course.id}_$index'),
+                              itemKey: Key('pdf_${course.id}_$index'),
+                              theme: theme,
+                              textTheme: textTheme,
+                              controller: controller,
+                              course: course,
+                              pdfIndex: index,
+                              fileName: fileName,
+                              pdfPath: pdfPath,
+                              constraints: constraints,
+                              onViewPdf: onViewPdf,
+                              showRenameDialog: showRenameDialog,
+                              onDelete: onDeletePdf,
+                              onGenerateQuestions: onGenerateQuestions,
+                              onGenerateFlashcards: onGenerateFlashcards,
                             );
                           },
                         ),

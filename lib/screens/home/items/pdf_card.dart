@@ -46,7 +46,9 @@ class PdfCard extends StatefulWidget {
 }
 
 class _PdfCardState extends State<PdfCard> {
-  bool _isExpanded = false;
+  /// Generate buttons are shown by default to emphasize quiz/flashcard
+  /// generation as the primary action when materials are uploaded.
+  bool _isExpanded = true;
 
   @override
   Widget build(BuildContext context) {
