@@ -76,52 +76,84 @@ class Sidebar extends StatelessWidget {
                 ),
                 child: Builder(
                   builder: (BuildContext context) {
-                    return InkWell(
-                      onTap: () {
-                        onSelectCourse(null);
-                        controller.clearError();
-                        // Close the drawer if it's open (for compact layout)
-                        if (Scaffold.of(context).isDrawerOpen) {
-                          Navigator.of(context).pop();
-                        }
-                      },
-                      borderRadius: BorderRadius.circular(
-                        ResponsiveSizer.borderRadiusFromConstraints(
-                          constraints,
-                        ),
-                      ),
-                      child: Padding(
-                        padding: EdgeInsets.symmetric(
-                          horizontal: ResponsiveSizer.spacingFromConstraints(
-                            constraints,
-                            multiplier: 0.5,
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: <Widget>[
+                        InkWell(
+                          onTap: () {
+                            onSelectCourse(null);
+                            controller.clearError();
+                            // Close the drawer if it's open (for compact layout)
+                            if (Scaffold.of(context).isDrawerOpen) {
+                              Navigator.of(context).pop();
+                            }
+                          },
+                          borderRadius: BorderRadius.circular(
+                            ResponsiveSizer.borderRadiusFromConstraints(
+                              constraints,
+                            ),
                           ),
-                          vertical: ResponsiveSizer.spacingFromConstraints(
-                            constraints,
-                            multiplier: 0.5,
-                          ),
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: <Widget>[
-                            Text(
+                          child: Padding(
+                            padding: EdgeInsets.symmetric(
+                              horizontal:
+                                  ResponsiveSizer.spacingFromConstraints(
+                                constraints,
+                                multiplier: 0.5,
+                              ),
+                              vertical: ResponsiveSizer.spacingFromConstraints(
+                                constraints,
+                                multiplier: 0.5,
+                              ),
+                            ),
+                            child: Text(
                               'TestMaker',
                               style: textTheme.titleLarge?.copyWith(
                                 fontWeight: FontWeight.w700,
                                 letterSpacing: -0.5,
                               ),
                             ),
-                            SizedBox(
-                              height: ResponsiveSizer.spacingFromConstraints(
-                                constraints,
-                                multiplier: 0.5,
-                              ),
-                            ),
-                            // Show welcome message with user name or "Your courses"
-                            _buildWelcomeText(theme, textTheme),
-                          ],
+                          ),
                         ),
-                      ),
+                        SizedBox(
+                          height: ResponsiveSizer.spacingFromConstraints(
+                            constraints,
+                            multiplier: 0.5,
+                          ),
+                        ),
+                        // Welcome text with logout button on the same row
+                        Padding(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: ResponsiveSizer.spacingFromConstraints(
+                              constraints,
+                              multiplier: 0.5,
+                            ),
+                          ),
+                          child: Row(
+                            children: <Widget>[
+                              Expanded(
+                                child: _buildWelcomeText(theme, textTheme),
+                              ),
+                              // Logout button next to welcome text
+                              if (currentUser != null && onLogout != null)
+                                IconButton(
+                                  onPressed: onLogout,
+                                  icon: Icon(
+                                    Icons.logout_rounded,
+                                    size:
+                                        ResponsiveSizer.iconSizeFromConstraints(
+                                      constraints,
+                                    ),
+                                    color: theme.colorScheme.error,
+                                  ),
+                                  tooltip: 'Log Out',
+                                  padding: EdgeInsets.zero,
+                                  constraints: const BoxConstraints(),
+                                  visualDensity: VisualDensity.compact,
+                                ),
+                            ],
+                          ),
+                        ),
+                      ],
                     );
                   },
                 ),
@@ -130,129 +162,163 @@ class Sidebar extends StatelessWidget {
                 height:
                     ResponsiveSizer.dividerHeightFromConstraints(constraints),
               ),
-              // Course list
+              // Course list and action buttons
               Expanded(
                 child: controller.isLoadingCourses
                     ? const Center(
                         child: CircularProgressIndicator(),
                       )
                     : controller.courses.isEmpty
-                        ? EmptyCoursesState(
-                            theme: theme,
-                            textTheme: textTheme,
-                            constraints: constraints,
-                          )
-                        : ListView.builder(
-                            padding: EdgeInsets.symmetric(
-                              vertical: ResponsiveSizer.spacingFromConstraints(
-                                constraints,
+                        // When no courses, show empty state with buttons centered
+                        ? SingleChildScrollView(
+                            child: Padding(
+                              padding: EdgeInsets.symmetric(
+                                vertical:
+                                    ResponsiveSizer.spacingFromConstraints(
+                                  constraints,
+                                  multiplier: 2,
+                                ),
+                              ),
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: <Widget>[
+                                  EmptyCoursesState(
+                                    theme: theme,
+                                    textTheme: textTheme,
+                                    constraints: constraints,
+                                  ),
+                                  SizedBox(
+                                    height:
+                                        ResponsiveSizer.spacingFromConstraints(
+                                      constraints,
+                                      multiplier: 3,
+                                    ),
+                                  ),
+                                  // Add course button
+                                  Padding(
+                                    padding: EdgeInsets.symmetric(
+                                      horizontal: ResponsiveSizer
+                                          .cardPaddingFromConstraints(
+                                        constraints,
+                                      ),
+                                    ),
+                                    child: FilledButton.icon(
+                                      onPressed: onCreateCourse,
+                                      icon: Icon(
+                                        Icons.add,
+                                        size: ResponsiveSizer
+                                            .iconSizeFromConstraints(
+                                          constraints,
+                                        ),
+                                      ),
+                                      label: const Text('New Course'),
+                                      style: FilledButton.styleFrom(
+                                        padding: EdgeInsets.symmetric(
+                                          horizontal: ResponsiveSizer
+                                              .spacingFromConstraints(
+                                            constraints,
+                                            multiplier: 2,
+                                          ),
+                                          vertical: ResponsiveSizer
+                                              .spacingFromConstraints(
+                                            constraints,
+                                            multiplier: 1.5,
+                                          ),
+                                        ),
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(
+                                            ResponsiveSizer
+                                                .borderRadiusFromConstraints(
+                                              constraints,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
-                            itemCount: controller.courses.length,
-                            itemBuilder: (BuildContext context, int index) {
-                              final course = controller.courses[index];
-                              final isSelected =
-                                  controller.selectedCourse?.id == course.id;
+                          )
+                        // When courses exist, show list with buttons at bottom
+                        : Column(
+                            children: <Widget>[
+                              Expanded(
+                                child: ListView.builder(
+                                  padding: EdgeInsets.symmetric(
+                                    vertical:
+                                        ResponsiveSizer.spacingFromConstraints(
+                                      constraints,
+                                    ),
+                                  ),
+                                  itemCount: controller.courses.length,
+                                  itemBuilder:
+                                      (BuildContext context, int index) {
+                                    final course = controller.courses[index];
+                                    final isSelected =
+                                        controller.selectedCourse?.id ==
+                                            course.id;
 
-                              return CourseItemWithSwipe(
-                                theme: theme,
-                                textTheme: textTheme,
-                                course: course,
-                                isSelected: isSelected,
-                                onSelectCourse: onSelectCourse,
-                                onDeleteCourse: onDeleteCourse,
-                                controller: controller,
-                              );
-                            },
+                                    return CourseItemWithSwipe(
+                                      theme: theme,
+                                      textTheme: textTheme,
+                                      course: course,
+                                      isSelected: isSelected,
+                                      onSelectCourse: onSelectCourse,
+                                      onDeleteCourse: onDeleteCourse,
+                                      controller: controller,
+                                    );
+                                  },
+                                ),
+                              ),
+                              Divider(
+                                height: ResponsiveSizer
+                                    .dividerHeightFromConstraints(constraints),
+                              ),
+                              // Add course button
+                              Padding(
+                                padding: EdgeInsets.all(
+                                  ResponsiveSizer.cardPaddingFromConstraints(
+                                    constraints,
+                                  ),
+                                ),
+                                child: FilledButton.icon(
+                                  onPressed: onCreateCourse,
+                                  icon: Icon(
+                                    Icons.add,
+                                    size:
+                                        ResponsiveSizer.iconSizeFromConstraints(
+                                      constraints,
+                                    ),
+                                  ),
+                                  label: const Text('New Course'),
+                                  style: FilledButton.styleFrom(
+                                    padding: EdgeInsets.symmetric(
+                                      horizontal: ResponsiveSizer
+                                          .spacingFromConstraints(
+                                        constraints,
+                                        multiplier: 2,
+                                      ),
+                                      vertical: ResponsiveSizer
+                                          .spacingFromConstraints(
+                                        constraints,
+                                        multiplier: 1.5,
+                                      ),
+                                    ),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(
+                                        ResponsiveSizer
+                                            .borderRadiusFromConstraints(
+                                          constraints,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
               ),
-              Divider(
-                height:
-                    ResponsiveSizer.dividerHeightFromConstraints(constraints),
-              ),
-              // Add course button
-              Padding(
-                padding: EdgeInsets.all(
-                  ResponsiveSizer.cardPaddingFromConstraints(constraints),
-                ),
-                child: FilledButton.icon(
-                  onPressed: onCreateCourse,
-                  icon: Icon(
-                    Icons.add,
-                    size: ResponsiveSizer.iconSizeFromConstraints(constraints),
-                  ),
-                  label: const Text('New Course'),
-                  style: FilledButton.styleFrom(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: ResponsiveSizer.spacingFromConstraints(
-                        constraints,
-                        multiplier: 2,
-                      ),
-                      vertical: ResponsiveSizer.spacingFromConstraints(
-                        constraints,
-                        multiplier: 1.5,
-                      ),
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(
-                        ResponsiveSizer.borderRadiusFromConstraints(
-                          constraints,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-              // Logout button (only show if user is logged in)
-              if (currentUser != null && onLogout != null) ...[
-                Padding(
-                  padding: EdgeInsets.only(
-                    left:
-                        ResponsiveSizer.cardPaddingFromConstraints(constraints),
-                    right:
-                        ResponsiveSizer.cardPaddingFromConstraints(constraints),
-                    bottom:
-                        ResponsiveSizer.cardPaddingFromConstraints(constraints),
-                  ),
-                  child: OutlinedButton.icon(
-                    onPressed: onLogout,
-                    icon: Icon(
-                      Icons.logout_rounded,
-                      size:
-                          ResponsiveSizer.iconSizeFromConstraints(constraints),
-                      color: theme.colorScheme.error,
-                    ),
-                    label: Text(
-                      'Log Out',
-                      style: TextStyle(
-                        color: theme.colorScheme.error,
-                      ),
-                    ),
-                    style: OutlinedButton.styleFrom(
-                      side: BorderSide(
-                        color: theme.colorScheme.error.withValues(alpha: 0.5),
-                      ),
-                      padding: EdgeInsets.symmetric(
-                        horizontal: ResponsiveSizer.spacingFromConstraints(
-                          constraints,
-                          multiplier: 2,
-                        ),
-                        vertical: ResponsiveSizer.spacingFromConstraints(
-                          constraints,
-                          multiplier: 1.5,
-                        ),
-                      ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(
-                          ResponsiveSizer.borderRadiusFromConstraints(
-                            constraints,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ],
             ],
           ),
         );
