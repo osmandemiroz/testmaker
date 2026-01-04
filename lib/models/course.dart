@@ -99,7 +99,8 @@ class Course {
       (String key, dynamic value) => MapEntry(int.parse(key), value as String),
     );
 
-    final flashcardSetNamesJson = json['flashcardSetNames'] as Map<String, dynamic>?;
+    final flashcardSetNamesJson =
+        json['flashcardSetNames'] as Map<String, dynamic>?;
     final flashcardSetNames = flashcardSetNamesJson?.map<int, String>(
       (String key, dynamic value) => MapEntry(int.parse(key), value as String),
     );
@@ -240,13 +241,25 @@ class Course {
   }
 
   /// Gets the name for a PDF at the given index.
-  /// Returns the filename if no custom name is set.
+  /// Returns a clean filename if no custom name is set.
+  /// Strips timestamp prefix and removes .pdf extension.
   String getPdfName(int index, String pdfPath) {
     if (pdfNames?[index] != null) {
       return pdfNames![index]!;
     }
     // Extract filename from path
-    final fileName = pdfPath.split('/').last;
+    var fileName = pdfPath.split('/').last;
+
+    // Remove .pdf extension (case-insensitive)
+    if (fileName.toLowerCase().endsWith('.pdf')) {
+      fileName = fileName.substring(0, fileName.length - 4);
+    }
+
+    // Remove timestamp prefix (digits followed by underscore)
+    // Pattern: 1767369212347_comp-org -> comp-org
+    final timestampPrefixPattern = RegExp(r'^\d+_');
+    fileName = fileName.replaceFirst(timestampPrefixPattern, '');
+
     return fileName.length > 30 ? '${fileName.substring(0, 30)}...' : fileName;
   }
 
