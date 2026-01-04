@@ -47,8 +47,8 @@ class ReorderablePdfItem extends StatelessWidget {
     return LayoutBuilder(
       key: itemKey,
       builder: (BuildContext context, BoxConstraints itemConstraints) {
-        // Make the entire card draggable
-        return ReorderableDragStartListener(
+        // Make the entire card draggable with long-press
+        return ReorderableDelayedDragStartListener(
           index: pdfIndex,
           child: PdfCard(
             theme: theme,
@@ -111,8 +111,8 @@ class ReorderableQuizItem extends StatelessWidget {
     return LayoutBuilder(
       key: itemKey,
       builder: (BuildContext context, BoxConstraints itemConstraints) {
-        // Make the entire card draggable
-        return ReorderableDragStartListener(
+        // Make the entire card draggable with long-press
+        return ReorderableDelayedDragStartListener(
           index: quizIndex,
           child: QuizCard(
             theme: theme,
@@ -176,8 +176,8 @@ class ReorderableFlashcardItem extends StatelessWidget {
     return LayoutBuilder(
       key: itemKey,
       builder: (BuildContext context, BoxConstraints itemConstraints) {
-        // Make the entire card draggable
-        return ReorderableDragStartListener(
+        // Make the entire card draggable with long-press
+        return ReorderableDelayedDragStartListener(
           index: flashcardSetIndex,
           child: FlashcardCard(
             theme: theme,
