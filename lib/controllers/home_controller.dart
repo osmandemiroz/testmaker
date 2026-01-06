@@ -240,6 +240,48 @@ class HomeController extends ChangeNotifier {
     }
   }
 
+  /// Imports a quiz with questions and a name into a specific course.
+  Future<void> importQuizToCourse(
+    String courseId,
+    List<Question> questions,
+    String name,
+  ) async {
+    try {
+      await _courseService.addQuizToCourse(
+        courseId,
+        questions,
+        quizName: name,
+      );
+      await _loadCourses();
+    } on Exception catch (e) {
+      if (kDebugMode) {
+        print('[HomeController.importQuizToCourse] Failed: $e');
+      }
+      rethrow;
+    }
+  }
+
+  /// Imports a flashcard set into a specific course.
+  Future<void> importFlashcardSetToCourse(
+    String courseId,
+    List<Flashcard> flashcards,
+    String name,
+  ) async {
+    try {
+      await _courseService.addFlashcardSetToCourse(
+        courseId,
+        flashcards,
+        flashcardSetName: name,
+      );
+      await _loadCourses();
+    } on Exception catch (e) {
+      if (kDebugMode) {
+        print('[HomeController.importFlashcardSetToCourse] Failed: $e');
+      }
+      rethrow;
+    }
+  }
+
   /// Uploads a PDF file to the selected course.
   Future<bool> uploadPdfToCourse() async {
     if (_selectedCourse == null) {

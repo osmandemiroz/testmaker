@@ -8,9 +8,11 @@ import 'package:testmaker/controllers/home_controller.dart';
 import 'package:testmaker/models/course.dart';
 import 'package:testmaker/screens/auth/auth_screen.dart';
 import 'package:testmaker/screens/home/dialogs/dialogs.dart';
+import 'package:testmaker/screens/home/dialogs/share_import_dialog.dart';
 import 'package:testmaker/screens/home/handlers/handlers.dart';
 import 'package:testmaker/screens/home/views/views.dart';
 import 'package:testmaker/screens/home/widgets/widgets.dart';
+import 'package:testmaker/services/sharing_service.dart';
 import 'package:testmaker/utils/responsive_sizer.dart';
 
 /// ********************************************************************
@@ -33,7 +35,12 @@ import 'package:testmaker/utils/responsive_sizer.dart';
 ///  - Quick access to sample quiz
 ///
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
+  const HomeScreen({
+    this.sharedContentId,
+    super.key,
+  });
+
+  final String? sharedContentId;
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -61,6 +68,58 @@ class _HomeScreenState extends State<HomeScreen> {
 
     // Start swipe indicator animation to help users discover the menu
     _startSwipeIndicatorAnimation();
+
+    // Handle shared content if present
+    if (widget.sharedContentId != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _showShareImportDialog(widget.sharedContentId!);
+      });
+    }
+  }
+
+  /// Shows the share import dialog.
+  Future<void> _showShareImportDialog(String id) async {
+    await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => ShareImportDialog(
+        sharedContentId: id,
+        homeController: _controller,
+      ),
+    );
+  }
+
+  /// Shows the manual import dialog.
+  Future<void> _showManualImportDialog() async {
+    final controller = TextEditingController();
+    final id = await showDialog<String>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Import from Code'),
+        content: TextField(
+          controller: controller,
+          decoration: const InputDecoration(
+            labelText: 'Share Code',
+            hintText: 'Enter the code shared with you',
+          ),
+          autofocus: true,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(controller.text.trim()),
+            child: const Text('Import'),
+          ),
+        ],
+      ),
+    );
+
+    if (id != null && id.isNotEmpty) {
+      await _showShareImportDialog(id);
+    }
   }
 
   @override
@@ -100,21 +159,25 @@ class _HomeScreenState extends State<HomeScreen> {
     if (shouldLogout == true) {
       await _authController.signOut();
       if (mounted) {
-        // Navigate to auth screen
-        await Navigator.of(context).pushReplacement(
-          PageRouteBuilder<void>(
-            pageBuilder: (context, animation, secondaryAnimation) =>
-                const AuthScreen(),
-            transitionsBuilder:
-                (context, animation, secondaryAnimation, child) {
-              return FadeTransition(
-                opacity: animation,
-                child: child,
-              );
-            },
-            transitionDuration: const Duration(milliseconds: 400),
-          ),
-        );
+        try {
+          // Navigate to auth screen
+          await Navigator.of(context).pushReplacement(
+            PageRouteBuilder<void>(
+              pageBuilder: (context, animation, secondaryAnimation) =>
+                  const AuthScreen(),
+              transitionsBuilder:
+                  (context, animation, secondaryAnimation, child) {
+                return FadeTransition(
+                  opacity: animation,
+                  child: child,
+                );
+              },
+              transitionDuration: const Duration(milliseconds: 400),
+            ),
+          );
+        } on Exception catch (_) {
+          // Silently handle navigation errors
+        }
       }
     }
   }
@@ -175,6 +238,89 @@ class _HomeScreenState extends State<HomeScreen> {
     });
   }
 
+  /// Shares a quiz.
+  Future<void> _shareQuiz(Course course, int quizIndex) async {
+    final user = _authController.user;
+    if (user == null) {
+      _showErrorSnackBar('You must be logged in to share.');
+      return;
+    }
+
+    // Show loading indicator
+    await showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(child: CircularProgressIndicator()),
+    );
+
+    try {
+      final quizName = course.getQuizName(quizIndex);
+      final questions = course.quizzes[quizIndex];
+
+      await SharingService.instance.shareQuiz(
+        title: quizName,
+        questions: questions,
+        creatorId: user.uid,
+      );
+
+      if (mounted) {
+        Navigator.of(context).pop(); // Dismiss loading
+      }
+    } on Exception catch (e) {
+      if (mounted) {
+        Navigator.of(context).pop(); // Dismiss loading
+      }
+      debugPrint('[HomeScreen._shareQuiz] Error: $e');
+      _showErrorSnackBar('Failed to share quiz: $e');
+    }
+  }
+
+  /// Shares a flashcard set.
+  Future<void> _shareFlashcardSet(Course course, int flashcardSetIndex) async {
+    final user = _authController.user;
+    if (user == null) {
+      _showErrorSnackBar('You must be logged in to share.');
+      return;
+    }
+
+    // Show loading indicator
+    await showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(child: CircularProgressIndicator()),
+    );
+
+    try {
+      final setName = course.getFlashcardSetName(flashcardSetIndex);
+      final flashcards = course.flashcards[flashcardSetIndex];
+
+      await SharingService.instance.shareFlashcardSet(
+        title: setName,
+        flashcards: flashcards,
+        creatorId: user.uid,
+      );
+
+      if (mounted) {
+        Navigator.of(context).pop(); // Dismiss loading
+      }
+    } on Exception catch (e) {
+      if (mounted) {
+        Navigator.of(context).pop(); // Dismiss loading
+      }
+      debugPrint('[HomeScreen._shareFlashcardSet] Error: $e');
+      _showErrorSnackBar('Failed to share flashcard set: $e');
+    }
+  }
+
+  void _showErrorSnackBar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Theme.of(context).colorScheme.error,
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -227,6 +373,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         ..selectCourse(course)
                         ..clearError();
                     },
+                    onImportContent: _showManualImportDialog,
                   ),
                   Expanded(
                     // Main content extends to the very top and bottom
@@ -445,7 +592,6 @@ class _HomeScreenState extends State<HomeScreen> {
                         pdfPath,
                         () => mounted,
                       ),
-                      buildEmptyCourseState: _buildEmptyCourseState,
                       onStartQuiz: (Course course, int quizIndex) =>
                           NavigationHandlers.startQuizFromCourse(
                         context,
@@ -459,6 +605,9 @@ class _HomeScreenState extends State<HomeScreen> {
                         course,
                         flashcardSetIndex,
                       ),
+                      onShareQuiz: _shareQuiz,
+                      onShareFlashcardSet: _shareFlashcardSet,
+                      buildEmptyCourseState: _buildEmptyCourseState,
                     ),
                   ],
                 ],
@@ -512,6 +661,7 @@ class _HomeScreenState extends State<HomeScreen> {
         _controller,
         course,
       ),
+      onImportContent: _showManualImportDialog,
     );
   }
 }

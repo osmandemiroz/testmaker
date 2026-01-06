@@ -16,6 +16,7 @@ class CompactLayout extends StatelessWidget {
     required this.buildMainContent,
     required this.onCreateCourse,
     required this.onDeleteCourse,
+    required this.onImportContent,
     this.currentUser,
     this.onLogout,
     super.key,
@@ -28,6 +29,7 @@ class CompactLayout extends StatelessWidget {
   final Widget Function(ThemeData theme) buildMainContent;
   final VoidCallback onCreateCourse;
   final Future<void> Function(Course course) onDeleteCourse;
+  final VoidCallback onImportContent;
 
   /// The currently authenticated user (null if not logged in)
   final AppUser? currentUser;
@@ -54,6 +56,7 @@ class CompactLayout extends StatelessWidget {
                   ..selectCourse(course)
                   ..clearError();
               },
+              onImportContent: onImportContent,
             ),
           ),
           body: Stack(

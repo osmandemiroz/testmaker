@@ -27,6 +27,8 @@ class CourseContentView extends StatelessWidget {
     required this.buildEmptyCourseState,
     required this.onStartQuiz,
     required this.onStartFlashcards,
+    required this.onShareQuiz,
+    required this.onShareFlashcardSet,
     super.key,
   });
 
@@ -52,6 +54,8 @@ class CourseContentView extends StatelessWidget {
   final void Function(Course course, String pdfPath) onGenerateFlashcards;
   final void Function(Course course, int quizIndex) onStartQuiz;
   final void Function(Course course, int flashcardSetIndex) onStartFlashcards;
+  final void Function(Course course, int quizIndex) onShareQuiz;
+  final void Function(Course course, int flashcardSetIndex) onShareFlashcardSet;
   final Widget Function(
     ThemeData theme,
     TextTheme textTheme,
@@ -322,6 +326,7 @@ class CourseContentView extends StatelessWidget {
                               onTap: () => onStartQuiz(course, index),
                               showRenameDialog: showRenameDialog,
                               onDelete: onDeleteQuiz,
+                              onShare: () => onShareQuiz(course, index),
                               constraints: constraints,
                             );
                           },
@@ -394,6 +399,7 @@ class CourseContentView extends StatelessWidget {
                               onTap: () => onStartFlashcards(course, index),
                               showRenameDialog: showRenameDialog,
                               onDelete: onDeleteFlashcardSet,
+                              onShare: () => onShareFlashcardSet(course, index),
                               constraints: constraints,
                             );
                           },

@@ -6,6 +6,7 @@ environment:
 description: A new Flutter project.
 dependencies:
   # Firebase packages for authentication
+  cloud_firestore: ^5.6.12
   crypto: ^3.0.6
   cupertino_icons: ^1.0.8
   deriv_chart: ^0.4.1
@@ -16,9 +17,11 @@ dependencies:
     sdk: flutter
   flutter_dotenv: ^5.2.1
   flutter_svg: ^2.0.10+1
+  go_router: ^16.1.0
   google_sign_in: ^6.2.2
   http: ^1.2.2
   path_provider: ^2.1.4
+  share_plus: ^12.0.1
   shared_preferences: ^2.3.3
   sign_in_with_apple: ^6.1.4
   syncfusion_flutter_pdf: ^28.2.8

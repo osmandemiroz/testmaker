@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Opening TestMaker...</title>
+    <script>
+        window.onload = function() {
+            // Extracts the ID from the end of the URL path (e.g., /share/XYZ123)
+            var pathParts = window.location.pathname.split('/');
+            var id = pathParts.pop() || pathParts.pop(); // Handle trailing slash
+            
+            if (id && id !== 'share') {
+                // Try to open the app using the custom scheme
+                window.location.href = "testmaker://share/" + id;
+                
+                // Fallback message if the app doesn't open in 2 seconds
+                setTimeout(function() {
+                    document.body.innerHTML = "<h2>If the app didn't open, please make sure TestMaker is installed.</h2><p>Share Code: <b>" + id + "</b></p>";
+                }, 2000);
+            } else {
+                document.body.innerHTML = "<h2>Invalid link.</h2>";
+            }
+        }
+    </script>
+    <style>
+        body { font-family: sans-serif; text-align: center; padding: 50px; background: #f4f4f9; color: #333; }
+        h2 { color: #673ab7; }
+    </style>
+</head>
+<body>
+    <h2>Opening TestMaker...</h2>
+    <p>Please wait a moment while we redirect you.</p>
+</body>
+</html>

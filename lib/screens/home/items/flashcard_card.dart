@@ -15,6 +15,7 @@ class FlashcardCard extends StatelessWidget {
     required this.onTap,
     required this.showRenameDialog,
     required this.onDelete,
+    required this.onShare,
     required this.constraints,
     super.key,
   });
@@ -36,6 +37,7 @@ class FlashcardCard extends StatelessWidget {
     int flashcardSetIndex,
     String flashcardSetName,
   ) onDelete;
+  final VoidCallback onShare;
   final BoxConstraints constraints;
 
   @override
@@ -164,6 +166,20 @@ class FlashcardCard extends StatelessWidget {
                   visualDensity: VisualDensity.compact,
                   color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
                   tooltip: 'Rename',
+                ),
+                IconButton(
+                  onPressed: onShare,
+                  icon: Icon(
+                    Icons.share_outlined,
+                    size: ResponsiveSizer.iconSizeFromConstraints(
+                      constraints,
+                      multiplier: 0.8,
+                    ),
+                  ),
+                  padding: EdgeInsets.zero,
+                  visualDensity: VisualDensity.compact,
+                  color: theme.colorScheme.secondary,
+                  tooltip: 'Share',
                 ),
                 IconButton(
                   onPressed: () => onDelete(

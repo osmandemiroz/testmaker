@@ -24,6 +24,7 @@ class Sidebar extends StatelessWidget {
     required this.onCreateCourse,
     required this.onDeleteCourse,
     required this.onSelectCourse,
+    required this.onImportContent,
     this.currentUser,
     this.onLogout,
     super.key,
@@ -33,6 +34,7 @@ class Sidebar extends StatelessWidget {
   final VoidCallback onCreateCourse;
   final Future<void> Function(Course course) onDeleteCourse;
   final void Function(Course? course) onSelectCourse;
+  final VoidCallback onImportContent;
 
   /// The currently authenticated user (null if not logged in)
   final AppUser? currentUser;
@@ -150,6 +152,20 @@ class Sidebar extends StatelessWidget {
                                   constraints: const BoxConstraints(),
                                   visualDensity: VisualDensity.compact,
                                 ),
+                              IconButton(
+                                onPressed: onImportContent,
+                                icon: Icon(
+                                  Icons.download_rounded,
+                                  size: ResponsiveSizer.iconSizeFromConstraints(
+                                    constraints,
+                                  ),
+                                  color: theme.colorScheme.primary,
+                                ),
+                                tooltip: 'Import Content',
+                                padding: EdgeInsets.zero,
+                                constraints: const BoxConstraints(),
+                                visualDensity: VisualDensity.compact,
+                              ),
                             ],
                           ),
                         ),

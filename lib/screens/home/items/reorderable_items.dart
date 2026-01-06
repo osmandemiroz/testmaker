@@ -85,6 +85,7 @@ class ReorderableQuizItem extends StatelessWidget {
     required this.onTap,
     required this.showRenameDialog,
     required this.onDelete,
+    required this.onShare,
     required this.constraints,
     super.key,
   });
@@ -104,6 +105,7 @@ class ReorderableQuizItem extends StatelessWidget {
     required Future<void> Function(String) onSave,
   }) showRenameDialog;
   final void Function(Course course, int quizIndex, String quizName) onDelete;
+  final VoidCallback onShare;
   final BoxConstraints constraints;
 
   @override
@@ -124,6 +126,7 @@ class ReorderableQuizItem extends StatelessWidget {
             onTap: onTap,
             showRenameDialog: showRenameDialog,
             onDelete: onDelete,
+            onShare: onShare,
             constraints: itemConstraints,
           ),
         );
@@ -146,6 +149,7 @@ class ReorderableFlashcardItem extends StatelessWidget {
     required this.onTap,
     required this.showRenameDialog,
     required this.onDelete,
+    required this.onShare,
     required this.constraints,
     super.key,
   });
@@ -169,6 +173,7 @@ class ReorderableFlashcardItem extends StatelessWidget {
     int flashcardSetIndex,
     String flashcardSetName,
   ) onDelete;
+  final VoidCallback onShare;
   final BoxConstraints constraints;
 
   @override
@@ -189,6 +194,7 @@ class ReorderableFlashcardItem extends StatelessWidget {
             onTap: onTap,
             showRenameDialog: showRenameDialog,
             onDelete: onDelete,
+            onShare: onShare,
             constraints: itemConstraints,
           ),
         );

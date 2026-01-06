@@ -115,7 +115,12 @@ class CourseService {
   /// Adds a quiz (list of questions) to a course.
   ///
   /// The quiz is appended to the course's quizzes list.
-  Future<void> addQuizToCourse(String courseId, List<Question> quiz) async {
+  /// If [quizName] is provided, it's added to the quizNames map.
+  Future<void> addQuizToCourse(
+    String courseId,
+    List<Question> quiz, {
+    String? quizName,
+  }) async {
     await _ensureInitialized();
 
     final courses = await getAllCourses();
@@ -128,8 +133,16 @@ class CourseService {
     final course = courses[index];
     final updatedQuizzes = <List<Question>>[...course.quizzes, quiz];
 
+    Map<int, String>? updatedQuizNames;
+    if (quizName != null) {
+      updatedQuizNames =
+          Map<int, String>.from(course.quizNames ?? <int, String>{});
+      updatedQuizNames[updatedQuizzes.length - 1] = quizName;
+    }
+
     courses[index] = course.copyWith(
       quizzes: updatedQuizzes,
+      quizNames: updatedQuizNames ?? course.quizNames,
       updatedAt: DateTime.now().millisecondsSinceEpoch,
     );
 
@@ -253,10 +266,12 @@ class CourseService {
   /// Adds a flashcard set (list of flashcards) to a course.
   ///
   /// The flashcard set is appended to the course's flashcards list.
+  /// If [flashcardSetName] is provided, it's added to the flashcardSetNames map.
   Future<void> addFlashcardSetToCourse(
     String courseId,
-    List<Flashcard> flashcardSet,
-  ) async {
+    List<Flashcard> flashcardSet, {
+    String? flashcardSetName,
+  }) async {
     await _ensureInitialized();
 
     final courses = await getAllCourses();
@@ -272,8 +287,17 @@ class CourseService {
       flashcardSet,
     ];
 
+    Map<int, String>? updatedFlashcardSetNames;
+    if (flashcardSetName != null) {
+      updatedFlashcardSetNames = Map<int, String>.from(
+        course.flashcardSetNames ?? <int, String>{},
+      );
+      updatedFlashcardSetNames[updatedFlashcards.length - 1] = flashcardSetName;
+    }
+
     courses[index] = course.copyWith(
       flashcards: updatedFlashcards,
+      flashcardSetNames: updatedFlashcardSetNames ?? course.flashcardSetNames,
       updatedAt: DateTime.now().millisecondsSinceEpoch,
     );
 
