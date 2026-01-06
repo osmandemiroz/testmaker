@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:testmaker/screens/home/dialogs/create_course_dialog.dart';
 import 'package:testmaker/screens/home/dialogs/dialogs.dart' as dialogs;
+import 'package:testmaker/screens/home/dialogs/manual_import_dialog.dart';
 import 'package:testmaker/screens/home/dialogs/settings_dialog.dart';
 
 /// Handlers for showing dialogs.
@@ -44,5 +45,18 @@ class DialogHandlers {
         return const SettingsDialog();
       },
     );
+  }
+
+  /// Shows the manual import dialog.
+  static Future<String?> showManualImportDialog(BuildContext context) async {
+    final result = await showDialog<String>(
+      context: context,
+      barrierColor: Colors.black.withValues(alpha: 0.4),
+      builder: (BuildContext context) {
+        return const ManualImportDialog();
+      },
+    );
+
+    return result;
   }
 }

@@ -1,48 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:testmaker/screens/home/dialogs/tm_dialog.dart';
 
-/// Shows a dialog for renaming items (PDFs, quizzes, flashcards).
-Future<void> showRenameDialog({
-  required BuildContext context,
-  required String title,
-  required String currentName,
-  required Future<void> Function(String) onSave,
-}) async {
-  final result = await showDialog<String>(
-    context: context,
-    barrierColor: Colors.black.withValues(alpha: 0.4),
-    builder: (BuildContext context) => _RenameDialogContent(
-      title: title,
-      currentName: currentName,
-    ),
-  );
-
-  if (result != null && result.isNotEmpty) {
-    await onSave(result);
-  }
-}
-
-class _RenameDialogContent extends StatefulWidget {
-  const _RenameDialogContent({
-    required this.title,
-    required this.currentName,
-  });
-
-  final String title;
-  final String currentName;
+/// A dialog that allows users to manually enter a share code to import content.
+class ManualImportDialog extends StatefulWidget {
+  const ManualImportDialog({super.key});
 
   @override
-  State<_RenameDialogContent> createState() => _RenameDialogContentState();
+  State<ManualImportDialog> createState() => _ManualImportDialogState();
 }
 
-class _RenameDialogContentState extends State<_RenameDialogContent> {
+class _ManualImportDialogState extends State<ManualImportDialog> {
   late TextEditingController _controller;
   bool _isFocused = false;
 
   @override
   void initState() {
     super.initState();
-    _controller = TextEditingController(text: widget.currentName);
+    _controller = TextEditingController();
   }
 
   @override
@@ -57,7 +31,8 @@ class _RenameDialogContentState extends State<_RenameDialogContent> {
     final textTheme = theme.textTheme;
 
     return TMDialog(
-      title: widget.title,
+      title: 'Import Content',
+      subtitle: 'Enter the share code to import a quiz or flashcard set.',
       icon: Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
@@ -65,7 +40,7 @@ class _RenameDialogContentState extends State<_RenameDialogContent> {
           shape: BoxShape.circle,
         ),
         child: Icon(
-          Icons.edit_note_rounded,
+          Icons.download_rounded,
           color: theme.colorScheme.primary,
           size: 32,
         ),
@@ -82,9 +57,9 @@ class _RenameDialogContentState extends State<_RenameDialogContent> {
         ),
         FilledButton(
           onPressed: () {
-            final name = _controller.text.trim();
-            if (name.isNotEmpty) {
-              Navigator.of(context).pop(name);
+            final code = _controller.text.trim();
+            if (code.isNotEmpty) {
+              Navigator.of(context).pop(code);
             }
           },
           style: FilledButton.styleFrom(
@@ -92,7 +67,7 @@ class _RenameDialogContentState extends State<_RenameDialogContent> {
             shape:
                 RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           ),
-          child: const Text('Rename'),
+          child: const Text('Import'),
         ),
       ],
       child: Column(
@@ -121,23 +96,23 @@ class _RenameDialogContentState extends State<_RenameDialogContent> {
                 style:
                     textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w600),
                 decoration: InputDecoration(
-                  hintText: 'Enter a name',
+                  hintText: 'e.g. YEmonb4W...',
                   hintStyle: textTheme.bodyLarge?.copyWith(
                     color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
                   ),
-                  labelText: 'Name',
+                  labelText: 'Share Code',
                   labelStyle: textTheme.bodyMedium?.copyWith(
                     color: _isFocused
                         ? theme.colorScheme.primary
                         : theme.colorScheme.onSurface.withValues(alpha: 0.6),
                   ),
                   border: InputBorder.none,
-                  contentPadding:
-                      const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                  contentPadding: const EdgeInsets.all(20),
                 ),
-                onSubmitted: (String value) {
-                  if (value.trim().isNotEmpty) {
-                    Navigator.of(context).pop(value.trim());
+                onSubmitted: (value) {
+                  final code = value.trim();
+                  if (code.isNotEmpty) {
+                    Navigator.of(context).pop(code);
                   }
                 },
               ),

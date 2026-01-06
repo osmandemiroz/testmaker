@@ -133,6 +133,18 @@ Monitor your learning with detailed analytics and performance charts
 
 </details>
 
+<details open>
+<summary><strong>🤝 Sharing & Collaboration</strong></summary>
+<br>
+
+- **Cloud Sharing** - Upload quizzes and flashcards to Firestore for easy sharing
+- **Clickable Links** - Professional `web.app` links that are clickable in all apps
+- **Universal Links** - Automatically opens the app directly to the shared content
+- **Manual Import** - Fallback "Import from Code" for quick sharing without links
+- **Cross-Platform** - Seamless sharing between Android and iOS
+
+</details>
+
 ---
 
 ## 🎬 Onboarding Experience
@@ -605,6 +617,35 @@ Guest users can upgrade to a full account anytime:
 - ⚠️ Internet required for generation
 - ✅ Generated content works offline after creation
 - ✅ API key stored locally (never uploaded)
+
+</details>
+
+<details>
+<summary><h3>🤝 Sharing & Importing Content</h3></summary>
+
+#### How to Share
+
+```
+1. Select a Quiz or Flashcard Set from your course
+2. Tap the "Share" icon on the card
+3. The app will upload the content to Firestore
+4. Share the generated link or "Share Code" with others
+```
+
+#### How to Import
+
+**Method 1: Clickable Link (Recommended)**
+Simply click a shared link (e.g., `https://testmaker-f7dd2.web.app/share/...`). The app will open automatically and prompt you to import.
+
+**Method 2: Manual Share Code**
+```
+1. Open Sidebar
+2. Tap "Import Content" (Download icon)
+3. Paste the Share Code provided to you
+4. Select which course to import into
+```
+
+> 🔒 **Privacy**: Shared content is stored anonymously on Firestore. Anyone with the link or code can import the content.
 
 </details>
 

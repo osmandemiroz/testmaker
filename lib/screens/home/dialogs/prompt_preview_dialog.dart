@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:testmaker/utils/responsive_sizer.dart';
+import 'package:testmaker/screens/home/dialogs/tm_dialog.dart';
 
 /// Shows a preview of the generated prompt.
 Future<void> showPromptPreview(
@@ -14,89 +14,69 @@ Future<void> showPromptPreview(
     context: context,
     barrierColor: Colors.black.withValues(alpha: 0.4),
     builder: (BuildContext context) {
-      return LayoutBuilder(
-        builder: (BuildContext context, BoxConstraints constraints) {
-          return AlertDialog(
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(
-                ResponsiveSizer.borderRadiusFromConstraints(
-                  constraints,
-                  multiplier: 1.67,
+      final theme = Theme.of(context);
+      return TMDialog(
+        title: '$title Prompt Generated',
+        subtitle:
+            'The prompt has been copied to your clipboard. Paste it into your AI agent to generate the content.',
+        icon: Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: theme.colorScheme.primary.withValues(alpha: 0.1),
+            shape: BoxShape.circle,
+          ),
+          child: Icon(
+            Icons.content_copy_rounded,
+            color: theme.colorScheme.primary,
+            size: 32,
+          ),
+        ),
+        actions: [
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(),
+            style: FilledButton.styleFrom(
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+            ),
+            child: const Text('Done'),
+          ),
+        ],
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Container(
+              decoration: BoxDecoration(
+                color: theme.colorScheme.surfaceContainerHighest
+                    .withValues(alpha: 0.3),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color:
+                      theme.colorScheme.outlineVariant.withValues(alpha: 0.5),
+                ),
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(16),
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxHeight: 300),
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.all(16),
+                    child: SelectableText(
+                      prompt,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        fontFamily: 'monospace',
+                        color:
+                            theme.colorScheme.onSurface.withValues(alpha: 0.8),
+                        height: 1.5,
+                      ),
+                    ),
+                  ),
                 ),
               ),
             ),
-            title: Text(
-              '$title Prompt Generated',
-              style: textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            content: SizedBox(
-              width: ResponsiveSizer.maxContentWidthFromConstraints(
-                constraints,
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  Text(
-                    'The prompt has been copied to your clipboard. '
-                    'Paste it into your AI agent to generate the content, '
-                    'then paste the result back into the app.',
-                    style: textTheme.bodyMedium,
-                  ),
-                  SizedBox(
-                    height: ResponsiveSizer.spacingFromConstraints(
-                      constraints,
-                      multiplier: 1.5,
-                    ),
-                  ),
-                  Container(
-                    width: double.infinity,
-                    constraints: BoxConstraints(
-                      maxHeight: ResponsiveSizer.spacingFromConstraints(
-                        constraints,
-                        multiplier: 20,
-                      ),
-                    ),
-                    padding: EdgeInsets.all(
-                      ResponsiveSizer.spacingFromConstraints(
-                        constraints,
-                        multiplier: 1.5,
-                      ),
-                    ),
-                    decoration: BoxDecoration(
-                      color: theme.colorScheme.surfaceContainerLowest,
-                      borderRadius: BorderRadius.circular(
-                        ResponsiveSizer.borderRadiusFromConstraints(
-                          constraints,
-                        ),
-                      ),
-                      border: Border.all(
-                        color: theme.colorScheme.outline.withValues(alpha: 0.3),
-                      ),
-                    ),
-                    child: SingleChildScrollView(
-                      child: SelectableText(
-                        prompt,
-                        style: textTheme.bodySmall?.copyWith(
-                          fontFamily: 'monospace',
-                          color: theme.colorScheme.onSurface,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            actions: <Widget>[
-              FilledButton(
-                onPressed: () => Navigator.of(context).pop(),
-                child: const Text('Done'),
-              ),
-            ],
-          );
-        },
+          ],
+        ),
       );
     },
   );

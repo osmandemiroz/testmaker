@@ -1,4 +1,4 @@
-// ignore_for_file: use_if_null_to_convert_nulls_to_bools, document_ignores, leading_newlines_in_multiline_strings
+// ignore_for_file: use_if_null_to_convert_nulls_to_bools, document_ignores, leading_newlines_in_multiline_strings, unawaited_futures
 
 import 'dart:async';
 
@@ -91,31 +91,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   /// Shows the manual import dialog.
   Future<void> _showManualImportDialog() async {
-    final controller = TextEditingController();
-    final id = await showDialog<String>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Import from Code'),
-        content: TextField(
-          controller: controller,
-          decoration: const InputDecoration(
-            labelText: 'Share Code',
-            hintText: 'Enter the code shared with you',
-          ),
-          autofocus: true,
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(controller.text.trim()),
-            child: const Text('Import'),
-          ),
-        ],
-      ),
-    );
+    final id = await DialogHandlers.showManualImportDialog(context);
 
     if (id != null && id.isNotEmpty) {
       await _showShareImportDialog(id);
@@ -247,7 +223,7 @@ class _HomeScreenState extends State<HomeScreen> {
     }
 
     // Show loading indicator
-    await showDialog<void>(
+    showDialog<void>(
       context: context,
       barrierDismissible: false,
       builder: (context) => const Center(child: CircularProgressIndicator()),
@@ -262,16 +238,13 @@ class _HomeScreenState extends State<HomeScreen> {
         questions: questions,
         creatorId: user.uid,
       );
-
-      if (mounted) {
-        Navigator.of(context).pop(); // Dismiss loading
-      }
     } on Exception catch (e) {
-      if (mounted) {
-        Navigator.of(context).pop(); // Dismiss loading
-      }
       debugPrint('[HomeScreen._shareQuiz] Error: $e');
       _showErrorSnackBar('Failed to share quiz: $e');
+    } finally {
+      if (mounted) {
+        Navigator.of(context).pop(); // Dismiss loading
+      }
     }
   }
 
@@ -284,7 +257,7 @@ class _HomeScreenState extends State<HomeScreen> {
     }
 
     // Show loading indicator
-    await showDialog<void>(
+    showDialog<void>(
       context: context,
       barrierDismissible: false,
       builder: (context) => const Center(child: CircularProgressIndicator()),
@@ -299,16 +272,13 @@ class _HomeScreenState extends State<HomeScreen> {
         flashcards: flashcards,
         creatorId: user.uid,
       );
-
-      if (mounted) {
-        Navigator.of(context).pop(); // Dismiss loading
-      }
     } on Exception catch (e) {
-      if (mounted) {
-        Navigator.of(context).pop(); // Dismiss loading
-      }
       debugPrint('[HomeScreen._shareFlashcardSet] Error: $e');
       _showErrorSnackBar('Failed to share flashcard set: $e');
+    } finally {
+      if (mounted) {
+        Navigator.of(context).pop(); // Dismiss loading
+      }
     }
   }
 

@@ -152,20 +152,6 @@ class Sidebar extends StatelessWidget {
                                   constraints: const BoxConstraints(),
                                   visualDensity: VisualDensity.compact,
                                 ),
-                              IconButton(
-                                onPressed: onImportContent,
-                                icon: Icon(
-                                  Icons.download_rounded,
-                                  size: ResponsiveSizer.iconSizeFromConstraints(
-                                    constraints,
-                                  ),
-                                  color: theme.colorScheme.primary,
-                                ),
-                                tooltip: 'Import Content',
-                                padding: EdgeInsets.zero,
-                                constraints: const BoxConstraints(),
-                                visualDensity: VisualDensity.compact,
-                              ),
                             ],
                           ),
                         ),
@@ -210,7 +196,7 @@ class Sidebar extends StatelessWidget {
                                       multiplier: 3,
                                     ),
                                   ),
-                                  // Add course button
+                                  // Action buttons
                                   Padding(
                                     padding: EdgeInsets.symmetric(
                                       horizontal: ResponsiveSizer
@@ -218,38 +204,70 @@ class Sidebar extends StatelessWidget {
                                         constraints,
                                       ),
                                     ),
-                                    child: FilledButton.icon(
-                                      onPressed: onCreateCourse,
-                                      icon: Icon(
-                                        Icons.add,
-                                        size: ResponsiveSizer
-                                            .iconSizeFromConstraints(
-                                          constraints,
-                                        ),
-                                      ),
-                                      label: const Text('New Course'),
-                                      style: FilledButton.styleFrom(
-                                        padding: EdgeInsets.symmetric(
-                                          horizontal: ResponsiveSizer
-                                              .spacingFromConstraints(
-                                            constraints,
-                                            multiplier: 2,
-                                          ),
-                                          vertical: ResponsiveSizer
-                                              .spacingFromConstraints(
-                                            constraints,
-                                            multiplier: 1.5,
-                                          ),
-                                        ),
-                                        shape: RoundedRectangleBorder(
-                                          borderRadius: BorderRadius.circular(
-                                            ResponsiveSizer
-                                                .borderRadiusFromConstraints(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.stretch,
+                                      children: [
+                                        FilledButton.icon(
+                                          onPressed: onCreateCourse,
+                                          icon: Icon(
+                                            Icons.add,
+                                            size: ResponsiveSizer
+                                                .iconSizeFromConstraints(
                                               constraints,
                                             ),
                                           ),
+                                          label: const Text('New Course'),
+                                          style: FilledButton.styleFrom(
+                                            padding: EdgeInsets.symmetric(
+                                              vertical: ResponsiveSizer
+                                                  .spacingFromConstraints(
+                                                constraints,
+                                                multiplier: 1.5,
+                                              ),
+                                            ),
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(
+                                                ResponsiveSizer
+                                                    .borderRadiusFromConstraints(
+                                                  constraints,
+                                                ),
+                                              ),
+                                            ),
+                                          ),
                                         ),
-                                      ),
+                                        const SizedBox(height: 12),
+                                        OutlinedButton.icon(
+                                          onPressed: onImportContent,
+                                          icon: Icon(
+                                            Icons.download_rounded,
+                                            size: ResponsiveSizer
+                                                .iconSizeFromConstraints(
+                                              constraints,
+                                            ),
+                                          ),
+                                          label: const Text('Import Content'),
+                                          style: OutlinedButton.styleFrom(
+                                            padding: EdgeInsets.symmetric(
+                                              vertical: ResponsiveSizer
+                                                  .spacingFromConstraints(
+                                                constraints,
+                                                multiplier: 1.5,
+                                              ),
+                                            ),
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(
+                                                ResponsiveSizer
+                                                    .borderRadiusFromConstraints(
+                                                  constraints,
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      ],
                                     ),
                                   ),
                                 ],
@@ -291,45 +309,75 @@ class Sidebar extends StatelessWidget {
                                 height: ResponsiveSizer
                                     .dividerHeightFromConstraints(constraints),
                               ),
-                              // Add course button
+                              // Action buttons
                               Padding(
                                 padding: EdgeInsets.all(
                                   ResponsiveSizer.cardPaddingFromConstraints(
                                     constraints,
                                   ),
                                 ),
-                                child: FilledButton.icon(
-                                  onPressed: onCreateCourse,
-                                  icon: Icon(
-                                    Icons.add,
-                                    size:
-                                        ResponsiveSizer.iconSizeFromConstraints(
-                                      constraints,
-                                    ),
-                                  ),
-                                  label: const Text('New Course'),
-                                  style: FilledButton.styleFrom(
-                                    padding: EdgeInsets.symmetric(
-                                      horizontal: ResponsiveSizer
-                                          .spacingFromConstraints(
-                                        constraints,
-                                        multiplier: 2,
-                                      ),
-                                      vertical: ResponsiveSizer
-                                          .spacingFromConstraints(
-                                        constraints,
-                                        multiplier: 1.5,
-                                      ),
-                                    ),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(
-                                        ResponsiveSizer
-                                            .borderRadiusFromConstraints(
+                                child: Column(
+                                  crossAxisAlignment:
+                                      CrossAxisAlignment.stretch,
+                                  children: [
+                                    FilledButton.icon(
+                                      onPressed: onCreateCourse,
+                                      icon: Icon(
+                                        Icons.add,
+                                        size: ResponsiveSizer
+                                            .iconSizeFromConstraints(
                                           constraints,
                                         ),
                                       ),
+                                      label: const Text('New Course'),
+                                      style: FilledButton.styleFrom(
+                                        padding: EdgeInsets.symmetric(
+                                          vertical: ResponsiveSizer
+                                              .spacingFromConstraints(
+                                            constraints,
+                                            multiplier: 1.5,
+                                          ),
+                                        ),
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(
+                                            ResponsiveSizer
+                                                .borderRadiusFromConstraints(
+                                              constraints,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
                                     ),
-                                  ),
+                                    const SizedBox(height: 12),
+                                    OutlinedButton.icon(
+                                      onPressed: onImportContent,
+                                      icon: Icon(
+                                        Icons.download_rounded,
+                                        size: ResponsiveSizer
+                                            .iconSizeFromConstraints(
+                                          constraints,
+                                        ),
+                                      ),
+                                      label: const Text('Import Content'),
+                                      style: OutlinedButton.styleFrom(
+                                        padding: EdgeInsets.symmetric(
+                                          vertical: ResponsiveSizer
+                                              .spacingFromConstraints(
+                                            constraints,
+                                            multiplier: 1.5,
+                                          ),
+                                        ),
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(
+                                            ResponsiveSizer
+                                                .borderRadiusFromConstraints(
+                                              constraints,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ),
                             ],

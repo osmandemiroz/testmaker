@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:testmaker/models/course.dart';
-import 'package:testmaker/utils/responsive_sizer.dart';
+import 'package:testmaker/screens/home/dialogs/tm_dialog.dart';
 
 /// A dialog that asks the user how they want to take the quiz.
 class QuizSortingDialog extends StatelessWidget {
@@ -10,42 +10,44 @@ class QuizSortingDialog extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        return AlertDialog(
-          title: const Text('Quiz Order'),
-          content: const Text(
-            'How would you like to take this quiz?',
+    return TMDialog(
+      title: 'Quiz Order',
+      subtitle: 'How would you like to take this quiz?',
+      icon: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: theme.colorScheme.primary.withValues(alpha: 0.1),
+          shape: BoxShape.circle,
+        ),
+        child: Icon(
+          Icons.sort_rounded,
+          color: theme.colorScheme.primary,
+          size: 32,
+        ),
+      ),
+      actions: [
+        OutlinedButton(
+          onPressed: () =>
+              Navigator.of(context).pop(QuizSortingPreference.sequential),
+          style: OutlinedButton.styleFrom(
+            padding: const EdgeInsets.symmetric(vertical: 16),
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           ),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(
-              ResponsiveSizer.borderRadiusFromConstraints(constraints),
-            ),
+          child: const Text('Sequential'),
+        ),
+        FilledButton(
+          onPressed: () =>
+              Navigator.of(context).pop(QuizSortingPreference.random),
+          style: FilledButton.styleFrom(
+            padding: const EdgeInsets.symmetric(vertical: 16),
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           ),
-          actions: [
-            TextButton(
-              onPressed: () =>
-                  Navigator.of(context).pop(QuizSortingPreference.sequential),
-              child: const Text('Sequential'),
-            ),
-            ElevatedButton(
-              onPressed: () =>
-                  Navigator.of(context).pop(QuizSortingPreference.random),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: theme.colorScheme.primary,
-                foregroundColor: theme.colorScheme.onPrimary,
-                elevation: 0,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(
-                    ResponsiveSizer.borderRadiusFromConstraints(constraints),
-                  ),
-                ),
-              ),
-              child: const Text('Random'),
-            ),
-          ],
-        );
-      },
+          child: const Text('Randomly'),
+        ),
+      ],
+      child: const SizedBox(height: 8),
     );
   }
 }
