@@ -75,5 +75,22 @@ void main() {
         expect(newCorrectOptions, containsAll(correctOptions));
       }
     });
+
+    test('shuffleOptionsOnly keeps question order but shuffles options', () {
+      final q1 =
+          Question(id: 1, text: 'Q1', options: ['A', 'B'], answerIndices: [0]);
+      final q2 =
+          Question(id: 2, text: 'Q2', options: ['C', 'D'], answerIndices: [0]);
+      final questions = [q1, q2];
+
+      final shuffled = QuestionUtils.shuffleOptionsOnly(questions);
+
+      expect(shuffled.length, 2);
+      expect(shuffled[0].id, 1);
+      expect(shuffled[1].id, 2);
+      // Option shuffling is random, so we just check contents
+      expect(shuffled[0].options, containsAll(['A', 'B']));
+      expect(shuffled[1].options, containsAll(['C', 'D']));
+    });
   });
 }

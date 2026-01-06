@@ -44,8 +44,13 @@ class NavigationHandlers {
       return;
     }
 
-    // Shuffle questions and options to prevent memorization
-    final shuffledQuestions = QuestionUtils.shuffleQuestions(questions);
+    // Respect sorting preference:
+    // - random: shuffle questions AND options
+    // - sequential: shuffle only options, keep question order
+    final shuffledQuestions =
+        course.quizSortingPreference == QuizSortingPreference.random
+            ? QuestionUtils.shuffleQuestions(questions)
+            : QuestionUtils.shuffleOptionsOnly(questions);
 
     // Get quiz name (custom or default)
     final quizName = course.getQuizName(quizIndex);

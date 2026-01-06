@@ -173,6 +173,37 @@ class CourseContentView extends StatelessWidget {
                     ],
                   ),
                 ),
+                // Sorting preference toggle button
+                IconButton(
+                  onPressed: controller.toggleQuizSortingPreference,
+                  icon: AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 300),
+                    transitionBuilder:
+                        (Widget child, Animation<double> animation) {
+                      return ScaleTransition(
+                        scale: animation,
+                        child: FadeTransition(
+                          opacity: animation,
+                          child: child,
+                        ),
+                      );
+                    },
+                    child: Icon(
+                      course.quizSortingPreference ==
+                              QuizSortingPreference.random
+                          ? Icons.shuffle
+                          : Icons.format_list_numbered,
+                      key: ValueKey<QuizSortingPreference>(
+                        course.quizSortingPreference,
+                      ),
+                      color: theme.colorScheme.primary,
+                    ),
+                  ),
+                  tooltip: course.quizSortingPreference ==
+                          QuizSortingPreference.random
+                      ? 'Random Order (Tap to switch to Sequential)'
+                      : 'Sequential Order (Tap to switch to Random)',
+                ),
               ],
             ),
           ),

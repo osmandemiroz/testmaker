@@ -26,12 +26,23 @@ class ContentAddHandlers {
     if (result != null && result.isNotEmpty) {
       await controller.addQuizFromText(result);
       if (mounted() && controller.error == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Quiz added successfully!'),
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
+        // Show sorting preference dialog
+        final preference = await showQuizSortingDialog(context);
+        if (preference != null && mounted()) {
+          // If the user selected sequential, update the course preference
+          if (preference == QuizSortingPreference.sequential) {
+            await controller.toggleQuizSortingPreference();
+          }
+        }
+
+        if (mounted()) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Quiz added successfully!'),
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        }
       }
     }
   }

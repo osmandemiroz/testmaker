@@ -789,4 +789,40 @@ class HomeController extends ChangeNotifier {
       return false;
     }
   }
+
+  /// Toggles the quiz sorting preference for the selected course.
+  Future<bool> toggleQuizSortingPreference() async {
+    if (_selectedCourse == null) {
+      return false;
+    }
+
+    try {
+      final currentPreference = _selectedCourse!.quizSortingPreference;
+      final newPreference = currentPreference == QuizSortingPreference.random
+          ? QuizSortingPreference.sequential
+          : QuizSortingPreference.random;
+
+      final updatedCourse = _selectedCourse!.copyWith(
+        quizSortingPreference: newPreference,
+        updatedAt: DateTime.now().millisecondsSinceEpoch,
+      );
+
+      // Optimistic update
+      _selectedCourse = updatedCourse;
+      notifyListeners();
+
+      await _courseService.updateCourse(updatedCourse);
+      await _loadCourses();
+
+      return true;
+    } on Exception catch (e) {
+      if (kDebugMode) {
+        print('[HomeController.toggleQuizSortingPreference] Failed: $e');
+      }
+      _error = 'Failed to update sorting preference';
+      await _loadCourses(); // Revert optimistic update
+      notifyListeners();
+      return false;
+    }
+  }
 }

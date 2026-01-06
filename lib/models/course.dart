@@ -1,6 +1,24 @@
 import 'package:testmaker/models/flashcard.dart';
 import 'package:testmaker/models/question.dart';
 
+/// Defines the sorting preference for quizzes in a course.
+enum QuizSortingPreference {
+  /// Quizzes are presented in the order they were added (sequential).
+  sequential,
+
+  /// Quizzes are presented in a random order (shuffled).
+  random;
+
+  /// Parses a [QuizSortingPreference] from a string.
+  static QuizSortingPreference fromString(String value) {
+    return QuizSortingPreference.values.firstWhere(
+      (e) => e.name == value,
+      orElse: () =>
+          QuizSortingPreference.random, // Default to random for legacy
+    );
+  }
+}
+
 /// ********************************************************************
 /// Course
 /// ********************************************************************
@@ -36,6 +54,7 @@ class Course {
     this.quizNames,
     this.flashcardSetNames,
     this.pdfNames,
+    this.quizSortingPreference = QuizSortingPreference.random,
   });
 
   /// Creates a [Course] from a JSON map.
@@ -123,6 +142,9 @@ class Course {
       quizNames: quizNames,
       flashcardSetNames: flashcardSetNames,
       pdfNames: pdfNames,
+      quizSortingPreference: QuizSortingPreference.fromString(
+        json['quizSortingPreference'] as String? ?? 'random',
+      ),
     );
   }
 
@@ -162,6 +184,9 @@ class Course {
   /// If a PDF doesn't have a custom name, the filename is used.
   final Map<int, String>? pdfNames;
 
+  /// User preference for quiz sorting (sequential or random).
+  final QuizSortingPreference quizSortingPreference;
+
   /// Converts this [Course] to a JSON map.
   Map<String, dynamic> toJson() {
     return <String, dynamic>{
@@ -196,6 +221,7 @@ class Course {
         'pdfNames': pdfNames!.map<String, String>(
           (int key, String value) => MapEntry(key.toString(), value),
         ),
+      'quizSortingPreference': quizSortingPreference.name,
     };
   }
 
@@ -213,6 +239,7 @@ class Course {
     Map<int, String>? quizNames,
     Map<int, String>? flashcardSetNames,
     Map<int, String>? pdfNames,
+    QuizSortingPreference? quizSortingPreference,
   }) {
     return Course(
       id: id ?? this.id,
@@ -225,6 +252,8 @@ class Course {
       quizNames: quizNames ?? this.quizNames,
       flashcardSetNames: flashcardSetNames ?? this.flashcardSetNames,
       pdfNames: pdfNames ?? this.pdfNames,
+      quizSortingPreference:
+          quizSortingPreference ?? this.quizSortingPreference,
     );
   }
 

@@ -37,17 +37,24 @@ class PdfGenerationHandlers {
       questionCount,
     );
 
-    if (success && mounted()) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Successfully generated $questionCount questions!'),
-          backgroundColor: Theme.of(context).colorScheme.primaryContainer,
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
+    if (success && mounted() && controller.error == null) {
+      // Show sorting preference dialog
+      final preference = await showQuizSortingDialog(context);
+      if (preference != null && mounted()) {
+        // If the user selected sequential, update the course preference
+        if (preference == QuizSortingPreference.sequential) {
+          await controller.toggleQuizSortingPreference();
+        }
+      }
+
+      if (mounted()) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Questions generated successfully!'),
+            behavior: SnackBarBehavior.floating,
           ),
-        ),
-      );
+        );
+      }
     }
   }
 

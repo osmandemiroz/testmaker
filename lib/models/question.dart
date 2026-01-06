@@ -178,4 +178,12 @@ class QuestionUtils {
       ..shuffle(random);
     return shuffled;
   }
+
+  /// Shuffles only the options within each question, keeping question order intact.
+  static List<Question> shuffleOptionsOnly(List<Question> questions) {
+    final random = Random();
+    return questions
+        .map((Question q) => q.withShuffledOptions(random))
+        .toList();
+  }
 }
