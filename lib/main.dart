@@ -71,7 +71,7 @@ class _MyAppState extends State<MyApp> {
         ),
         useMaterial3: true,
         fontFamily: '.SF Pro Display', // Use system font if possible
-        cardTheme: CardTheme(
+        cardTheme: CardThemeData(
           elevation: 0,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
@@ -91,7 +91,7 @@ class _MyAppState extends State<MyApp> {
         useMaterial3: true,
         fontFamily: '.SF Pro Display',
         scaffoldBackgroundColor: Colors.black,
-        cardTheme: CardTheme(
+        cardTheme: CardThemeData(
           elevation: 0,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),

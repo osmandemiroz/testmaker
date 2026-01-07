@@ -286,7 +286,7 @@ class Course {
 
     // Remove timestamp prefix (digits followed by underscore)
     // Pattern: 1767369212347_comp-org -> comp-org
-    final timestampPrefixPattern = RegExp(r'^\d+_');
+    final Pattern timestampPrefixPattern = RegExp(r'^\d+_');
     fileName = fileName.replaceFirst(timestampPrefixPattern, '');
 
     return fileName.length > 30 ? '${fileName.substring(0, 30)}...' : fileName;
