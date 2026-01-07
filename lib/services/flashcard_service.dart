@@ -95,6 +95,37 @@ class FlashcardService {
     }
   }
 
+  /// Splits text by blank lines (newline, optional whitespace, newline)
+  /// without using RegExp to avoid deprecation.
+  List<String> _splitByBlankLines(String text) {
+    final blocks = <String>[];
+    final lines = text.split('\n');
+    final currentBlock = <String>[];
+
+    for (var i = 0; i < lines.length; i++) {
+      final line = lines[i];
+      // Check if line is empty or contains only whitespace
+      if (line.trim().isEmpty) {
+        // If we have content in current block, save it and start new block
+        if (currentBlock.isNotEmpty) {
+          blocks.add(currentBlock.join('\n'));
+          currentBlock.clear();
+        }
+        // Skip the blank line(s)
+        continue;
+      }
+      // Add non-blank line to current block
+      currentBlock.add(line);
+    }
+
+    // Add the last block if it has content
+    if (currentBlock.isNotEmpty) {
+      blocks.add(currentBlock.join('\n'));
+    }
+
+    return blocks;
+  }
+
   /// Parses flashcards from a simple text format.
   ///
   /// Expected format (one flashcard per block, separated by blank lines):
@@ -110,7 +141,9 @@ class FlashcardService {
   /// Term\tDefinition
   List<Flashcard> _parseFlashcardsFromSimpleText(String text) {
     final flashcards = <Flashcard>[];
-    final blocks = text.split(RegExp(r'\n\s*\n')); // Split by blank lines
+    // Split by blank lines without RegExp to avoid deprecation
+    // Pattern: \n\s*\n (newline, optional whitespace, newline)
+    final blocks = _splitByBlankLines(text);
 
     var flashcardId = 1;
     for (final block in blocks) {

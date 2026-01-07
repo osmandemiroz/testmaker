@@ -286,8 +286,26 @@ class Course {
 
     // Remove timestamp prefix (digits followed by underscore)
     // Pattern: 1767369212347_comp-org -> comp-org
-    final Pattern timestampPrefixPattern = RegExp(r'^\d+_');
-    fileName = fileName.replaceFirst(timestampPrefixPattern, '');
+    // Manually check and remove prefix to avoid RegExp deprecation
+    if (fileName.isNotEmpty) {
+      var prefixEnd = 0;
+      // Find where digits end by checking character codes
+      while (prefixEnd < fileName.length) {
+        final charCode = fileName.codeUnitAt(prefixEnd);
+        // Check if character is a digit (0-9)
+        if (charCode >= 48 && charCode <= 57) {
+          prefixEnd++;
+        } else {
+          break;
+        }
+      }
+      // If we found digits followed by underscore, remove the prefix
+      if (prefixEnd > 0 &&
+          prefixEnd < fileName.length &&
+          fileName[prefixEnd] == '_') {
+        fileName = fileName.substring(prefixEnd + 1);
+      }
+    }
 
     return fileName.length > 30 ? '${fileName.substring(0, 30)}...' : fileName;
   }

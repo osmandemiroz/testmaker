@@ -88,6 +88,125 @@ class QuizService {
     }
   }
 
+  /// Checks if a line starts with an option prefix (A-D) or numbered prefix
+  /// without using RegExp to avoid deprecation.
+  bool _isOptionLine(String line) {
+    if (line.isEmpty) return false;
+
+    // Check for A-D) format
+    if (line.length >= 2) {
+      final firstChar = line[0];
+      if ((firstChar == 'A' ||
+              firstChar == 'B' ||
+              firstChar == 'C' ||
+              firstChar == 'D') &&
+          line.length >= 2 &&
+          line[1] == ')') {
+        return true;
+      }
+    }
+
+    // Check for numbered format (digits followed by dot)
+    if (line.isNotEmpty) {
+      var i = 0;
+      // Check for digits at the start
+      while (i < line.length) {
+        final charCode = line.codeUnitAt(i);
+        if (charCode >= 48 && charCode <= 57) {
+          // 0-9
+          i++;
+        } else if (i > 0 && line[i] == '.') {
+          return true; // Found digits followed by dot
+        } else {
+          break;
+        }
+      }
+    }
+
+    return false;
+  }
+
+  /// Removes option prefix (A-D) or numbered prefix from a line
+  /// without using RegExp to avoid deprecation.
+  String _removeOptionPrefix(String line) {
+    if (line.isEmpty) return line;
+
+    // Check for A-D) format and remove it
+    if (line.length >= 2) {
+      final firstChar = line[0];
+      if ((firstChar == 'A' ||
+              firstChar == 'B' ||
+              firstChar == 'C' ||
+              firstChar == 'D') &&
+          line.length >= 2 &&
+          line[1] == ')') {
+        // Remove "X) " or "X)"
+        var startIndex = 2;
+        // Skip whitespace after )
+        while (startIndex < line.length && line[startIndex] == ' ') {
+          startIndex++;
+        }
+        return line.substring(startIndex);
+      }
+    }
+
+    // Check for numbered format (digits followed by dot) and remove it
+    if (line.isNotEmpty) {
+      var i = 0;
+      // Find digits at the start
+      while (i < line.length) {
+        final charCode = line.codeUnitAt(i);
+        if (charCode >= 48 && charCode <= 57) {
+          // 0-9
+          i++;
+        } else if (i > 0 && line[i] == '.') {
+          // Found digits followed by dot, remove prefix
+          var startIndex = i + 1;
+          // Skip whitespace after dot
+          while (startIndex < line.length && line[startIndex] == ' ') {
+            startIndex++;
+          }
+          return line.substring(startIndex);
+        } else {
+          break;
+        }
+      }
+    }
+
+    return line;
+  }
+
+  /// Splits text by blank lines (newline, optional whitespace, newline)
+  /// without using RegExp to avoid deprecation.
+  List<String> _splitByBlankLines(String text) {
+    final blocks = <String>[];
+    final lines = text.split('\n');
+    final currentBlock = <String>[];
+
+    for (var i = 0; i < lines.length; i++) {
+      final line = lines[i];
+      // Check if line is empty or contains only whitespace
+      if (line.trim().isEmpty) {
+        // If we have content in current block, save it and start new block
+        if (currentBlock.isNotEmpty) {
+          blocks.add(currentBlock.join('\n'));
+          currentBlock.clear();
+        }
+        // Skip the blank line(s)
+        continue;
+      }
+      // Add non-blank line to current block
+      currentBlock.add(line);
+    }
+
+    // Add the last block if it has content
+    if (currentBlock.isNotEmpty) {
+      blocks.add(currentBlock.join('\n'));
+    }
+
+    return blocks;
+  }
+
   /// Parses questions from a simple text format.
   ///
   /// Expected format (one question per block, separated by blank lines):
@@ -107,7 +226,8 @@ class QuizService {
   /// D) Option D
   List<Question> _parseQuestionsFromSimpleText(String text) {
     final questions = <Question>[];
-    final blocks = text.split(RegExp(r'\n\s*\n')); // Split by blank lines
+    // Split by blank lines without RegExp to avoid deprecation
+    final blocks = _splitByBlankLines(text);
 
     var questionId = 1;
     for (final block in blocks) {
@@ -131,11 +251,9 @@ class QuizService {
             questionText = line.substring(line.indexOf(':') + 1).trim();
           } else if (line.contains('?') && questionText == null) {
             questionText = line;
-          } else if (line.startsWith(RegExp(r'[A-D]\)')) ||
-              line.startsWith(RegExp(r'\d+\.'))) {
-            // Option line
-            final optionText =
-                line.replaceFirst(RegExp(r'^[A-D]\)\s*|\d+\.\s*'), '').trim();
+          } else if (_isOptionLine(line)) {
+            // Option line - remove prefix (A-D) or numbered prefix
+            final optionText = _removeOptionPrefix(line).trim();
             if (optionText.isNotEmpty) {
               options.add(optionText);
               // Check if marked as correct

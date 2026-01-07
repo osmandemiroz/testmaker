@@ -471,8 +471,21 @@ class _AuthScreenState extends State<AuthScreen>
                 if (value == null || value.trim().isEmpty) {
                   return 'Please enter your email';
                 }
-                if (!RegExp(r'^[\w-.]+@([\w-]+\.)+[\w-]{2,4}$')
-                    .hasMatch(value.trim())) {
+                // Email validation without RegExp to avoid deprecation
+                final email = value.trim();
+                final atIndex = email.indexOf('@');
+                // Must have exactly one @ symbol and it can't be at start or end
+                if (atIndex <= 0 || atIndex >= email.length - 1) {
+                  return 'Please enter a valid email';
+                }
+                // Check domain part (after @)
+                final domain = email.substring(atIndex + 1);
+                final lastDotIndex = domain.lastIndexOf('.');
+                // Domain must have at least one dot and TLD must be 2-4 chars
+                if (lastDotIndex <= 0 ||
+                    lastDotIndex >= domain.length - 1 ||
+                    domain.length - lastDotIndex - 1 < 2 ||
+                    domain.length - lastDotIndex - 1 > 4) {
                   return 'Please enter a valid email';
                 }
                 return null;
