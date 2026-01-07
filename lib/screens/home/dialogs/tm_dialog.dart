@@ -74,6 +74,10 @@ class _TMDialogState extends State<TMDialog>
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
+    // Get keyboard height to adjust dialog positioning
+    // This ensures the "Add Content" button remains visible when keyboard appears
+    final viewInsets = MediaQuery.of(context).viewInsets;
+    final keyboardHeight = viewInsets.bottom;
 
     return BackdropFilter(
       filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
@@ -84,50 +88,65 @@ class _TMDialogState extends State<TMDialog>
           child: Dialog(
             backgroundColor: Colors.transparent,
             elevation: 0,
-            insetPadding:
-                const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+            // Adjust insetPadding based on keyboard height
+            // When keyboard appears, reduce bottom padding to keep actions visible
+            insetPadding: EdgeInsets.only(
+              left: 20,
+              right: 20,
+              top: 24,
+              bottom: keyboardHeight > 0 ? 8 : 24,
+            ),
             child: LayoutBuilder(
               builder: (context, constraints) {
                 final maxWidth = widget.maxWidth ??
                     ResponsiveSizer.dialogMaxWidthFromConstraints(constraints);
 
                 return Center(
-                  child: Container(
-                    constraints: BoxConstraints(maxWidth: maxWidth),
-                    decoration: BoxDecoration(
-                      color: isDark
-                          ? Colors.black.withValues(alpha: 0.6)
-                          : Colors.white.withValues(alpha: 0.7),
-                      borderRadius: BorderRadius.circular(28),
-                      border: Border.all(
-                        color: (isDark ? Colors.white : Colors.black)
-                            .withValues(alpha: 0.1),
-                        width: 1.5,
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.2),
-                          blurRadius: 30,
-                          offset: const Offset(0, 15),
-                        ),
-                      ],
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(
+                      maxWidth: maxWidth,
+                      // Constrain max height to ensure dialog fits above keyboard
+                      maxHeight: MediaQuery.of(context).size.height -
+                          viewInsets.top -
+                          viewInsets.bottom -
+                          48, // Account for dialog padding
                     ),
-                    clipBehavior: Clip.antiAlias,
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        _buildHeader(context, constraints),
-                        Flexible(
-                          child: SingleChildScrollView(
-                            padding: widget.contentPadding ??
-                                const EdgeInsets.fromLTRB(24, 0, 24, 24),
-                            child: widget.child,
-                          ),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: isDark
+                            ? Colors.black.withValues(alpha: 0.6)
+                            : Colors.white.withValues(alpha: 0.7),
+                        borderRadius: BorderRadius.circular(28),
+                        border: Border.all(
+                          color: (isDark ? Colors.white : Colors.black)
+                              .withValues(alpha: 0.1),
+                          width: 1.5,
                         ),
-                        if (widget.actions != null)
-                          _buildActions(context, constraints),
-                      ],
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.2),
+                            blurRadius: 30,
+                            offset: const Offset(0, 15),
+                          ),
+                        ],
+                      ),
+                      clipBehavior: Clip.antiAlias,
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          _buildHeader(context, constraints),
+                          Flexible(
+                            child: SingleChildScrollView(
+                              padding: widget.contentPadding ??
+                                  const EdgeInsets.fromLTRB(24, 0, 24, 24),
+                              child: widget.child,
+                            ),
+                          ),
+                          if (widget.actions != null)
+                            _buildActions(context, constraints),
+                        ],
+                      ),
                     ),
                   ),
                 );
